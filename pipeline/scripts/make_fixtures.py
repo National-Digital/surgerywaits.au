@@ -2,6 +2,7 @@
 
     cd pipeline && uv run --locked python scripts/make_fixtures.py          # verify and rebuild
     cd pipeline && uv run --locked python scripts/make_fixtures.py --bump   # move to newer versions
+    cd pipeline && uv run --locked python scripts/make_fixtures.py --recut  # new cut, same versions
 
 By default each pinned version is fetched and its sha256 must equal the manifest's, or the run
 aborts and leaves the fixtures untouched. Only --bump picks the newest version. publicdata's own
@@ -42,6 +43,12 @@ HOSPITALS = {
         "Royal Children's Hospital [Queensland]",
     ],
 }
+# Two campuses that share the alias "WDHS", so the register's shared-alias rule has real rows.
+SHARED_ALIAS_PAIR = [
+    "Western District Health Service [Hamilton]",
+    "Western District Health Service [Penshurst]",
+]
+NATIONAL = "NAT"
 QLD_FACILITIES = ["Ayr", "Cooktown", "Mater Adult", "Cairns", "Thursday Island"]
 STATE_NAMES = {"NSW": "New South Wales", "Vic": "Victoria", "Qld": "Queensland"}
 KEEP_YEARS = 2
@@ -141,6 +148,31 @@ def sort_by(table: pa.Table, columns: list[str]) -> pa.Table:
     return table.sort_by([(c, "ascending") for c in columns])
 
 
+def plan_register(
+    units: pa.Table, mappings: pa.Table, names: set[str]
+) -> tuple[set[str], set[str]]:
+    """Hospital codes to keep, and the state, network and national units they map to."""
+    hospitals = {
+        c
+        for c, n, t in zip(
+            units["code"].to_pylist(),
+            units["name"].to_pylist(),
+            units["type_code"].to_pylist(),
+            strict=True,
+        )
+        if n in names and t == "H"
+    }
+    related = {NATIONAL}
+    for unit, mapped in zip(
+        mappings["reporting_unit_code"].to_pylist(),
+        mappings["mapped_code"].to_pylist(),
+        strict=True,
+    ):
+        if unit in hospitals:
+            related.add(mapped)
+    return hospitals, related - hospitals
+
+
 def cut(slug: str, table: pa.Table, ctx: dict[str, Any]) -> pa.Table:  # noqa: PLR0911
     names: set[str] = ctx["names"]
     cols = set(table.column_names)
@@ -149,16 +181,23 @@ def cut(slug: str, table: pa.Table, ctx: dict[str, Any]) -> pa.Table:  # noqa: P
         ctx["categories"] |= {v for c in CATEGORY_COLUMNS if c in cols for v in out[c].to_pylist()}
         return sort_by(out, ["reporting_unit", *[c for c in CATEGORY_COLUMNS if c in cols], "year"])
     if slug == "au-myhospitals-reporting-units":
-        out = take(table, [n in names for n in table["name"].to_pylist()])
-        ctx["codes"] = set(out["code"].to_pylist())
+        out = take(table, [c in ctx["codes"] | ctx["related"] for c in table["code"].to_pylist()])
         return sort_by(out, ["code"])
     if slug == "au-hospitals-myhospitals":
-        return sort_by(
-            take(table, [c in ctx["codes"] for c in table["code"].to_pylist()]), ["code"]
-        )
+        keep = ctx["codes"] | ctx["related"]
+        return sort_by(take(table, [c in keep for c in table["code"].to_pylist()]), ["code"])
     if slug == "au-myhospitals-reporting-unit-mappings":
-        out = take(table, [c in ctx["codes"] for c in table["reporting_unit_code"].to_pylist()])
-        return sort_by(out, ["reporting_unit_code", "map_type_code", "mapped_code"])
+        # Non-hospital units keep only rows that point at a kept unit, duplicates included.
+        everything = ctx["codes"] | ctx["related"]
+        keep = [
+            (u in ctx["codes"]) or (u in ctx["related"] and m in everything)
+            for u, m in zip(
+                table["reporting_unit_code"].to_pylist(),
+                table["mapped_code"].to_pylist(),
+                strict=True,
+            )
+        ]
+        return sort_by(take(table, keep), ["reporting_unit_code", "map_type_code", "mapped_code"])
     if slug == "au-myhospitals-reported-measures":
         out = take(table, [c in ctx["categories"] for c in table["category_name"].to_pylist()])
         return sort_by(out, ["reported_measure_code"])
@@ -227,16 +266,26 @@ def build_slug(slug: str, tmp: Path, pins: dict[str, Any], *, bump: bool) -> tup
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bump", action="store_true", help="move each pin to the newest version")
-    bump = parser.parse_args().bump
+    parser.add_argument(
+        "--recut", action="store_true", help="accept a changed extract at the pinned versions"
+    )
+    args = parser.parse_args()
+    bump, recut = args.bump, args.recut
     pins = load_pins() if (OUT / "manifest.json").is_file() or not bump else {}
     names = {h for hs in HOSPITALS.values() for h in hs}
-    ctx: dict[str, Any] = {"names": names, "codes": set(), "categories": set()}
+    ctx: dict[str, Any] = {"names": names, "codes": set(), "related": set(), "categories": set()}
     manifest: dict[str, Any] = {}
     with tempfile.TemporaryDirectory() as tmpname:
         tmp = Path(tmpname)
         built = tmp / "built"
+        fetched = {slug: build_slug(slug, tmp, pins, bump=bump) for slug in SLUGS}
+        ctx["codes"], ctx["related"] = plan_register(
+            pq.read_table(fetched["au-myhospitals-reporting-units"][2]),
+            pq.read_table(fetched["au-myhospitals-reporting-unit-mappings"][2]),
+            names | set(SHARED_ALIAS_PAIR),
+        )
         for slug in SLUGS:
-            version, digest, path = build_slug(slug, tmp, pins, bump=bump)
+            version, digest, path = fetched[slug]
             table = pq.read_table(path)
             meta = json.loads((table.schema.metadata or {})[b"publicdata"])
             out = cut(slug, table, ctx)
@@ -266,10 +315,12 @@ def main() -> None:
                 "source_url": f"{BASE}/d/{slug}/v/{version}/data.parquet",
                 "version": version,
             }
-            if pin and not bump and pin["extract_sha256"] != manifest[slug]["extract_sha256"]:
-                msg = (
-                    f"{slug}: the extract no longer matches its pinned sha256; use --bump to accept"
-                )
+            if (
+                pin
+                and not (bump or recut)
+                and pin["extract_sha256"] != manifest[slug]["extract_sha256"]
+            ):
+                msg = f"{slug}: the extract differs from its pin; use --bump or --recut"
                 raise SystemExit(msg)
             if pin and pin["version"] != version:
                 print(f"{slug}: {pin['version']} -> {version}")

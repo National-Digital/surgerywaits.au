@@ -68,8 +68,7 @@ withheld.
 ### D4: The data build is Python 3.13, checked strictly
 
 `pipeline/` is a Python 3.13 package managed with uv. It is checked with ruff, pyright in strict
-mode and pytest. Parquet is read with pyarrow or duckdb, pinned to an exact version. The Parquet
-reader is planned.
+mode and pytest. Parquet is read with pyarrow, pinned to an exact version.
 
 Why: Python has mature Parquet and data-frame libraries. Strict type checking catches a column that
 changes type before it reaches a published figure, and pinned readers keep the output reproducible

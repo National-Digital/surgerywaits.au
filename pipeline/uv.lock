@@ -221,11 +221,11 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "jsonschema" },
+    { name = "pyarrow" },
 ]
 
 [package.dev-dependencies]
 dev = [
-    { name = "pyarrow" },
     { name = "pyright" },
     { name = "pytest" },
     { name = "pyyaml" },
@@ -235,11 +235,13 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "jsonschema", specifier = "==4.26.0" }]
+requires-dist = [
+    { name = "jsonschema", specifier = "==4.26.0" },
+    { name = "pyarrow", specifier = "==26.0.1" },
+]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "pyarrow", specifier = "==26.0.1" },
     { name = "pyright", specifier = "==1.1.414" },
     { name = "pytest", specifier = "==9.2.0" },
     { name = "pyyaml", specifier = "==6.0.3" },

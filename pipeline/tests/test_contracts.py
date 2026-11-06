@@ -4,10 +4,35 @@ from pathlib import Path
 import pytest
 
 from fakes import FakeOpener, FakeResponse, Sleeps, make_entry
+from surgerywaits.hospitals import (
+    LATITUDE_RANGE,
+    LONGITUDE_RANGE,
+    HospitalError,
+    Register,
+    Row,
+    build_register,
+    load_register,
+    read_rows,
+)
 from surgerywaits.manifest import ManifestError, load
 from surgerywaits.pull import PullError, pull
 
 ROOT = Path(__file__).resolve().parents[2]
+FIXTURES = ROOT / "pipeline" / "tests" / "fixtures"
+HOSPITAL_SLUGS = (
+    "au-myhospitals-reporting-units",
+    "au-myhospitals-reporting-unit-mappings",
+    "au-hospitals-myhospitals",
+)
+
+
+def _hospital_rows() -> tuple[list[Row], list[Row], list[Row]]:
+    units, mappings, records = (read_rows(FIXTURES / s / "data.parquet") for s in HOSPITAL_SLUGS)
+    return units, mappings, records
+
+
+def _register() -> Register:
+    return load_register(*(FIXTURES / s / "data.parquet" for s in HOSPITAL_SLUGS))
 
 
 def test_manifest_entry_pins_slug_version_and_sha256() -> None:
@@ -60,14 +85,29 @@ def test_no_wall_clock_values_in_dist() -> None:
     raise NotImplementedError
 
 
-@pytest.mark.skip(reason="planned: the private sector is excluded")
 def test_private_sector_is_excluded() -> None:
-    raise NotImplementedError
+    units, mappings, records = _hospital_rows()
+    assert not any(
+        u["private"] for u in units if u["code"] in {h.code for h in _register().hospitals}
+    )
+    units = [{**u, "private": True} if u["code"] == "H0075" else u for u in units]
+    records = [{**r, "sector": "Private"} if r["code"] == "H0075" else r for r in records]
+    register = build_register(units, mappings, records)
+    assert "H0075" not in {h.code for h in register.hospitals}
+    assert register.excluded_private == ("H0075",)
 
 
-@pytest.mark.skip(reason="planned: coordinates fall within Australia")
 def test_coordinates_fall_within_australia() -> None:
-    raise NotImplementedError
+    lat_low, lat_high = LATITUDE_RANGE
+    lon_low, lon_high = LONGITUDE_RANGE
+    for h in _register().hospitals:
+        if h.latitude is not None and h.longitude is not None:
+            assert lat_low <= h.latitude <= lat_high, h.code
+            assert lon_low <= h.longitude <= lon_high, h.code
+    units, mappings, records = _hospital_rows()
+    bad = [{**r, "latitude": 37.5} if r["code"] == "H0075" else r for r in records]
+    with pytest.raises(HospitalError):
+        build_register(units, mappings, bad)
 
 
 def test_slugs_are_unique() -> None:
