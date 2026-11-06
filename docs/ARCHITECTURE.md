@@ -25,12 +25,15 @@ Cloudflare Worker    serves the static assets (planned)
 - **publicdata.au.** The build reads immutable dated version files at
   `https://publicdata.au/d/<slug>/v/<date>/data.parquet`. It checks each file against the sha256
   pinned in a manifest. A refresh finds new versions through the service's versions endpoint at
-  `/api/v1/datasets/<slug>/versions`. Suppressed and empty cells arrive as nulls, and a
-  `markers` column keeps the publisher's code for each emptied cell. That code gives the reason the
-  site shows: "<5" means too few patients, "-" means no patients reported, and "NP" means AIHW did
-  not publish. "Not peered" appears only in place of the peer-group columns and the site shows it
-  as "not published: no peer group comparison". The credit line uses the citation that
-  publicdata.au publishes with each version.
+  `/api/v1/datasets/<slug>/versions`. Suppressed and empty cells arrive as nulls, and a `markers`
+  column keeps the publisher's code for each emptied cell. That code gives the reason the site
+  shows: "<5" means too few patients, "-" means no patients reported, and "NP" means AIHW did not
+  publish. "Not peered" appears only in place of the peer-group columns and the site shows it as
+  "not published: no peer group comparison". The Queensland tables carry no markers. A column
+  named in their `suppressed` list is "not published: Queensland Health gave no figure", and a
+  null in the prior-year change column that the list does not name is "not reported". Any other
+  unflagged null fails the build. The credit line uses the citation that publicdata.au publishes
+  with each version.
 - **`pipeline/` (planned).** A Python 3.13 package built with uv, and checked with ruff, pyright in
   strict mode and pytest. It turns the pinned files into the output files.
 - **`contract/` (planned).** JSON Schemas that define every file in the output. The pipeline
@@ -52,7 +55,7 @@ planned marker that does not match the test.
 - **Two halves, one boundary.** `pipeline/` (Python) builds the data, `site/` (TypeScript) is the front end, and the site reads only the pipeline's dist output, validated against `contract/`. — enforced by `site/src/contracts/gates.test.ts` › "validate against their JSON Schemas in contract/" (planned); `site/src/contracts/gates.test.ts` › "the site reads only the pipeline's dist output" (planned).
 - **Determinism.** Nothing in dist holds a wall-clock value, a random value or unordered iteration, and two builds are byte-identical. — enforced by `pipeline/tests/test_contracts.py::test_building_twice_gives_byte_identical_dist` (planned); `pipeline/tests/test_contracts.py::test_no_wall_clock_values_in_dist` (planned); `site/src/contracts/gates.test.ts` › "building the site twice gives byte-identical output" (planned).
 - **One source.** Data comes only from publicdata.au's pinned dated versions, each verified by sha256, with no fallback. — enforced by `pipeline/tests/test_contracts.py::test_manifest_entry_pins_slug_version_and_sha256`; `pipeline/tests/test_contracts.py::test_download_with_wrong_digest_fails_closed`.
-- **Suppressed values.** A suppressed cell renders "not published" with the publisher's reason, never 0, blank or a rank. The three reasons apply to a hospital's own figures: "<5" means too few patients, "-" means no patients reported and "NP" means AIHW did not publish. — enforced by `pipeline/tests/test_contracts.py::test_every_null_has_a_publisher_marker_or_is_reported` (planned); `pipeline/tests/test_contracts.py::test_every_marker_maps_to_a_known_reason` (planned); `site/src/contracts/gates.test.ts` › "render 'not published' with the reason taken from the publisher's marker (<5, -, NP); an unknown marker fails the build" (planned); `site/src/contracts/gates.test.ts` › "a suppressed cell is never rendered blank or as 0" (planned).
+- **Suppressed values.** A suppressed cell renders "not published" with the publisher's reason, never 0, blank or a rank. The three reasons apply to a hospital's own figures: "<5" means too few patients, "-" means no patients reported and "NP" means AIHW did not publish. — enforced by `pipeline/tests/test_contracts.py::test_every_null_has_a_publisher_marker_or_is_reported`; `pipeline/tests/test_contracts.py::test_every_marker_maps_to_a_known_reason`; `site/src/contracts/gates.test.ts` › "render 'not published' with the reason taken from the publisher's marker (<5, -, NP); an unknown marker fails the build" (planned); `site/src/contracts/gates.test.ts` › "a suppressed cell is never rendered blank or as 0" (planned).
 - **Hospital joins.** The waiting-times tables name hospitals instead of coding them, so each hospital row joins to one register code on its name, state and alternative names, and an unmatched or ambiguous row fails the build. — enforced by `pipeline/tests/test_contracts.py::test_unmatched_or_ambiguous_hospital_join_fails`.
 - **Not peered.** "Not peered" appears only in place of the peer-group columns, AIHW does not define it, and the site shows it as "not published: no peer group comparison" with no other meaning. — enforced by `site/src/contracts/gates.test.ts` › "'not peered' shows as 'not published: no peer group comparison' and only in place of the peer-group columns" (planned).
 - **Reference period and release date.** Every rendered figure carries both, or it does not ship. — enforced by `site/src/contracts/gates.test.ts` › "every rendered figure shows its reference period and the data release date" (planned).
