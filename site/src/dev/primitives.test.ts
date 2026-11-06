@@ -31,4 +31,12 @@ describe('the primitives preview page', () => {
     }
     expect(values).toContain('0.0%');
   });
+
+  it('shows the data table with one stamp, a stale row and a withheld cell', async () => {
+    const html = await render(primitives, {});
+    expect(textsOf(html, 'c-table__stamp')).toHaveLength(1);
+    expect(textsOf(html, 'c-table__marker').length).toBeGreaterThan(0);
+    expect(textsOf(html, 'c-table__rank').length).toBeGreaterThan(0);
+    expect(textsOf(html, 'c-table__value').join(' ')).toContain('not published');
+  });
 });

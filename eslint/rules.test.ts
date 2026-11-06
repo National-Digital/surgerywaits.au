@@ -162,6 +162,12 @@ describe('no-literal-text', () => {
     ]);
   }, 60_000);
 
+  it('accepts scope only with its four values', async () => {
+    expect(await problems('text-scope-bad.astro')).toEqual([
+      { line: 9, ruleId: 'site/no-literal-text' },
+    ]);
+  }, 60_000);
+
   it('accepts keys, non-copy attributes, comparisons, punctuation and style blocks', async () => {
     expect(await problems('text-good.astro')).toEqual([]);
   }, 60_000);

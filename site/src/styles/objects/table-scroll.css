@@ -1,0 +1,10 @@
+@layer objects {
+  /* A wide table scrolls inside this box, so the page itself never scrolls sideways. */
+  .o-table-scroll {
+    overflow-x: auto;
+    margin-block-end: var(--space-4);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+    background: var(--card);
+  }
+}

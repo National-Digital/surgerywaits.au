@@ -1,5 +1,7 @@
 import { listDist, readDist, readHospital, readQueenslandFacility } from '../lib/dist';
 import type { HospitalSurgery } from '../lib/dist';
+import { sortRows } from '../lib/table';
+import type { TableRow } from '../lib/table';
 import type {
   Figure,
   NotPublishedReason,
@@ -166,4 +168,56 @@ export function sampleQueensland(): QueenslandSample[] {
     }
   }
   return samples;
+}
+
+const TABLE_ROLES: readonly Role[] = ['median_wait', 'on_time', 'volume'];
+
+export interface SurgeryTable {
+  key: string;
+  roles: readonly Role[];
+  rows: TableRow[];
+}
+
+// Every surgery that all hospitals in it report on each table measure, with ranks only where ranked.
+export function surgeryTables(): SurgeryTable[] {
+  const byKey = new Map<string, TableRow[]>();
+  for (const slug of listDist('hospitals')) {
+    const hospital = readHospital(slug);
+    for (const surgery of hospital.surgeries) {
+      const cells = TABLE_ROLES.map((role) => surgery.measures[role]);
+      if (cells.every((m) => m !== undefined)) {
+        const key = `${surgery.kind}/${surgery.slug}`;
+        byKey.set(key, [
+          ...(byKey.get(key) ?? []),
+          {
+            code: hospital.code,
+            name: hospital.name,
+            stale: surgery.stale,
+            cells: cells.map((m) => ({
+              figure: m.figure,
+              ...(m.rank.status === 'ranked' ? { rank: m.rank } : {}),
+            })),
+          },
+        ]);
+      }
+    }
+  }
+  return [...byKey.entries()].map(([key, rows]) => ({
+    key,
+    roles: TABLE_ROLES,
+    rows: sortRows(rows, 0, 'median_wait'),
+  }));
+}
+
+// The table with the most hospitals that shows a ranked row, a stale row and a withheld cell.
+export function sampleTable(): SurgeryTable {
+  const score = (rows: TableRow[]): number =>
+    Number(rows.some((r) => r.stale === true)) +
+    Number(rows.some((r) => r.cells.some((c) => c.figure.state !== 'published'))) +
+    Number(rows.some((r) => r.cells.some((c) => c.rank !== undefined)));
+  const [best] = surgeryTables().sort(
+    (a, b) =>
+      score(b.rows) - score(a.rows) || b.rows.length - a.rows.length || (a.key < b.key ? -1 : 1),
+  );
+  return best ?? { key: '', roles: TABLE_ROLES, rows: [] };
 }

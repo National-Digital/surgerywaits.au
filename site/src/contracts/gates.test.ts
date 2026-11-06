@@ -16,7 +16,9 @@ import {
   replacedTerms,
   strings,
 } from '../lib/content-files';
+import DataTable from '../components/DataTable.astro';
 import Figure from '../components/Figure.astro';
+import { surgeryTables } from '../dev/preview';
 import {
   DistError,
   distDirectory,
@@ -178,9 +180,47 @@ describe('Reference period and release date', () => {
 });
 
 describe('Ranking', () => {
-  it.todo(
-    'a hospital with suppressed, closed or stale figures (latest period older than the newest in the table) is never ranked',
-  );
+  it('a hospital with suppressed, closed or stale figures (latest period older than the newest in the table) is never ranked', async () => {
+    let ranked = 0;
+    for (const table of surgeryTables()) {
+      for (const row of table.rows) {
+        for (const cell of row.cells) {
+          if (cell.rank !== undefined) {
+            ranked++;
+            expect(cell.figure.state).toBe('published');
+            expect(row.stale).not.toBe(true);
+          }
+        }
+      }
+      const html = await render(DataTable, {
+        id: 'gate',
+        caption: 'Gate',
+        rowHeading: 'Hospital',
+        columns: table.roles.map((role) => ({ heading: role, role })),
+        rows: table.rows,
+      });
+      expect(textsOf(html, 'c-table__rank')).toHaveLength(
+        table.rows.flatMap((r) => r.cells).filter((c) => c.rank !== undefined).length,
+      );
+    }
+    expect(ranked).toBeGreaterThan(0);
+    // A rank on a stale row, built to fail the gate, does not render.
+    const current = { state: 'published', value: 9, period: '2024–25', release: '2026-08-19' };
+    const stale = { ...current, period: '2017–18' };
+    const rows = [
+      { code: 'y', name: 'Y', cells: [{ figure: current }] },
+      {
+        code: 'x',
+        name: 'X',
+        stale: true,
+        cells: [{ figure: stale, rank: { position: 1, of: 2 } }],
+      },
+    ];
+    const columns = [{ heading: 'Wait', role: 'median_wait' }];
+    await expect(
+      render(DataTable, { id: 'bad', caption: 'Bad', rowHeading: 'Hospital', columns, rows }),
+    ).rejects.toThrow();
+  }, 60_000);
 });
 
 describe('Private hospitals', () => {

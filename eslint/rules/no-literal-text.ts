@@ -42,6 +42,8 @@ const NON_COPY = new Set([
   'aria-labelledby',
   'aria-live',
 ]);
+// The only values a scope attribute takes; any other string is treated as copy.
+const SCOPE_VALUES = new Set(['col', 'row', 'colgroup', 'rowgroup']);
 // A meta tag's content is not copy when its name says so.
 const META_NON_COPY = new Set(['viewport', 'theme-color', 'color-scheme', 'robots']);
 // Calls whose string arguments name a content key, not text.
@@ -106,6 +108,9 @@ function copyAttribute(attr: Node): boolean {
   const name = attrName(attr);
   if (name === 'content' && metaNonCopy(attr)) {
     return false;
+  }
+  if (name === 'scope') {
+    return !SCOPE_VALUES.has(String((attr.value as Node | undefined)?.value));
   }
   return !(NON_COPY.has(name) || name.startsWith('data-'));
 }

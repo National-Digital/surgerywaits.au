@@ -34,6 +34,8 @@ export const labelsSchema = z.strictObject({
   qld_treated: text,
   qld_percent_treated_in_time: text,
   qld_percent_change_treated_on_prior_year: text,
+  table_earlier_marker: text,
+  table_scroll_hint: text,
   title_primitives: text,
   preview_heading: text,
   preview_intro: text,
@@ -41,6 +43,9 @@ export const labelsSchema = z.strictObject({
   preview_tiles: text,
   preview_withheld: text,
   preview_queensland: text,
+  preview_table: text,
+  preview_table_caption: text,
+  preview_table_row_heading: text,
 });
 
 export const pageSchema = z.strictObject({
