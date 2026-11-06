@@ -31,22 +31,20 @@ src = ["src", "tests"]
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-  # These two fight ruff format, which owns trailing commas and joined strings.
+  # Docstrings are optional; comments are one short line where a why is needed.
+  "D",
+  # Conflicts with ruff format, which owns trailing commas.
   "COM812",
+  # Conflicts with ruff format, which owns joined strings.
   "ISC001",
   # No file carries a copyright header; the licence files cover the code.
   "CPY",
-  # ruff format owns line length.
-  "E501",
-  # A docstring is optional and holds a why.
-  "D1",
 ]
 
-[tool.ruff.lint.pydocstyle]
-convention = "google"
-
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101", "PLR2004"]
+# pytest tests use assert.
+"tests/**" = ["S101"]
+# Hand-run scripts are not a package and report progress on stdout.
 "scripts/**" = ["INP001", "T201"]
 
 [tool.pyright]
@@ -59,3 +57,5 @@ reportUnnecessaryTypeIgnoreComment = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+addopts = ["--strict-markers", "--strict-config", "-W", "error"]
+xfail_strict = true

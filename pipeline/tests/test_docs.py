@@ -8,6 +8,7 @@ from urllib.parse import unquote
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
+MIN_PARTS = 2
 
 TITLE = r"(?:\s+(?:\"[^\"]*\"|'[^']*'|\([^)]*\)))?"
 TARGET = r"(?:<([^>\n]*)>|((?:[^()\s]|\([^()\s]*\))+))"
@@ -138,7 +139,7 @@ def check_names(workflows: Mapping[str, str]) -> set[str]:
     names: set[str] = set()
     for text in workflows.values():
         jobs = re.split(r"^jobs:\s*$", text, maxsplit=1, flags=re.MULTILINE)
-        if len(jobs) < 2:
+        if len(jobs) < MIN_PARTS:
             continue
         for job_id, block in re.findall(
             r"^  ([\w-]+):[ \t]*\n((?:(?:    .*)?\n|\Z)*)", jobs[1] + "\n", re.MULTILINE
@@ -227,7 +228,9 @@ def test_a_link_to_a_missing_file_is_caught() -> None:
 
 def test_a_link_to_a_missing_anchor_is_caught() -> None:
     docs = {
-        "a.md": "[ok](b.md#a-b-c) [dup](b.md#dup-1) [self](#top) [bad](b.md#nope) [no](#nope)\n# Top",
+        "a.md": (
+            "[ok](b.md#a-b-c) [dup](b.md#dup-1) [self](#top) [bad](b.md#nope) [no](#nope)\n# Top"
+        ),
         "b.md": "## A `b` C!\n# Dup\n# Dup\n```\n# Not a heading\n```",
     }
     assert broken_links(docs, _exists("a.md", "b.md")) == [
@@ -270,7 +273,10 @@ def test_link_titles_in_every_form_are_accepted() -> None:
 
 def test_encoded_paths_balanced_parentheses_and_angle_targets() -> None:
     docs = {
-        "a.md": "[a](my%20file.md) [b](f(1).md) [c](<my file.md>) [d](<gone file.md>) [e](x%20y.md#nope)",
+        "a.md": (
+            "[a](my%20file.md) [b](f(1).md) [c](<my file.md>) [d](<gone file.md>) "
+            "[e](x%20y.md#nope)"
+        ),
         "x y.md": "# X",
     }
     present = ("my file.md", "f(1).md", "x y.md")
@@ -341,14 +347,16 @@ def test_an_unknown_npm_script_is_caught() -> None:
 
 TABLE = (
     "## Checks on each pull request\n\nText | with a pipe\n\n| Check | What |\n| --- | --- |\n"
-    "| Site checks | x |\n| `Analyze (python)` | x |\n| Pipeline checks | x |\n| Unnamed | x |\n\n## Next\n"
+    "| Site checks | x |\n| `Analyze (python)` | x |\n| Pipeline checks | x |\n"
+    "| Unnamed | x |\n\n## Next\n"
 )
 
 
 def test_a_check_no_workflow_defines_is_caught() -> None:
     workflow = (
         "jobs:\n  a:\n    name: Site checks\n  b:\n    name: Analyze (${{ matrix.language }})\n"
-        "    strategy:\n      matrix:\n        language: [actions, python]\n  Unnamed:\n    runs-on: x\n"
+        "    strategy:\n      matrix:\n        language: [actions, python]\n"
+        "  Unnamed:\n    runs-on: x\n"
     )
     assert undefined_checks(TABLE, {"ci.yml": workflow}) == [
         "CONTRIBUTING.md lists Pipeline checks, which no workflow defines"
@@ -357,7 +365,10 @@ def test_a_check_no_workflow_defines_is_caught() -> None:
 
 
 def test_block_list_matrices_expand_and_include_fails_loudly() -> None:
-    block = "jobs:\n  b:\n    name: Analyze (${{ matrix.language }})\n    strategy:\n      matrix:\n        language:\n          - actions\n          - python\n"
+    block = (
+        "jobs:\n  b:\n    name: Analyze (${{ matrix.language }})\n"
+        "    strategy:\n      matrix:\n        language:\n          - actions\n          - python\n"
+    )
     assert check_names({"w.yml": block}) == {"Analyze (actions)", "Analyze (python)"}
     include = block.replace("language:\n", "include:\n          - language: x\n        language:\n")
     with pytest.raises(ValueError, match=r"matrix\.include"):

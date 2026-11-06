@@ -216,7 +216,10 @@ def build_slug(slug: str, tmp: Path, pins: dict[str, Any], *, bump: bool) -> tup
     version = newest(slug) if bump or pin is None else pin["version"]
     path, digest = download(slug, version, tmp)
     if pin and pin["version"] == version and pin["source_sha256"] != digest:
-        msg = f"{slug} {version}: served sha256 {digest} differs from the pinned {pin['source_sha256']}"
+        msg = (
+            f"{slug} {version}: served sha256 {digest} "
+            f"differs from the pinned {pin['source_sha256']}"
+        )
         raise SystemExit(msg)
     return version, digest, path
 

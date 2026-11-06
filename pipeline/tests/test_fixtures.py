@@ -11,6 +11,7 @@ FIXTURES = Path(__file__).resolve().parent / "fixtures"
 REASONS = {"<5": "too few patients", "-": "no patients reported", "NP": "not published"}
 FORMS = {"markers", "suppressed", "none"}
 SUMS = {"match", "stale", "missing"}
+SHA256_HEX_LENGTH = 64
 SLUGS = {
     "abs-suburbs-localities-2021",
     "au-elective-surgery-waiting-times",
@@ -83,7 +84,7 @@ def test_each_entry_has_a_version_and_attribution() -> None:
 
 def test_each_entry_records_how_it_was_pinned() -> None:
     for slug, entry in _manifest(FIXTURES).items():
-        assert len(entry["source_sha256"]) == 64, slug
+        assert len(entry["source_sha256"]) == SHA256_HEX_LENGTH, slug
         assert entry["publisher_sum"] in SUMS, slug
         assert entry["marker_form"] in FORMS, slug
         assert entry["source_url"].endswith(f"/v/{entry['version']}/data.parquet"), slug

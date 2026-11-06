@@ -1,5 +1,6 @@
 import json
 import re
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, cast
 
@@ -17,13 +18,6 @@ ACTIONS = sorted(
 )
 EXPRESSION = re.compile(r"\$\{\{.*?\}\}", re.DOTALL)
 GUARD = "github.repository == 'National-Digital/surgerywaits.au'"
-PR_TRIGGERS = {
-    "pull_request",
-    "pull_request_target",
-    "merge_group",
-    "workflow_run",
-    "workflow_call",
-}
 MEASURED = re.compile(r"lighthouse|lhci|pagespeed|(?<![a-z0-9])psi(?![a-z0-9])", re.IGNORECASE)
 PINNED = re.compile(r"@[0-9a-f]{40}$")
 VERSION_COMMENT = re.compile(r"#\s*v\d")
@@ -100,9 +94,39 @@ def unguarded_side_effects(text: str) -> list[str]:
     return bad
 
 
-def measured_on_pull_requests(text: str) -> bool:
+def _local_callees(wf: dict[Any, Any], read: Callable[[str], str | None]) -> list[dict[Any, Any]]:
+    # Third-party actions are out of scope; only `uses: ./...` files in this repo are resolved.
+    found: list[dict[Any, Any]] = []
+    seen: set[str] = set()
+    pending = _uses_values(wf)
+    while pending:
+        ref = pending.pop()
+        if not ref.startswith("./") or ref in seen:
+            continue
+        seen.add(ref)
+        base = ref.removeprefix("./").rstrip("/")
+        for candidate in (base, f"{base}/action.yml", f"{base}/action.yaml"):
+            text = read(candidate)
+            if text is not None:
+                callee = _load(text)
+                found.append(callee)
+                pending.extend(_uses_values(callee))
+                break
+    return found
+
+
+def _read_local(path: str) -> str | None:
+    file = ROOT / path
+    return file.read_text("utf-8") if file.is_file() else None
+
+
+def measured_outside_dispatch_only(
+    text: str, read: Callable[[str], str | None] = _read_local
+) -> bool:
     wf = _load(text)
-    return bool(_triggers(wf) & PR_TRIGGERS) and bool(MEASURED.search(json.dumps(wf)))
+    if _triggers(wf) == {"workflow_dispatch"}:
+        return False
+    return any(MEASURED.search(json.dumps(w)) for w in [wf, *_local_callees(wf, read)])
 
 
 def uses_pull_request_target(text: str) -> bool:
@@ -185,7 +209,10 @@ SIDE_EFFECTS = {
 
 
 def _job(extra: str, guard: str = "") -> str:
-    return f"on: push\npermissions: {{}}\njobs:\n  a:\n    runs-on: ubuntu-24.04\n    {extra}\n    {guard}\n    steps: []\n"
+    return (
+        "on: push\npermissions: {}\njobs:\n  a:\n    runs-on: ubuntu-24.04\n"
+        f"    {extra}\n    {guard}\n    steps: []\n"
+    )
 
 
 def test_workflows_exist() -> None:
@@ -210,7 +237,10 @@ def test_guard_bypasses_are_caught() -> None:
 
 
 def test_needs_chain_must_be_guarded_throughout() -> None:
-    base = f"on: push\npermissions: {{}}\njobs:\n  g:\n    runs-on: ubuntu-24.04\n    if: {GUARD}\n    steps: []\n  u:\n    runs-on: ubuntu-24.04\n    steps: []\n"
+    base = (
+        "on: push\npermissions: {}\njobs:\n  g:\n    runs-on: ubuntu-24.04\n"
+        f"    if: {GUARD}\n    steps: []\n  u:\n    runs-on: ubuntu-24.04\n    steps: []\n"
+    )
     side = "  a:\n    runs-on: ubuntu-24.04\n    environment: p\n    needs: {}\n    steps: []\n"
     assert unguarded_side_effects(base + side.format("g")) == []
     assert unguarded_side_effects(base + side.format("[g, u]")) == ["a"]
@@ -238,35 +268,83 @@ def test_every_job_with_side_effects_runs_only_in_the_public_repo() -> None:
     assert {k: v for k, v in found.items() if v} == {}
 
 
-def test_measurement_fixture_on_a_pull_request_is_caught() -> None:
-    for step in (
-        "run: npx lhci autorun",
-        "run: npx lighthouse x",
-        "run: curl pagespeedonline.googleapis.com",
-    ):
-        text = f"on: pull_request\npermissions: {{}}\njobs:\n  a:\n    runs-on: ubuntu-24.04\n    steps:\n      - {step}\n"
-        assert measured_on_pull_requests(text)
-        assert not measured_on_pull_requests(text.replace("pull_request", "schedule"))
-    assert not measured_on_pull_requests(CLEAN)
+def _measuring(on: str, step: str = "run: npx lhci autorun") -> str:
+    return (
+        f"on: {on}\npermissions: {{}}\njobs:\n  a:\n    runs-on: ubuntu-24.04\n"
+        f"    steps:\n      - {step}\n"
+    )
 
 
-def test_measurement_hidden_outside_steps_or_behind_workflow_run_is_caught() -> None:
+@pytest.mark.parametrize(
+    "step",
+    ["run: npx lhci autorun", "run: npx lighthouse x", "run: curl pagespeedonline.googleapis.com"],
+)
+def test_measurement_in_a_dispatch_only_workflow_passes(step: str) -> None:
+    assert not measured_outside_dispatch_only(_measuring("workflow_dispatch", step))
+    assert not measured_outside_dispatch_only(_measuring("[workflow_dispatch]", step))
+    assert not measured_outside_dispatch_only(CLEAN)
+
+
+@pytest.mark.parametrize(
+    "on",
+    [
+        "pull_request",
+        "merge_group",
+        "push",
+        "schedule",
+        "{schedule: [{cron: '0 0 * * 1'}]}",
+        "{push: {branches: [main]}}",
+        "[workflow_dispatch, schedule]",
+        "{workflow_dispatch: , schedule: [{cron: '0 0 * * 1'}]}",
+        "[workflow_dispatch, push]",
+        "workflow_run",
+        "workflow_call",
+    ],
+)
+def test_measurement_with_any_other_trigger_is_caught(on: str) -> None:
+    assert measured_outside_dispatch_only(_measuring(on))
+
+
+def test_measurement_hidden_outside_steps_is_caught() -> None:
     env = "on: merge_group\nenv: {U: 'https://www.googleapis.com/pagespeedonline/v5'}\njobs: {}\n"
-    assert measured_on_pull_requests(env)
-    assert measured_on_pull_requests("on: workflow_run\njobs:\n  a:\n    steps: [{run: run psi}]\n")
-    assert measured_on_pull_requests("on: pull_request\njobs:\n  a:\n    steps: [{run: PSI}]\n")
-    assert not measured_on_pull_requests(
+    assert measured_outside_dispatch_only(env)
+    assert measured_outside_dispatch_only(
+        "on: workflow_run\njobs:\n  a:\n    steps: [{run: run psi}]\n"
+    )
+    assert measured_outside_dispatch_only(
+        "on: pull_request\njobs:\n  a:\n    steps: [{run: PSI}]\n"
+    )
+    assert not measured_outside_dispatch_only(
         "on: pull_request\njobs:\n  a:\n    steps: [{run: epsilon}]\n"
     )
 
 
-def test_measurement_in_a_called_workflow_is_caught() -> None:
-    text = "on: workflow_call\njobs:\n  a:\n    steps: [{run: npx lhci}]\n"
-    assert measured_on_pull_requests(text)
+LHCI_STEP = "steps: [{run: npx lhci autorun}]"
 
 
-def test_no_pull_request_workflow_measures_performance() -> None:
-    bad = [f.name for f in WORKFLOWS if measured_on_pull_requests(f.read_text("utf-8"))]
+def test_scheduled_caller_of_a_local_action_running_lhci_is_caught() -> None:
+    files = {".github/actions/perf/action.yml": f"runs: {{using: composite, {LHCI_STEP}}}"}
+    caller = "on: schedule\njobs:\n  a:\n    steps: [{uses: ./.github/actions/perf}]\n"
+    assert measured_outside_dispatch_only(caller, files.get)
+    assert not measured_outside_dispatch_only(
+        caller.replace("schedule", "workflow_dispatch"), files.get
+    )
+
+
+def test_scheduled_caller_of_a_local_reusable_workflow_running_lhci_is_caught() -> None:
+    files = {".github/workflows/perf.yml": f"on: workflow_call\njobs:\n  a:\n    {LHCI_STEP}\n"}
+    caller = "on: schedule\njobs:\n  a:\n    uses: ./.github/workflows/perf.yml\n"
+    assert measured_outside_dispatch_only(caller, files.get)
+
+
+def test_scheduled_caller_of_a_clean_local_action_passes() -> None:
+    files = {".github/actions/ok/action.yml": "runs: {using: composite, steps: []}"}
+    caller = "on: schedule\njobs:\n  a:\n    steps: [{uses: ./.github/actions/ok}]\n"
+    assert not measured_outside_dispatch_only(caller, files.get)
+
+
+def test_measurement_runs_only_in_dispatch_only_workflows() -> None:
+    bad = [f.name for f in WORKFLOWS if measured_outside_dispatch_only(f.read_text("utf-8"))]
     assert bad == []
 
 

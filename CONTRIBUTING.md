@@ -47,7 +47,7 @@ git hooks, and where each pinned version lives.
 | Check sign-off                  | Confirms every commit has a `Signed-off-by` line.                                                             |
 | Check title                     | Confirms the pull request title is a Conventional Commit.                                                     |
 | Secret scan (gitleaks)          | Scans the full history for credentials.                                                                       |
-| Workflow lint                   | Lints the workflow files under `.github/workflows/`.                                                          |
+| Workflow lint                   | Lints the workflow files under `.github/workflows/` and every shell file.                                     |
 | Review dependency changes       | Fails on a new dependency with a known high or critical vulnerability.                                        |
 | Analyze (actions)               | Runs CodeQL static analysis on the workflows.                                                                 |
 | Analyze (javascript-typescript) | Runs CodeQL static analysis on the TypeScript and JavaScript.                                                 |

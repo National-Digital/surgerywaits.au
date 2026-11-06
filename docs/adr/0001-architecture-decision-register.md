@@ -231,8 +231,8 @@ single place to see the state and avoids a new issue on every run.
 Two workflows measure performance. `psi.yml` checks production through the PageSpeed Insights API.
 `lighthouse.yml` runs a pinned Lighthouse against a URL. Both run only on `workflow_dispatch`.
 Neither runs on a schedule, on `pull_request` or on `merge_group`, and neither is a required check.
-Both workflows are planned. A repository test fails if any workflow triggered by a pull request, the
-merge queue or `workflow_run` runs Lighthouse or PageSpeed Insights.
+Both workflows are planned. A repository test fails if any workflow that runs Lighthouse or
+PageSpeed Insights has a trigger other than `workflow_dispatch`.
 
 Why: scores from a shared runner vary from run to run, so a pull request can fail for a reason it
 did not cause. Running on demand against production measures what visitors receive.
@@ -290,14 +290,14 @@ The site uses TypeScript `strict` with `noUncheckedIndexedAccess`, `exactOptiona
 the site lands. ESLint uses `typescript-eslint` with `strictTypeChecked` and
 `stylisticTypeChecked`, `eslint-plugin-astro`, no `any`, no non-null assertions, and knip for unused
 exports. Zod schemas use `.strict()` and never `z.any()`. A lint rule is never disabled inline
-without a one-line reason. The Astro, Zod and Worker parts are planned.
+without a one-line reason, and the `eslint-comments` plugin's `require-description` rule enforces
+this. ESLint loads `eslint.config.ts` through `jiti`. The Astro, Zod and Worker parts are planned.
 
-Every script is TypeScript, so no `.js` or `.mjs` file is written. The one exception is
-`eslint.config.mjs`, which is planned to move to `eslint.config.ts`. The Worker's bindings are typed
-by `wrangler types`, and CI fails when the generated file is out of date. Shellcheck runs today over
-workflow scripts through actionlint. Covering every shell file, including those in `.githooks/`, in
-the hook and in CI is planned. The Python side keeps pyright in strict mode and ruff ([D4][d4]). The
-Astro and Worker parts are planned.
+Every script is TypeScript, so no `.js` or `.mjs` file is written. The Worker's bindings are typed
+by `wrangler types`, and CI fails when the generated file is out of date. Shellcheck runs over
+workflow scripts through actionlint, and over `.githooks/*` and every `*.sh` file in the
+`Workflow lint` job and the pre-commit hook. The Python side keeps pyright in strict mode and ruff
+([D4][d4]). The Astro and Worker parts are planned.
 
 Why: strict flags left to each author vary from file to file. A fixed list makes the type check the
 same for every contributor and catches a missing array element or an unchecked optional before it
@@ -397,23 +397,20 @@ and gives the same result on every machine.
 ### D27: Python lint is `ruff` with every rule selected
 
 `ruff` runs with `select = ["ALL"]` and `ruff format` as the formatter, both in CI and the
-pre-commit hook. The target ignore list in `pyproject.toml` is short and each entry has a one-line
+pre-commit hook. The ignore list in `pyproject.toml` is short and each entry has a one-line
 reason: the docstring rules, because comments and docstrings are one short line where needed;
 `COM812` and `ISC001`, because they conflict with `ruff format`; and `S101` in tests only, because
-pytest uses `assert`. pyright stays in strict mode ([D4][d4]). The target for pytest is
+pytest uses `assert`. The list also ignores `CPY`, because no file carries a copyright header and
+the licence files cover the code. pyright stays in strict mode ([D4][d4]). pytest runs with
 `--strict-markers`, `--strict-config` and `-W error`, with `xfail_strict = true`.
-
-Aligning the ignore list to that target and adding the pytest options are planned. Today the list
-also ignores `CPY`, because no file carries a copyright header and the licence files cover the code;
-`E501`, because `ruff format` owns line length; and `PLR2004` in tests, because test assertions
-compare against literal values. The docstring ignore is `D1` only, so missing docstrings pass.
 
 Why: selecting every rule and ignoring a few with stated reasons catches more than a short allow
 list, and the same stance applies to TypeScript in [D20][d20].
 
 ### D28: Three test runners each have one job
 
-- pytest tests the pipeline.
+- pytest tests the pipeline. It runs with `--strict-markers`, `--strict-config`, `-W error` and
+  `xfail_strict = true`, so an unknown marker, a config typo, a warning or a stray pass fails.
 - Vitest runs unit, contract and gate tests for the site, scripts and Worker. It runs today for the
   site. The Worker's tests are planned to run in Cloudflare's Vitest pool, so they use the real
   runtime.

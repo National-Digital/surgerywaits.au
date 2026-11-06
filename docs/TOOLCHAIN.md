@@ -19,7 +19,7 @@ uv sync
 From the repository root:
 
 ```
-npm run lint            # ESLint, typescript-eslint strict-type-checked, no warnings allowed
+npm run lint            # ESLint, no warnings, every disable needs a reason
 npm run format:check    # Prettier
 npm run typecheck       # tsc
 npm run knip            # unused files, exports and dependencies
@@ -35,6 +35,13 @@ uv run pyright
 uv run pytest
 ```
 
+ESLint reads `eslint.config.ts` through `jiti`, and the
+`@eslint-community/eslint-plugin-eslint-comments` plugin fails any inline disable that has no
+description. Ruff selects every rule and ignores only the few listed with a reason in
+`pipeline/pyproject.toml`. Pytest runs with `--strict-markers`, `--strict-config`, `-W error` and
+`xfail_strict`. The `Workflow lint` job also runs shellcheck over `.githooks/*` and every `*.sh`
+file.
+
 ## CI
 
 `.github/workflows/ci.yml` runs on every pull request and on pushes to `main` with three jobs
@@ -42,7 +49,8 @@ whose names are stable enough to require as status checks.
 
 - `Site checks` runs `npm ci`, then lint, format check, typecheck, knip and vitest.
 - `Pipeline checks` installs the `uv` version in `pipeline/uv.toml`, runs `uv sync --locked`, then
-  ruff, pyright and pytest, leaving out `tests/test_repo.py` and `tests/test_docs.py` because the next job runs them.
+  ruff, pyright and pytest. It leaves out `tests/test_repo.py` and `tests/test_docs.py`, because
+  the next job runs them.
 - `Repository tests` runs `pipeline/tests/test_repo.py` and `pipeline/tests/test_docs.py`. The
   second fails when a document links to a missing file or heading, names a missing path or npm
   script, or lists a check that no workflow defines. The first reads every workflow and checks
@@ -67,8 +75,9 @@ it from a `report` job on the weekly run with the label `scheduled-codeql`. Ever
 
 - `prepare-commit-msg` adds the `Signed-off-by` trailer when it is missing.
 - `pre-commit` runs ESLint and Prettier on the staged site files and ruff on the staged Python
-  files. When files under `.github/` are staged it also runs actionlint with shellcheck, and
-  zizmor. A tool that is not installed fails the commit with a message naming it.
+  files. It runs shellcheck on staged `.githooks/*` and `*.sh` files. When files under `.github/`
+  are staged it also runs actionlint with shellcheck, and zizmor. A tool that is not installed
+  fails the commit with a message naming it.
 - `pre-push` runs `typecheck`, `knip`, `vitest`, pyright and pytest.
 
 Skip a hook once with `--no-verify`. CI runs the same checks on every pull request.

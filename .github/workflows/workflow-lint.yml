@@ -1,7 +1,7 @@
 name: Workflow lint
 
-# zizmor and actionlint (with shellcheck) over every workflow, then a check that both tools still
-# fail a workflow with known defects.
+# zizmor and actionlint (with shellcheck) over every workflow, shellcheck over every shell file,
+# then a check that both tools still fail a workflow with known defects.
 on:
   push:
     branches: [main]
@@ -53,6 +53,9 @@ jobs:
         run: zizmor --persona auditor --strict-collection --format github .github
       - name: actionlint
         run: actionlint -shellcheck "$RUNNER_TEMP/lint-bin/shellcheck"
+      # Hooks have no .sh suffix, so the file list names .githooks as well as *.sh.
+      - name: Shell lint
+        run: git ls-files -z -- '.githooks/*' '*.sh' | xargs -0 -r "$RUNNER_TEMP/lint-bin/shellcheck"
       # concurrency-limits is reported only at the pedantic persona and above, so finding it shows
       # a pedantic or stricter persona is in force.
       - name: Both tools still fail a workflow with known defects
