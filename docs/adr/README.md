@@ -9,6 +9,8 @@ disagree on detail, the documents and the code are right and the record is corre
 
 - [0001](0001-architecture-decision-register.md) Architecture decision register: the twenty-eight
   decisions the rebuild starts from. It is a register, so one record holds several decisions.
+- [0002](0002-suburb-centre-points.md) Suburb centre points: the area centroid of each ABS suburb's
+  shape, rounded to 5 decimal places, with special-purpose codes excluded.
 
 ## Changing a decision
 
