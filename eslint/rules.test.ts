@@ -135,3 +135,34 @@ describe('good code', () => {
     expect(await problems('../../site/src/components/SkipLink.astro')).toEqual([]);
   }, 60_000);
 });
+
+describe('no-literal-text', () => {
+  it('rejects literal text, attributes, string expressions, set:html and frontmatter strings', async () => {
+    expect(await problems('text-bad.astro')).toEqual([
+      { line: 2, ruleId: 'site/no-literal-text' },
+      { line: 3, ruleId: 'site/no-literal-text' },
+      { line: 8, ruleId: 'site/no-literal-text' },
+      { line: 13, ruleId: 'site/no-literal-text' },
+      { line: 14, ruleId: 'site/no-literal-text' },
+      { line: 15, ruleId: 'site/no-literal-text' },
+      { line: 17, ruleId: 'site/no-literal-text' },
+      { line: 18, ruleId: 'site/no-literal-text' },
+      { line: 19, ruleId: 'site/no-literal-text' },
+      { line: 20, ruleId: 'site/no-literal-text' },
+      { line: 21, ruleId: 'site/no-literal-text' },
+      { line: 22, ruleId: 'site/no-literal-text' },
+      { line: 23, ruleId: 'site/no-literal-text' },
+      { line: 26, ruleId: 'site/no-literal-text' },
+      { line: 30, ruleId: 'site/no-literal-text' },
+      { line: 30, ruleId: 'site/no-literal-text' },
+      { line: 31, ruleId: 'site/no-literal-text' },
+      { line: 32, ruleId: 'site/no-literal-text' },
+      { line: 33, ruleId: 'site/no-literal-text' },
+      { line: 34, ruleId: 'site/no-literal-text' },
+    ]);
+  }, 60_000);
+
+  it('accepts keys, non-copy attributes, comparisons, punctuation and style blocks', async () => {
+    expect(await problems('text-good.astro')).toEqual([]);
+  }, 60_000);
+});

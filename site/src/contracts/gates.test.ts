@@ -1,6 +1,20 @@
 import { readdirSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { ESLint } from 'eslint';
 import { describe, expect, it } from 'vitest';
+import type { z } from 'astro/zod';
 
+import { labelsSchema, pageSchema, siteSchema, termsSchema } from '../lib/content-schema';
+import {
+  contentSlug,
+  decode,
+  distSlug,
+  entityPattern,
+  pageStrings,
+  readContent,
+  replacedTerms,
+  strings,
+} from '../lib/content-files';
 import { formatFigure } from '../lib/format';
 import type { NotPublishedReason, Role } from '../lib/format';
 
@@ -132,11 +146,120 @@ describe('Contrast', () => {
 });
 
 describe('Copy', () => {
-  it.todo("'elective' appears only where the methodology quotes a source");
+  it("'elective' appears only where the methodology quotes a source", () => {
+    const { terms, quotes } = termsSchema.parse(
+      readContent().find(({ path }) => path === 'terms.yaml')?.data,
+    );
+    const found = readContent()
+      .filter(({ path }) => path !== 'terms.yaml')
+      .flatMap(({ path, data }) =>
+        replacedTerms(contentSlug(path), strings(data), { terms, quotes }),
+      );
+    expect(found).toEqual([]);
+    expect(terms.some((t) => t.replaces.includes('elective'))).toBe(true);
+    expect(quotes.every((q) => q.page === 'methodology')).toBe(true);
+  });
+  it('the terminology check catches a replaced term and honours a quote listed for its page', () => {
+    const terms = [{ preferred: 'planned surgery', replaces: ['elective surgery', 'elective'] }];
+    const text = ['Waits for elective surgery', 'a selective list'];
+    expect(replacedTerms('guide', text, { terms, quotes: [] })).toEqual([
+      'guide: "elective surgery" should be "planned surgery"',
+      'guide: "elective" should be "planned surgery"',
+    ]);
+    const quotes = [
+      { page: 'methodology', term: 'elective surgery' },
+      { page: 'methodology', term: 'elective' },
+    ];
+    expect(replacedTerms('methodology', text, { terms, quotes })).toEqual([]);
+    expect(replacedTerms('guide', text, { terms, quotes })).toHaveLength(2);
+    expect(replacedTerms('guide', ['elective&nbsp;surgery'], { terms, quotes: [] })).toHaveLength(
+      2,
+    );
+  });
+  it('a page and its dist file share one slug', () => {
+    expect(contentSlug('pages/not-found.yaml')).toBe('not-found');
+    expect([
+      distSlug('index.html'),
+      distSlug('404.html'),
+      distSlug('methodology/index.html'),
+    ]).toEqual(['home', '404', 'methodology']);
+  });
+  it('the page scan reads attributes and decodes every entity', () => {
+    const html =
+      '<html><head><meta name="description" content="Elective &amp; more"></head><body>' +
+      '<img alt="elective&#32;surgery" src="/a.png"><p>ABN&nbsp;12 345&ensp;678</p>' +
+      '<p>Pty&thinsp;Ltd</p><script>var elective = 1</script></body></html>';
+    const text = pageStrings(html);
+    expect(text).toContain('Elective & more');
+    expect(text).toContain('elective surgery');
+    expect(text.filter((t) => entityPattern.test(t))).toHaveLength(2);
+    expect(text.join(' ')).not.toContain('var elective');
+    expect(entityPattern.test(decode('Pty&nbsp;Ltd'))).toBe(true);
+  });
   it.todo("no 'best hospital' or practitioner-promotion language appears");
-  it.todo('copy lives in typed content files');
-  it.todo('a missing or unknown content slot fails the build');
-  it.todo('no literal user-visible text appears in components; copy lives in YAML under content/');
+  it('copy lives in typed content files', () => {
+    const schemas: Record<string, z.ZodType> = {
+      'site.yaml': siteSchema,
+      'labels.yaml': labelsSchema,
+      'terms.yaml': termsSchema,
+    };
+    const files = readContent();
+    expect(files.length).toBeGreaterThan(0);
+    for (const { path, data } of files) {
+      const schema = path.startsWith('pages/') ? pageSchema : schemas[path];
+      expect(schema, path + ' has no schema').toBeDefined();
+      expect(schema?.safeParse(data).success, path).toBe(true);
+    }
+  });
+  it('a missing or unknown content slot fails the build', () => {
+    const labels = readContent().find(({ path }) => path === 'labels.yaml')?.data as Record<
+      string,
+      string
+    >;
+    const missing = { ...labels };
+    delete missing['skip_link'];
+    expect(labelsSchema.safeParse(missing).success).toBe(false);
+    expect(labelsSchema.safeParse({ ...labels, stray: 'Text' }).success).toBe(false);
+    const site = readContent().find(({ path }) => path === 'site.yaml')?.data as {
+      operator: { line: string };
+    };
+    const noSlot = { ...site, operator: { ...site.operator, line: 'Built and operated by us' } };
+    expect(siteSchema.safeParse(noSlot).success).toBe(false);
+    const twice = { ...site, operator: { ...site.operator, line: '{operator} {operator}' } };
+    expect(siteSchema.safeParse(twice).success).toBe(false);
+  });
+  it('no literal user-visible text appears in components; copy lives in YAML under content/', async () => {
+    const eslint = new ESLint({ cwd: fileURLToPath(new URL('../../../', import.meta.url)) });
+    const results = await eslint.lintFiles(['site/src/**/*.astro']);
+    const found = results.flatMap((r) =>
+      r.messages
+        .filter((m) => m.ruleId === 'site/no-literal-text')
+        .map((m) => r.filePath + ':' + String(m.line)),
+    );
+    expect(found).toEqual([]);
+  }, 60_000);
+  it('the site entity names the publisher without an ACN, an ABN or a company suffix', () => {
+    const files = readContent();
+    expect(files.length).toBeGreaterThan(0);
+    expect(
+      files
+        .filter(({ raw, data }) =>
+          [raw, ...strings(data).map(decode)].some((t) => entityPattern.test(t)),
+        )
+        .map(({ path }) => path),
+    ).toEqual([]);
+    for (const bad of [
+      'ACN 123 456 789',
+      'ABN 12 345 678 901',
+      'National Digital Pty Ltd',
+      'pty. ltd',
+    ]) {
+      expect(entityPattern.test(bad), bad).toBe(true);
+    }
+    const site = siteSchema.parse(files.find(({ path }) => path === 'site.yaml')?.data);
+    expect(site.operator.line).toBe('Built and operated by {operator}, Burleigh Heads, Queensland');
+    expect(site.operator.url).toBe('https://nationaldigital.com.au/');
+  });
   it.todo('the credit line uses the citation publicdata.au publishes with each version');
 });
 

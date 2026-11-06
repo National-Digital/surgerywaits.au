@@ -66,6 +66,17 @@ export default defineConfig(
   },
   { files: ['**/*.astro'], processor: astroStyles },
   {
+    files: ['site/src/**/*.astro', 'eslint/fixtures/text-*.astro'],
+    plugins: { site: siteCss },
+    rules: { 'site/no-literal-text': 'error' },
+  },
+  {
+    // Fixtures sit outside every tsconfig, so they are parsed without type information.
+    files: ['eslint/fixtures/text-*.astro'],
+    extends: [tseslint.configs.disableTypeChecked],
+    languageOptions: { parserOptions: { projectService: false, project: null } },
+  },
+  {
     files: ['**/*.css', '**/*.astro/*.css'],
     language: 'css/css',
     plugins: { css, site: siteCss },

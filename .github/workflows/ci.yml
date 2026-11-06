@@ -53,6 +53,9 @@ jobs:
       - run: npx vitest run site/src/styles/built-css.test.ts
         env:
           BUILT_CSS: '1'
+      - run: npx vitest run site/src/contracts/built-pages.test.ts
+        env:
+          BUILT_PAGES: '1'
       - run: npm run worker:types:check
       - run: npm run worker:dry-run -- "$RUNNER_TEMP/worker-out"
 

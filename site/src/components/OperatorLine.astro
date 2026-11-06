@@ -1,0 +1,12 @@
+---
+import BlockLink from './BlockLink.astro';
+import { OPERATOR_SLOT } from '../lib/content-schema';
+import { getSite } from '../lib/content';
+
+const { operator } = getSite();
+const [before = '', after = ''] = operator.line.split(OPERATOR_SLOT);
+---
+
+{/* prettier-ignore */}
+<p>{before}<a href={operator.url}>{operator.name}</a>{after}</p>
+<BlockLink href={operator.contact_url}>{operator.contact_label}</BlockLink>

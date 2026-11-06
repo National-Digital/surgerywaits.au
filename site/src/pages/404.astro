@@ -1,10 +1,14 @@
 ---
 import Base from '../layouts/Base.astro';
+import BlockLink from '../components/BlockLink.astro';
+import Prose from '../components/Prose.astro';
+import { getPage, label } from '../lib/content';
+
+const page = getPage('not-found');
 ---
 
-<Base title="Page not found - Surgery Waits">
-  <h1>Page not found</h1>
-  <p>
-    This page does not exist. <a href="/">Go to the home page</a>.
-  </p>
+<Base title={label('title_not_found')}>
+  <h1>{page.heading}</h1>
+  <Prose paragraphs={page.paragraphs} />
+  <BlockLink href="/">{label('go_home')}</BlockLink>
 </Base>

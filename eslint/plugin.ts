@@ -1,6 +1,7 @@
 import { bemClassName } from './rules/bem-class-name.ts';
 import { breakpointScale } from './rules/breakpoint-scale.ts';
 import { layerDeclared } from './rules/layer-declared.ts';
+import { noLiteralText } from './rules/no-literal-text.ts';
 import { tokenValues } from './rules/token-values.ts';
 
 export const siteCss = {
@@ -10,5 +11,6 @@ export const siteCss = {
     'layer-declared': layerDeclared,
     'token-values': tokenValues,
     'breakpoint-scale': breakpointScale,
+    'no-literal-text': noLiteralText,
   },
 };
