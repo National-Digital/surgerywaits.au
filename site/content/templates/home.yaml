@@ -1,0 +1,39 @@
+title: 'Planned surgery waiting times at public hospitals in Australia: {site}'
+description: 'This site shows how long patients waited for planned surgery at public hospitals in Australia. Find a surgery, a hospital, a state or territory or an urgency category. The latest figures cover {period}.'
+heading: How long will I wait for planned surgery?
+lede: 'This site shows how long patients waited for planned surgery at public hospitals in Australia. The latest figures cover {period}. Each figure comes from published government data, and each figure shows the period it covers.'
+stamp: 'The counts on this page are for {period}. The data was released on {release}.'
+start_heading: Find your waiting time
+start_intro: Choose how you want to look. Each page shows the published figures and the period they cover.
+surgery_link: Surgery
+surgery_note_one: 1 procedure or specialty
+surgery_note_many: '{count} procedures and specialties'
+specialty_link: Surgery specialties
+specialty_note: The same figures grouped by medical specialty.
+hospitals_link: Public hospitals
+hospitals_note_one: 1 public hospital
+hospitals_note_many: '{count} public hospitals'
+states_link: States and territories
+states_note_one: 1 state or territory
+states_note_many: '{count} states and territories'
+urgency_link: Urgency categories
+urgency_note_one: 1 urgency category
+urgency_note_many: '{count} urgency categories'
+common_heading: Surgeries with the most patients
+common_intro: 'The table lists the {count} procedures that treated the most patients at public hospitals in Australia. The procedure with the most patients comes first. Select a procedure to see the hospitals that report it.'
+common_caption: 'The {count} planned surgery procedures with the most patients, Australia'
+common_row_heading: Surgery
+common_median: Median wait, Australia
+common_volume: Patients treated, Australia
+states_heading: Waiting times by state and territory
+states_intro: Each state and territory page shows its waiting times beside the national figures and ranks its public hospitals by median wait.
+state_link: '{state}: planned surgery waiting times'
+urgency_heading: Waiting times by urgency category
+urgency_intro: Your treating specialist gives you an urgency category. Each category page ranks public hospitals by the share of patients treated within the recommended time.
+about_heading: About these figures
+about:
+  - Every figure on this site comes from published government data. The site does not estimate a figure, and it does not accept payment to change one.
+  - A table orders hospitals by a measured number. The site does not call any hospital the best.
+  - A median wait is the number of days within which half of the patients were treated. A median wait describes past patients and does not predict your own wait.
+exclusion_heading: What this site leaves out
+exclusion: Private hospitals are excluded. This site covers public hospitals only, so it shows no private hospital.

@@ -137,7 +137,7 @@ function analyse(path: string, html: string, bytes: number, skipped: boolean): P
     footerText: footer && textOf(footer),
     footerHrefs: footer ? anchors(footer) : [],
     breadcrumbHrefs: breadcrumb ? anchors(breadcrumb) : [],
-    mainHrefs: main && /^(?:hospitals|surgery)\/index\.html$/.test(path) ? anchors(main) : [],
+    mainHrefs: main && /^(?:(?:hospitals|surgery)\/)?index\.html$/.test(path) ? anchors(main) : [],
     compareBar: html.includes('c-compare-bar'),
     canonical: html.includes(
       `<link rel="canonical" href="https://surgerywaits.au${address(path)}">`,
@@ -787,3 +787,17 @@ function expectedThinCount(): number {
   }
   return thin;
 }
+
+describe('Built home page', () => {
+  it('links only to built pages and carries the exclusion and one passport', () => {
+    const built = new Set(paths);
+    const home = pageAt('index.html');
+    const links = home.mainHrefs.filter((h) => h.startsWith('/'));
+    expect(links.length).toBeGreaterThan(0);
+    for (const href of links) {
+      expect(built.has(`${href.slice(1)}index.html`), href).toBe(true);
+    }
+    expect(home.mainText).toContain('Private hospitals are excluded');
+    expect(home.passports).toBe(1);
+  });
+});

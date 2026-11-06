@@ -2,6 +2,7 @@ import { getCollection, getEntry } from 'astro:content';
 import { z } from 'astro/zod';
 import {
   areasSchema,
+  homeTemplateSchema,
   hospitalsIndexSchema,
   hospitalTemplateSchema,
   labelsSchema,
@@ -53,8 +54,10 @@ const surgeryNames = await single('surgery-names', 'surgery-names', surgeryNames
 
 const stateTemplate = await single('state', 'state', stateTemplateSchema);
 const urgencyTemplate = await single('urgency', 'urgency', urgencyTemplateSchema);
+const homeTemplate = await single('home', 'home', homeTemplateSchema);
 
 export const getStateTemplate = (): typeof stateTemplate => stateTemplate;
+export const getHomeTemplate = (): typeof homeTemplate => homeTemplate;
 export const getUrgencyTemplate = (): typeof urgencyTemplate => urgencyTemplate;
 export const getSurgeryTemplate = (): typeof surgeryTemplate => surgeryTemplate;
 export const getPairTemplate = (): typeof pairTemplate => pairTemplate;
@@ -73,7 +76,7 @@ export function getNavigation(): typeof navigation {
   return navigation;
 }
 
-export function getPage(id: 'home' | 'not-found'): z.output<typeof pageSchema> {
+export function getPage(id: 'not-found'): z.output<typeof pageSchema> {
   const page = pages.get(id);
   if (page === undefined) {
     throw new Error(`content/pages/${id}.yaml is missing`);
