@@ -13,6 +13,7 @@ from typing import Any
 from surgerywaits.catalogue import Catalogue, Role
 from surgerywaits.contract import validate
 from surgerywaits.derive import Derived, DerivedFigure, DerivedObservation, RankStatus, TrendPoint
+from surgerywaits.gates import check_docs, check_freshness
 from surgerywaits.hospitals import STATES, Hospital, Register
 from surgerywaits.manifest import Entry
 from surgerywaits.queensland import FacilityQuarter, Overlay
@@ -538,6 +539,12 @@ def _index_doc(ctx: _Ctx, rows: Mapping[str, tuple[str, Doc]]) -> Doc:
 
 def assemble(inputs: Inputs) -> dict[str, tuple[str, Doc]]:
     """Every dist file as (schema name, document), keyed by its path under the output directory."""
+    check_freshness(
+        inputs.entries,
+        {TABLE_SOURCES[t]: p for t, p in inputs.derived.newest_periods},
+        TABLE_SOURCES.values(),
+        inputs.overlay.records,
+    )
     ctx = _context(inputs)
     names = {h.code: h.name for h in inputs.register.hospitals}
     docs = {**_hospital_docs(ctx), **_trend_docs(ctx), **_surgery_docs(ctx)}
@@ -554,6 +561,7 @@ def assemble(inputs: Inputs) -> dict[str, tuple[str, Doc]]:
     docs.update(_queensland(inputs, names, ctx.slugs))
     docs["credits.json"] = ("credits", _credits(inputs.entries, set(READ_SOURCES)))
     docs["index.json"] = ("index", _index_doc(ctx, docs))
+    check_docs(inputs.entries, docs)
     return docs
 
 

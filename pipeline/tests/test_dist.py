@@ -423,7 +423,7 @@ def _known_dates(overlay_dates: set[str]) -> set[str]:
     return {getattr(e, f) for e in load() for f in fields if getattr(e, f, None)} | overlay_dates
 
 
-def _scan_for_clock(files: dict[str, bytes], overlay_dates: set[str]) -> None:
+def scan_for_clock(files: dict[str, bytes], overlay_dates: set[str]) -> None:
     known = _known_dates(overlay_dates)
     for path, data in files.items():
         if path == SUMS:
@@ -433,7 +433,7 @@ def _scan_for_clock(files: dict[str, bytes], overlay_dates: set[str]) -> None:
         assert set(DATE.findall(text)) <= known, path
 
 
-def _overlay_dates(inputs: Inputs) -> set[str]:
+def overlay_dates(inputs: Inputs) -> set[str]:
     records = inputs.overlay.records
     return {r.release_date.isoformat() for r in records} | {
         r.quarter.end.isoformat() for r in records
@@ -441,7 +441,7 @@ def _overlay_dates(inputs: Inputs) -> set[str]:
 
 
 def test_no_file_holds_a_date_or_time_outside_the_sources() -> None:
-    _scan_for_clock(render(fixture_docs()), _overlay_dates(fixture_inputs()))
+    scan_for_clock(render(fixture_docs()), overlay_dates(fixture_inputs()))
 
 
 def test_the_hash_seed_does_not_change_the_fixture_build() -> None:
@@ -512,7 +512,7 @@ def test_the_real_dist_builds_twice_to_the_same_checksums_and_reports_its_size(
 def test_the_real_dist_credits_every_source_and_holds_no_stray_dates() -> None:
     inputs, files, _ = _real_build()
     _check_sources(files)
-    _scan_for_clock(files, _overlay_dates(inputs))
+    scan_for_clock(files, overlay_dates(inputs))
 
 
 def test_every_real_rank_sits_inside_its_cohort() -> None:
