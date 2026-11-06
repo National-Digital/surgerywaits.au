@@ -1,0 +1,319 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://surgerywaits.au/contract/common.schema.json",
+  "title": "Shared definitions",
+  "description": "Definitions that the dist file schemas share: figures, ranks, measures and identifiers.",
+  "$defs": {
+    "date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])(?![\\s\\S])$"
+    },
+    "period": {
+      "description": "A financial-year reference period, written with an en dash.",
+      "type": "string",
+      "pattern": "^[0-9]{4}–[0-9]{2}(?![\\s\\S])$"
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*(?![\\s\\S])$"
+    },
+    "code": {
+      "description": "The publisher's code for a hospital.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9]+(?![\\s\\S])$"
+    },
+    "state": {
+      "description": "State or territory, in the publisher's short form; OT is Other Territories.",
+      "enum": ["NSW", "Vic", "Qld", "WA", "SA", "Tas", "ACT", "NT", "OT"]
+    },
+    "kind": {
+      "description": "Which publisher table a category comes from.",
+      "enum": ["urgency", "procedure", "specialty"]
+    },
+    "role": {
+      "enum": ["median_wait", "volume", "long_wait", "on_time"]
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "latitude": {
+      "type": "number",
+      "minimum": -62,
+      "maximum": -8
+    },
+    "longitude": {
+      "type": "number",
+      "minimum": 90,
+      "maximum": 175
+    },
+    "published_figure": {
+      "description": "A number the publisher released. Zero is a real value here and nowhere else.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "value", "period", "release"],
+      "properties": {
+        "state": {
+          "const": "published"
+        },
+        "value": {
+          "type": "number",
+          "minimum": 0
+        },
+        "period": {
+          "$ref": "#/$defs/period"
+        },
+        "release": {
+          "$ref": "#/$defs/date"
+        }
+      }
+    },
+    "not_published_figure": {
+      "description": "A cell the publisher withheld. It has a reason and never a value.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "reason", "period", "release"],
+      "properties": {
+        "state": {
+          "const": "not_published"
+        },
+        "reason": {
+          "enum": [
+            "too_few_patients",
+            "no_patients_reported",
+            "not_published_by_aihw",
+            "no_peer_group_comparison",
+            "not_given_by_queensland_health"
+          ]
+        },
+        "period": {
+          "$ref": "#/$defs/period"
+        },
+        "release": {
+          "$ref": "#/$defs/date"
+        }
+      }
+    },
+    "not_reported_figure": {
+      "description": "A cell the source does not report. It has a reason and never a value.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "reason", "period", "release"],
+      "properties": {
+        "state": {
+          "const": "not_reported"
+        },
+        "reason": {
+          "const": "not_reported_by_source"
+        },
+        "period": {
+          "$ref": "#/$defs/period"
+        },
+        "release": {
+          "$ref": "#/$defs/date"
+        }
+      }
+    },
+    "figure": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/published_figure"
+        },
+        {
+          "$ref": "#/$defs/not_published_figure"
+        },
+        {
+          "$ref": "#/$defs/not_reported_figure"
+        }
+      ]
+    },
+    "ranked": {
+      "description": "A competition rank (1, 2, 2, 4) with the number of hospitals it is out of.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "position", "of"],
+      "properties": {
+        "status": {
+          "const": "ranked"
+        },
+        "position": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "of": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "unranked": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "why"],
+      "properties": {
+        "status": {
+          "const": "unranked"
+        },
+        "why": {
+          "enum": [
+            "not_a_ranked_measure",
+            "not_published",
+            "not_reported",
+            "closed",
+            "stale",
+            "earlier_period"
+          ]
+        }
+      }
+    },
+    "measure": {
+      "description": "A figure and its rank. Only a published figure can be ranked.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["figure", "rank"],
+          "properties": {
+            "figure": {
+              "$ref": "#/$defs/published_figure"
+            },
+            "rank": {
+              "$ref": "#/$defs/ranked"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["figure", "rank"],
+          "properties": {
+            "figure": {
+              "$ref": "#/$defs/figure"
+            },
+            "rank": {
+              "$ref": "#/$defs/unranked"
+            }
+          }
+        }
+      ]
+    },
+    "measures": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "median_wait": {
+          "$ref": "#/$defs/measure"
+        },
+        "volume": {
+          "$ref": "#/$defs/measure"
+        },
+        "long_wait": {
+          "$ref": "#/$defs/measure"
+        },
+        "on_time": {
+          "$ref": "#/$defs/measure"
+        }
+      }
+    },
+    "scope": {
+      "description": "Private hospitals are excluded; this says how many and which.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sector", "private_excluded"],
+      "properties": {
+        "sector": {
+          "const": "public"
+        },
+        "private_excluded": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/code"
+          }
+        }
+      }
+    },
+    "sources": {
+      "description": "Slugs of the entries in credits.json that this file's figures come from.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/slug"
+      }
+    },
+    "network": {
+      "description": "The publisher's own network mapping.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "name"],
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/text"
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "year": {
+      "description": "The calendar year a financial-year period starts in.",
+      "type": "integer",
+      "minimum": 2000,
+      "maximum": 2100
+    },
+    "trend_point": {
+      "description": "[start year, value, change] for a published figure; [start year, null, null, state:reason] for one that is not published or not reported. Change is null unless the previous period is also published.",
+      "oneOf": [
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/year"
+            },
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": ["number", "null"]
+            }
+          ],
+          "items": false,
+          "minItems": 3
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/year"
+            },
+            {
+              "type": "null"
+            },
+            {
+              "type": "null"
+            },
+            {
+              "enum": [
+                "not_published:too_few_patients",
+                "not_published:no_patients_reported",
+                "not_published:not_published_by_aihw",
+                "not_published:no_peer_group_comparison",
+                "not_published:not_given_by_queensland_health",
+                "not_reported:not_reported_by_source"
+              ]
+            }
+          ],
+          "items": false,
+          "minItems": 4
+        }
+      ]
+    }
+  }
+}

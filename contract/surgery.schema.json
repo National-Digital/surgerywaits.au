@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://surgerywaits.au/contract/surgery.schema.json",
+  "title": "Surgery page",
+  "description": "surgeries/<kind>/<slug>.json: one category, with every public hospital's figures in the table's newest period.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "slug",
+    "name",
+    "code",
+    "period",
+    "release",
+    "units",
+    "scope",
+    "hospitals",
+    "sources"
+  ],
+  "properties": {
+    "kind": { "$ref": "common.schema.json#/$defs/kind" },
+    "slug": { "$ref": "common.schema.json#/$defs/slug" },
+    "name": { "$ref": "common.schema.json#/$defs/text" },
+    "code": { "$ref": "common.schema.json#/$defs/text" },
+    "period": { "$ref": "common.schema.json#/$defs/period" },
+    "release": { "$ref": "common.schema.json#/$defs/date" },
+    "units": {
+      "description": "The unit and ranking direction of each measure this category reports.",
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "median_wait": { "$ref": "#/$defs/units" },
+        "volume": { "$ref": "#/$defs/units" },
+        "long_wait": { "$ref": "#/$defs/units" },
+        "on_time": { "$ref": "#/$defs/units" }
+      }
+    },
+    "scope": { "$ref": "common.schema.json#/$defs/scope" },
+    "hospitals": {
+      "description": "Ranked hospitals first by median wait, then the rest by name. A figure with no number is never ranked.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "slug", "name", "state", "closed", "measures"],
+        "properties": {
+          "code": { "$ref": "common.schema.json#/$defs/code" },
+          "slug": { "$ref": "common.schema.json#/$defs/slug" },
+          "name": { "$ref": "common.schema.json#/$defs/text" },
+          "state": { "$ref": "common.schema.json#/$defs/state" },
+          "closed": { "type": "boolean" },
+          "measures": { "$ref": "common.schema.json#/$defs/measures" }
+        }
+      }
+    },
+    "sources": { "$ref": "common.schema.json#/$defs/sources" }
+  },
+  "$defs": {
+    "units": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unit", "direction"],
+      "properties": {
+        "unit": { "enum": ["days", "surgeries", "percent"] },
+        "direction": { "enum": ["lower_is_better", "higher_is_better", "not_ranked"] }
+      }
+    }
+  }
+}

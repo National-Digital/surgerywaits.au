@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://surgerywaits.au/contract/suburbs.schema.json",
+  "title": "Suburbs",
+  "description": "suburbs.json: each suburb or locality as [code, name, state, latitude, longitude] for the location search.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["suburbs", "sources"],
+  "properties": {
+    "suburbs": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "prefixItems": [
+          {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          {
+            "$ref": "common.schema.json#/$defs/state"
+          },
+          {
+            "$ref": "common.schema.json#/$defs/latitude"
+          },
+          {
+            "$ref": "common.schema.json#/$defs/longitude"
+          }
+        ],
+        "items": false,
+        "minItems": 5
+      }
+    },
+    "sources": {
+      "$ref": "common.schema.json#/$defs/sources"
+    }
+  }
+}

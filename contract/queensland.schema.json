@@ -1,0 +1,221 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://surgerywaits.au/contract/queensland.schema.json",
+  "title": "Queensland facility",
+  "description": "queensland/<code>.json: Queensland Health's quarterly figures for one facility, kept apart from the national figures and never ranked.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["code", "slug", "name", "facility", "quarters", "sources"],
+  "properties": {
+    "code": {
+      "$ref": "common.schema.json#/$defs/code"
+    },
+    "slug": {
+      "description": "The hospital's page slug, or null where it has no national figures.",
+      "oneOf": [
+        {
+          "$ref": "common.schema.json#/$defs/slug"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "name": {
+      "$ref": "common.schema.json#/$defs/text"
+    },
+    "facility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "name"],
+      "properties": {
+        "code": {
+          "$ref": "common.schema.json#/$defs/text"
+        },
+        "name": {
+          "$ref": "common.schema.json#/$defs/text"
+        }
+      }
+    },
+    "quarters": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["period", "period_end", "release", "total", "urgency", "specialties"],
+        "properties": {
+          "period": {
+            "$ref": "#/$defs/period"
+          },
+          "period_end": {
+            "$ref": "common.schema.json#/$defs/date"
+          },
+          "release": {
+            "$ref": "common.schema.json#/$defs/date"
+          },
+          "total": {
+            "$ref": "#/$defs/figures"
+          },
+          "urgency": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["category", "figures"],
+              "properties": {
+                "category": {
+                  "$ref": "#/$defs/category"
+                },
+                "figures": {
+                  "$ref": "#/$defs/figures"
+                }
+              }
+            }
+          },
+          "specialties": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["code", "slug", "name", "figures"],
+              "properties": {
+                "code": {
+                  "$ref": "common.schema.json#/$defs/text"
+                },
+                "slug": {
+                  "$ref": "common.schema.json#/$defs/slug"
+                },
+                "name": {
+                  "$ref": "common.schema.json#/$defs/text"
+                },
+                "figures": {
+                  "$ref": "#/$defs/figures"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "sources": {
+      "$ref": "common.schema.json#/$defs/sources"
+    }
+  },
+  "$defs": {
+    "figures": {
+      "description": "Every Queensland value column. There is no rank, trend or national comparison field, and the object is closed.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "treated",
+        "percent_treated_in_time",
+        "percent_change_treated_on_prior_year",
+        "waiting",
+        "long_waits",
+        "percent_waiting_in_time",
+        "long_waits_ready_for_surgery",
+        "long_waits_not_ready_for_surgery",
+        "percent_waiting_in_time_ready_for_surgery"
+      ],
+      "properties": {
+        "treated": {
+          "$ref": "#/$defs/figure"
+        },
+        "percent_treated_in_time": {
+          "$ref": "#/$defs/figure"
+        },
+        "percent_change_treated_on_prior_year": {
+          "$ref": "#/$defs/figure"
+        },
+        "waiting": {
+          "$ref": "#/$defs/figure"
+        },
+        "long_waits": {
+          "$ref": "#/$defs/figure"
+        },
+        "percent_waiting_in_time": {
+          "$ref": "#/$defs/figure"
+        },
+        "long_waits_ready_for_surgery": {
+          "$ref": "#/$defs/figure"
+        },
+        "long_waits_not_ready_for_surgery": {
+          "$ref": "#/$defs/figure"
+        },
+        "percent_waiting_in_time_ready_for_surgery": {
+          "$ref": "#/$defs/figure"
+        }
+      }
+    },
+    "figure": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "value", "period", "release"],
+          "properties": {
+            "state": {
+              "const": "published"
+            },
+            "value": {
+              "type": "number"
+            },
+            "period": {
+              "$ref": "#/$defs/period"
+            },
+            "release": {
+              "$ref": "common.schema.json#/$defs/date"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "reason", "period", "release"],
+          "properties": {
+            "state": {
+              "const": "not_published"
+            },
+            "reason": {
+              "const": "not_given_by_queensland_health"
+            },
+            "period": {
+              "$ref": "#/$defs/period"
+            },
+            "release": {
+              "$ref": "common.schema.json#/$defs/date"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "reason", "period", "release"],
+          "properties": {
+            "state": {
+              "const": "not_reported"
+            },
+            "reason": {
+              "const": "not_reported_by_source"
+            },
+            "period": {
+              "$ref": "#/$defs/period"
+            },
+            "release": {
+              "$ref": "common.schema.json#/$defs/date"
+            }
+          }
+        }
+      ]
+    },
+    "period": {
+      "description": "A quarter written in words, as in July to September 2025.",
+      "type": "string",
+      "minLength": 1
+    },
+    "category": {
+      "enum": ["1", "2", "3"]
+    }
+  }
+}

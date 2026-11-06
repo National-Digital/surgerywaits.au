@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://surgerywaits.au/contract/index.schema.json",
+  "title": "Dist index",
+  "description": "index.json: what the build holds, the newest period and release of each table, and the scope.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["scope", "tables", "counts", "hospitals_without_coordinates", "sources"],
+  "properties": {
+    "scope": {
+      "$ref": "common.schema.json#/$defs/scope"
+    },
+    "tables": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "source", "newest_period", "release"],
+        "properties": {
+          "kind": {
+            "$ref": "common.schema.json#/$defs/kind"
+          },
+          "source": {
+            "$ref": "common.schema.json#/$defs/slug"
+          },
+          "newest_period": {
+            "$ref": "common.schema.json#/$defs/period"
+          },
+          "release": {
+            "$ref": "common.schema.json#/$defs/date"
+          }
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hospitals_in_register",
+        "hospitals_with_figures",
+        "surgeries",
+        "suburbs",
+        "queensland_facilities",
+        "files"
+      ],
+      "properties": {
+        "hospitals_in_register": {
+          "$ref": "common.schema.json#/$defs/count"
+        },
+        "hospitals_with_figures": {
+          "$ref": "common.schema.json#/$defs/count"
+        },
+        "surgeries": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["urgency", "procedure", "specialty"],
+          "properties": {
+            "urgency": {
+              "$ref": "common.schema.json#/$defs/count"
+            },
+            "procedure": {
+              "$ref": "common.schema.json#/$defs/count"
+            },
+            "specialty": {
+              "$ref": "common.schema.json#/$defs/count"
+            }
+          }
+        },
+        "suburbs": {
+          "$ref": "common.schema.json#/$defs/count"
+        },
+        "files": {
+          "$ref": "common.schema.json#/$defs/count"
+        },
+        "queensland_facilities": {
+          "$ref": "common.schema.json#/$defs/count"
+        }
+      }
+    },
+    "hospitals_without_coordinates": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "common.schema.json#/$defs/code"
+      }
+    },
+    "sources": {
+      "$ref": "common.schema.json#/$defs/sources"
+    }
+  }
+}

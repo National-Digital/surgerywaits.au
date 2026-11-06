@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://surgerywaits.au/contract/surgery-index.schema.json",
+  "title": "Surgery index",
+  "description": "surgeries.json: every category of planned surgery that has a page.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["surgeries", "sources"],
+  "properties": {
+    "surgeries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "slug", "name", "code", "hospitals", "newest_period"],
+        "properties": {
+          "kind": {
+            "$ref": "common.schema.json#/$defs/kind"
+          },
+          "slug": {
+            "$ref": "common.schema.json#/$defs/slug"
+          },
+          "name": {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          "code": {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          "hospitals": {
+            "description": "Hospitals with a figure for this category in the table's newest period.",
+            "$ref": "common.schema.json#/$defs/count"
+          },
+          "newest_period": {
+            "$ref": "common.schema.json#/$defs/period"
+          }
+        }
+      }
+    },
+    "sources": {
+      "$ref": "common.schema.json#/$defs/sources"
+    }
+  }
+}
