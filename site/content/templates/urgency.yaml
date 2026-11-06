@@ -4,10 +4,10 @@ categories:
     meaning: It is for a condition that could get worse quickly enough to become an emergency.
   - short: semi-urgent
     within: 90 days
-    meaning: It is for a condition that causes pain, dysfunction or disability and is unlikely to get worse quickly.
+    meaning: It is for a condition that causes some pain, dysfunction or disability. The condition is unlikely to get worse quickly or become an emergency.
   - short: non-urgent
     within: 365 days
-    meaning: It is for a condition that causes minimal pain, dysfunction or disability and is unlikely to get worse quickly.
+    meaning: It is for a condition that causes little or no pain, dysfunction or disability. The condition is unlikely to get worse quickly and is not expected to become an emergency.
 crumb_home: Home
 crumb_urgency: Urgency categories
 category_label: 'Category {number}, {short}'
@@ -27,7 +27,7 @@ states_intro: Each link opens the public hospitals of one state or territory for
 state_link: '{state}: {category}'
 relation_heading: How categories relate to waiting times by surgery
 relation:
-  - The waiting time for a surgery, such as a hip replacement, covers everyone who had that surgery in all three categories together. A hospital page shows the surgery figures and the urgency figures separately, because a combined figure would be a number that nobody published.
+  - The waiting time for a surgery, such as a hip replacement, covers everyone who had that surgery in all three categories together. A hospital page shows the surgery figures and the urgency figures separately, because the publisher does not report a figure for one surgery in one category.
   - A hospital with a short median wait for your surgery may be slower or faster for your category. Take both numbers to your appointment.
 ask_heading: What to ask your specialist
 ask:
