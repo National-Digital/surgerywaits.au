@@ -36,7 +36,7 @@ const canonical = canonicalPath === undefined ? undefined : new URL(canonicalPat
     <title>{title}</title>
     {description !== undefined && <meta name="description" content={description} />}
     {canonical !== undefined && <link rel="canonical" href={canonical.href} />}
-    {noindex && <meta name="robots" content="noindex" />}
+    {noindex && <meta name="robots" content="noindex,follow" />}
   </head>
   <body>
     <SkipLink />

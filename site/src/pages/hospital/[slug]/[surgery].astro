@@ -1,0 +1,18 @@
+---
+import PairPage from '../../../components/PairPage.astro';
+import { pairRoutes } from '../../../lib/pair-page';
+import type { PairRoute } from '../../../lib/pair-page';
+
+interface Props {
+  slug: string;
+  surgery: string;
+}
+
+export function getStaticPaths(): { params: PairRoute; props: Props }[] {
+  return pairRoutes();
+}
+
+const { slug, surgery } = Astro.props;
+---
+
+<PairPage slug={slug} surgery={surgery} />

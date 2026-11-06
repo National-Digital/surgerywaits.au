@@ -26,7 +26,7 @@ describe('StatTile', () => {
     expect(textsOf(html, 'c-figure__value')).toEqual(['55 days']);
     expect(textsOf(html, 'c-stamp')).toEqual(['2024–25, released 19 August 2026']);
     expect(textsOf(html, 'c-tiles__line')).toEqual([
-      'Rank 3rd of 40',
+      'Rank 3rd of 40 nationally',
       'Change on the year before +3 days',
     ]);
     expect(text(html)).not.toContain(EARLIER);

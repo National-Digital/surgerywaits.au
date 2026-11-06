@@ -1,0 +1,39 @@
+crumb_home: Home
+crumb_hospitals: Hospitals
+heading: '{surgery} at {hospital}'
+title: '{surgery} at {hospital}: waiting times, {site}'
+description: '{surgery} at {hospital}, {state}: median wait, long waits and patients treated for planned surgery, beside the state and national figures. The latest figures cover {period}.'
+lede: '{hospital} is a public hospital in {state}. This page shows its waiting times for {surgery} in {period}, beside the figures for {state} and for Australia.'
+lede_area: '{hospital} is a public hospital in the {area} area, {state}. This page shows its waiting times for {surgery} in {period}, beside the figures for {state} and for Australia.'
+renamed_note: 'The source publishes this surgery as "{source}".'
+closed_notice: '{hospital} has closed. The figures below are the last it reported.'
+figures_heading: Figures for this hospital
+figures_intro: 'Each tile shows one figure for {surgery} at {hospital}.'
+figures_none: '{hospital} did not publish a median wait for {surgery} in {period}.'
+tile_heading: '{measure}, {hospital}'
+ranking: A rank compares this hospital with every public hospital in Australia that published the same figure for the same period. The page shows a rank only on a current published figure. It never ranks a figure that is withheld or not reported.
+compare_heading: Compared with the state and Australia
+compare_intro: 'The state and national rows cover every public hospital that reported {surgery}. They are never ranked.'
+compare_caption: '{surgery}: {hospital}, {state} and Australia'
+compare_row_heading: Who the figures cover
+compare_state_row: '{state} (all public hospitals)'
+compare_national_row: Australia (all public hospitals)
+nearby_heading: Shorter waits nearby
+nearby_intro: 'These open public hospitals are among the four nearest to {hospital}. Each published a shorter median wait for {surgery} than {hospital} did. Each distance is a straight line, not a travel time.'
+nearby_none: 'None of the four public hospitals nearest to {hospital} published a shorter median wait for {surgery} in {period}.'
+nearby_distance: '{distance} away'
+history_heading: How this hospital's wait has changed
+history_rose: 'The median wait for {surgery} at {hospital} rose from {from} ({from_stamp}) to {to} ({to_stamp}).'
+history_fell: 'The median wait for {surgery} at {hospital} fell from {from} ({from_stamp}) to {to} ({to_stamp}).'
+history_unchanged: 'The median wait for {surgery} at {hospital} stayed at {to} ({to_stamp}), the same as {from} ({from_stamp}).'
+trends_heading: How the wait has changed
+trends_intro: Each chart shows the median wait for each year the source published it. A year with no published figure is a gap in the line, and the table under the chart gives the reason.
+chart_caption: '{surgery}: median wait by financial year, {series}'
+chart_name: 'Line chart of the median wait by financial year for {surgery}, for {series}'
+series_national: Australia
+links_heading: More on this page's subjects
+link_hospital: 'All planned surgery at {hospital}'
+link_surgery: '{surgery} at every public hospital in Australia'
+link_state: '{surgery} in {state}'
+exclusion_heading: What this page leaves out
+exclusion: Private hospitals are excluded. This page covers public hospitals only, so it shows no private hospital.

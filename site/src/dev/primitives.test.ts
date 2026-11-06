@@ -5,7 +5,7 @@ import primitives from './primitives.astro';
 describe('the primitives preview page', () => {
   it('is marked noindex', async () => {
     const html = await render(primitives, {});
-    expect(html).toContain('<meta name="robots" content="noindex">');
+    expect(html).toContain('<meta name="robots" content="noindex,follow">');
   });
 
   it('shows every state with a stamp beside each figure', async () => {

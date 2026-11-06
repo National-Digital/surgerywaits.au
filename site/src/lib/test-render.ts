@@ -13,6 +13,11 @@ export async function render(component: unknown, props: Record<string, unknown>)
 
 type Node = DefaultTreeAdapterTypes.Node;
 
+// A page parsed once can be passed in place of its source, so many queries share one parse.
+type Source = string | Node;
+const rootOf = (source: Source): Node =>
+  typeof source === 'string' ? parseFragment(source) : source;
+
 function walk(node: Node, visit: (n: Node) => void): void {
   visit(node);
   if ('childNodes' in node) {
@@ -22,7 +27,7 @@ function walk(node: Node, visit: (n: Node) => void): void {
   }
 }
 
-function plain(node: Node): string {
+export function plain(node: Node): string {
   if ('value' in node) {
     return node.value;
   }
@@ -32,8 +37,8 @@ function plain(node: Node): string {
   return node.childNodes.map(plain).join(' ');
 }
 
-export function text(html: string): string {
-  return plain(parseFragment(html)).replace(/\s+/g, ' ').trim();
+export function text(html: Source): string {
+  return plain(rootOf(html)).replace(/\s+/g, ' ').trim();
 }
 
 // A selector is a class name, or a tag name such as td.
@@ -42,9 +47,9 @@ function matches(node: Node, selector: string): boolean {
 }
 
 // The text of every element that carries a class, in document order.
-export function textsOf(html: string, className: string): string[] {
+export function textsOf(html: Source, className: string): string[] {
   const found: string[] = [];
-  walk(parseFragment(html), (node) => {
+  walk(rootOf(html), (node) => {
     if (matches(node, className)) {
       found.push(plain(node).replace(/\s+/g, ' ').trim());
     }
@@ -77,9 +82,9 @@ function below(node: Node): Set<string> {
 }
 
 // Each element that carries the class, with its own classes and those inside it.
-export function elementsOf(html: string, className: string): Found[] {
+export function elementsOf(html: Source, className: string): Found[] {
   const found: Found[] = [];
-  walk(parseFragment(html), (node) => {
+  walk(rootOf(html), (node) => {
     const classes = classesOf(node);
     if (matches(node, className)) {
       found.push({

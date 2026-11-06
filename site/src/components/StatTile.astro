@@ -1,7 +1,7 @@
 ---
 import Figure from './Figure.astro';
-import { label } from '../lib/content';
-import { formatChange, formatRank, isPublished } from '../lib/format';
+import { label, nationalRank } from '../lib/content';
+import { formatChange, isPublished } from '../lib/format';
 import { assertCurrent } from '../lib/tile';
 import type { Figure as FigureData, Role } from '../lib/format';
 
@@ -26,7 +26,7 @@ assertCurrent(isPublished(figure) && !stale, rank !== undefined || change !== nu
     {rank && (
       <p class="c-tiles__line">
         <span>{label('rank_caption')}</span>
-        <strong>{formatRank(rank.position, rank.of)}</strong>
+        <strong>{nationalRank(rank)}</strong>
       </p>
     )}
     {change !== null && (

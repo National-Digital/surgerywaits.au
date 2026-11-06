@@ -1,6 +1,6 @@
 ---
-import { label } from '../lib/content';
-import { formatFigureParts, formatRank, formatStamp, isPublished } from '../lib/format';
+import { label, nationalRank } from '../lib/content';
+import { formatFigureParts, formatStamp, isPublished } from '../lib/format';
 import type { Role } from '../lib/format';
 import { assertTable, pairCells, tableIds } from '../lib/table';
 import type { Span, TableRow } from '../lib/table';
@@ -70,8 +70,7 @@ const stamp = assertTable(columns, rows, span);
                 )}
                 {cell.rank && (
                   <small class="c-table__rank">
-                    {label('rank_caption')} {formatRank(cell.rank.position, cell.rank.of)}{' '}
-                    {label('rank_national')}
+                    {label('rank_caption')} {nationalRank(cell.rank)}
                   </small>
                 )}
               </td>

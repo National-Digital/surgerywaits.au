@@ -2,7 +2,7 @@ import { parseFragment } from 'parse5';
 import type { DefaultTreeAdapterTypes } from 'parse5';
 import { describe, expect, it } from 'vitest';
 
-import hospitalPage from '../pages/hospital/[slug].astro';
+import hospitalPage from '../pages/hospital/[slug]/index.astro';
 import hospitals from '../pages/hospitals/index.astro';
 import surgeries from '../pages/surgery/index.astro';
 import {
