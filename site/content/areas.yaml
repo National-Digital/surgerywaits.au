@@ -1,0 +1,206 @@
+# The places the nearby pages are named for. Each is a health network, the hospital it is measured from and the place name.
+areas:
+  - network: LHN101
+    place: Randwick
+    hospital: H0037
+  - network: LHN102
+    place: Camperdown
+    hospital: H0021
+  - network: LHN103
+    place: Liverpool
+    hospital: H0028
+  - network: LHN104
+    place: Westmead
+    hospital: H0054
+  - network: LHN105
+    place: Penrith
+    hospital: H0056
+  - network: LHN106
+    place: St Leonards
+    hospital: H0068
+  - network: LHN107
+    place: Gosford
+    hospital: H0071
+  - network: LHN108
+    place: Wollongong
+    hospital: H0047
+  - network: LHN109
+    place: Newcastle
+    hospital: H0112
+  - network: LHN110
+    place: Coffs Harbour
+    hospital: H0129
+  - network: LHN111
+    place: Lismore
+    hospital: H0120
+  - network: LHN112
+    place: Dubbo
+    hospital: H0191
+  - network: LHN113
+    place: Bega
+    hospital: H0136
+  - network: LHN114
+    place: Wagga Wagga
+    hospital: H0180
+  - network: LHN209
+    place: St Albans
+    hospital: H0373
+  - network: LHN210
+    place: Bendigo
+    hospital: H0272
+  - network: LHN225
+    place: Parkville
+    hospital: H0371
+  - network: LHN226
+    place: Epping
+    hospital: H0368
+  - network: LHN231
+    place: Geelong
+    hospital: H0238
+  - network: LHN234
+    place: Box Hill
+    hospital: H0330
+  - network: LHN235
+    place: Shepparton
+    hospital: H0298
+  - network: LHN243
+    place: Wangaratta
+    hospital: H0300
+  - network: LHN249
+    place: Wodonga
+    hospital: H0302
+  - network: LHN252
+    place: Warragul
+    hospital: H0319
+  - network: LHN253
+    place: Wonthaggi
+    hospital: H0320
+  - network: LHN260
+    place: Traralgon
+    hospital: H0326
+  - network: LHN262
+    place: Fitzroy
+    hospital: H0374
+  - network: LHN266
+    place: Heidelberg
+    hospital: H0359
+  - network: LHN267
+    place: Werribee
+    hospital: H0369
+  - network: LHN268
+    place: Prahran
+    hospital: H0358
+  - network: LHN269
+    place: Clayton
+    hospital: H0331
+  - network: LHN270
+    place: Frankston
+    hospital: H0350
+  - network: LHN284
+    place: Warrnambool
+    hospital: H0241
+  - network: LHN294
+    place: Ballarat
+    hospital: H0255
+  - network: LHN312
+    place: Cairns
+    hospital: H0494
+  - network: LHN313
+    place: Townsville
+    hospital: H0489
+  - network: LHN314
+    place: Mackay
+    hospital: H0477
+  - network: LHN316
+    place: Rockhampton
+    hospital: H0460
+  - network: LHN318
+    place: Bundaberg
+    hospital: H0411
+  - network: LHN319
+    place: Sunshine Coast
+    hospital: H0750
+    article: true
+  - network: LHN320
+    place: Herston
+    hospital: H0490
+  - network: LHN322
+    place: Woolloongabba
+    hospital: H0390
+  - network: LHN323
+    place: Gold Coast
+    hospital: H0409
+    article: true
+  - network: LHN325
+    place: Toowoomba
+    hospital: H0439
+  - network: LHN326
+    place: Roma
+    hospital: H0449
+  - network: LHN327
+    place: Thursday Island
+    hospital: H0506
+  - network: LHN401
+    place: Elizabeth Vale
+    hospital: H0541
+  - network: LHN402
+    place: Adelaide CBD
+    hospital: H0540
+    article: true
+  - network: LHN403
+    place: Bedford Park
+    hospital: H0600
+  - network: LHN406
+    place: Gawler
+    hospital: H0603
+  - network: LHN407
+    place: Port Lincoln
+    hospital: H0553
+  - network: LHN408
+    place: Port Augusta
+    hospital: H0583
+  - network: LHN409
+    place: Berri
+    hospital: H0589
+  - network: LHN410
+    place: Mount Gambier
+    hospital: H0596
+  - network: LHN411
+    place: Port Pirie
+    hospital: H0576
+  - network: LHN501
+    place: Nedlands
+    hospital: H0621
+  - network: LHN502
+    place: Murdoch
+    hospital: H0746
+  - network: LHN503
+    place: Bunbury
+    hospital: H0702
+  - network: LHN504
+    place: Perth CBD
+    hospital: H0632
+    article: true
+  - network: LHN604
+    place: Hobart
+    hospital: H0714
+  - network: LHN703
+    place: Darwin
+    hospital: H0737
+  - network: LHN801
+    place: Garran
+    hospital: H0742
+children_only_hospitals:
+  - H0014
+  - H0015
+  - H0364
+  - H0386
+  - H0389
+  - H0619
+  - H0745
+  - H0751
+children_only_networks:
+  - LHN117
+  - LHN223
+  - LHN321
+  - LHN580

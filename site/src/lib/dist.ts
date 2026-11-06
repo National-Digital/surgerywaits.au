@@ -137,6 +137,56 @@ export interface HospitalIndexRow {
   name: string;
   state: State;
   closed: boolean;
+  network: { code: string; name: string } | null;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+export type Kind = HospitalSurgery['kind'];
+
+export interface SurgeryRow {
+  code: string;
+  slug: string;
+  name: string;
+  state: State;
+  closed: boolean;
+  measures: Partial<Record<Role, Measure>>;
+}
+
+export type Benchmark = Partial<Record<Role, Figure>>;
+
+export interface BenchmarkSeries {
+  scope: string;
+  role: Role;
+  release: string;
+  periods: string[];
+  points: TrendPoint[];
+}
+
+export interface Surgery {
+  kind: Kind;
+  slug: string;
+  name: string;
+  code: string;
+  period: string;
+  release: string;
+  scope: { sector: 'public'; private_excluded: string[] };
+  hospitals: SurgeryRow[];
+  benchmarks: {
+    national: Benchmark | null;
+    states: { state: Exclude<State, 'OT'>; measures: Benchmark }[];
+    trends: BenchmarkSeries[];
+  };
+  sources: string[];
+}
+
+export interface SurgeryIndexRow {
+  kind: Kind;
+  slug: string;
+  name: string;
+  code: string;
+  hospitals: number;
+  newest_period: string;
 }
 
 interface TrendSeries {
@@ -180,6 +230,26 @@ export function readTrend(slug: string): Trend {
 
 export function readQueenslandFacility(code: string): QueenslandFacility {
   return readDist(`queensland/${code}.json`) as QueenslandFacility;
+}
+
+export function readSurgery(kind: Kind, slug: string): Surgery {
+  return readDist(`surgeries/${kind}/${slug}.json`) as Surgery;
+}
+
+export function readSurgeryIndex(): SurgeryIndexRow[] {
+  return (readDist('surgeries.json') as { surgeries: SurgeryIndexRow[] }).surgeries;
+}
+
+export function readSurgeryIndexSources(): string[] {
+  return (readDist('surgeries.json') as { sources: string[] }).sources;
+}
+
+// Each kind has its own folder, so one slug may appear under two kinds.
+export function listSurgeries(kind: Kind): string[] {
+  return readdirSync(join(distDirectory(), 'surgeries', kind))
+    .filter((file) => file.endsWith('.json'))
+    .map((file) => file.slice(0, -'.json'.length))
+    .sort();
 }
 
 export function listDist(folder: 'hospitals' | 'queensland' | 'trends'): string[] {

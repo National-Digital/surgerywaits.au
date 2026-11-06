@@ -1,0 +1,66 @@
+---
+// Base comes first so its global sheet, and with it the layer order, precedes every component sheet.
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+import LinkList from './LinkList.astro';
+import DataPassport from './DataPassport.astro';
+import SafetyBlock from './SafetyBlock.astro';
+import { getSite, getSurgeryTemplate } from '../lib/content';
+import { formatCount } from '../lib/format';
+import { readSurgeryIndexSources } from '../lib/dist';
+import { fill } from '../lib/slots';
+import { SPECIALTY_PATH, SURGERY_PATH, indexGroups, surgeryPath } from '../lib/surgery-page';
+
+const t = getSurgeryTemplate();
+const site = getSite().name;
+const headings = {
+  procedure: { heading: t.index_procedures_heading, intro: t.index_procedures_intro },
+  specialty: { heading: t.index_specialties_heading, intro: t.index_specialties_intro },
+};
+const groups = indexGroups().map((group) => ({ ...group, ...headings[group.kind] }));
+const sources = readSurgeryIndexSources();
+---
+
+<Base
+  title={fill(t.index_title, { site })}
+  description={t.index_description}
+  canonicalPath={SURGERY_PATH}
+>
+  <div class="o-columns">
+    <Breadcrumbs items={[{ label: t.crumb_home, href: '/' }, { label: t.crumb_surgery }]} />
+    <h1>{t.index_heading}</h1>
+    <p>{t.index_lede}</p>
+    <LinkList links={[{ label: t.index_specialties_link, href: SPECIALTY_PATH }]} />
+
+    {groups.map((group) => (
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+      <section aria-labelledby={group.id}>
+        <h2 id={group.id}>{group.heading}</h2>
+        <p>{group.intro}</p>
+        <ul>
+          {group.items.map((entry) => (
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+            <li>
+              <a href={surgeryPath(entry.ref)}>{entry.ref.name}</a>
+              <p>
+                {entry.hospitals === 1
+                  ? t.index_hospitals_one
+                  : fill(t.index_hospitals_many, { count: formatCount(entry.hospitals) })}
+                {'. '}
+                {fill(t.index_period, { period: entry.period })}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+
+    <section aria-labelledby="exclusion-heading">
+      <h2 id="exclusion-heading">{t.exclusion_heading}</h2>
+      <p>{t.exclusion}</p>
+    </section>
+
+    <SafetyBlock id="surgery-safety-heading" />
+    <DataPassport sources={sources} />
+  </div>
+</Base>

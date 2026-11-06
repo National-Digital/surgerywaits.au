@@ -7,12 +7,17 @@ const COLLECTIONS = new Map([
   ['labels.yaml', 'labels'],
   ['navigation.yaml', 'navigation'],
   ['terms.yaml', 'terms'],
+  ['areas.yaml', 'areas'],
+  ['surgery-names.yaml', 'surgery-names'],
 ]);
 
 function entries(collection: string): { id: string; data: unknown }[] {
   return readContent().flatMap(({ path, data }) => {
     if (collection === 'templates' && path.startsWith('templates/')) {
       return [{ id: path.slice('templates/'.length).replace(/\.yaml$/, ''), data }];
+    }
+    if (collection === 'surgery' && path === 'templates/surgery.yaml') {
+      return [{ id: 'surgery', data }];
     }
     if (collection === 'pages' && path.startsWith('pages/')) {
       return [{ id: path.slice('pages/'.length).replace(/\.yaml$/, ''), data }];

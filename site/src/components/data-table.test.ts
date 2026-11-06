@@ -54,21 +54,21 @@ describe('DataTable', () => {
 
   it('shows a withheld cell in words and a published zero as zero', async () => {
     const html = await render(DataTable, props);
-    const values = textsOf(html, 'c-table__value');
+    const values = textsOf(html, 'td');
     expect(values).toEqual([
-      '55 days',
+      '55 days Rank 3rd of 40 nationally',
       '1,204 surgeries',
       'not published: too few patients',
       '0 surgeries',
-      '70 days',
-      'not reported',
+      '70 days 2017–18, released 19 August 2026',
+      'not reported 2024–25, released 19 August 2026',
     ]);
     expect(html).toContain('is-not-published');
   });
 
   it('ranks only a current published cell', async () => {
     const html = await render(DataTable, props);
-    expect(textsOf(html, 'c-table__rank')).toEqual(['Rank 3rd of 40']);
+    expect(textsOf(html, 'c-table__rank')).toEqual(['Rank 3rd of 40 nationally']);
     for (const bad of [
       { figure: withheld, rank: { position: 1, of: 2 } },
       { figure: published(5), rank: { position: 1, of: 2 } },

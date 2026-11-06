@@ -77,6 +77,10 @@ jobs:
       - run: npx vitest run site/src/contracts/built-pages.test.ts
         env:
           BUILT_PAGES: '1'
+      # Builds the site a second time and compares the checksum of every file.
+      - run: npx vitest run site/src/contracts/determinism.test.ts
+        env:
+          BUILD_TWICE: '1'
       - run: npm run worker:types:check
       - run: npm run worker:dry-run -- "$RUNNER_TEMP/worker-out"
 
@@ -202,4 +206,10 @@ jobs:
         working-directory: .
         env:
           BUILT_PAGES: '1'
+          SURGERYWAITS_DIST: ${{ github.workspace }}/pipeline/dist
+      - run: npx vitest run site/src/contracts/determinism.test.ts
+        working-directory: .
+        env:
+          BUILD_TWICE: '1'
+          ASTRO_TELEMETRY_DISABLED: '1'
           SURGERYWAITS_DIST: ${{ github.workspace }}/pipeline/dist

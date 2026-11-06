@@ -1,0 +1,174 @@
+---
+// Base comes first so its global sheet, and with it the layer order, precedes every component sheet.
+import Base from '../layouts/Base.astro';
+import BlockLink from './BlockLink.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+import DataPassport from './DataPassport.astro';
+import DataTable from './DataTable.astro';
+import LinkList from './LinkList.astro';
+import SafetyBlock from './SafetyBlock.astro';
+import StatTile from './StatTile.astro';
+import StatTiles from './StatTiles.astro';
+import TrendChart from './TrendChart.astro';
+import { getHospitalTemplate, getSite, getSurgeryTemplate, label } from '../lib/content';
+import { readSurgery } from '../lib/dist';
+import { formatCount } from '../lib/format';
+import { TABLE_ROLES } from '../lib/hospital-page';
+import { fill } from '../lib/slots';
+import {
+  NEAR,
+  KINDS,
+  NATIONAL,
+  SURGERY_PATH,
+  hospitalRows,
+  nationalTiles,
+  nearArea,
+  nearAreas,
+  nearPath,
+  publishedMedians,
+  refOf,
+  roleLabels,
+  statePath,
+  surgeryPath,
+  trendScope,
+} from '../lib/surgery-page';
+
+interface Props {
+  urlSlug: string;
+  area: string;
+}
+
+const { urlSlug, area: areaSlug } = Astro.props;
+const t = getSurgeryTemplate();
+const states = getHospitalTemplate().states;
+const site = getSite().name;
+const ref = refOf(KINDS.procedure, urlSlug);
+const surgery = readSurgery(ref.kind, ref.slug);
+const roles = roleLabels(label);
+const area = nearArea(ref, areaSlug);
+const areas = nearAreas().get(ref.urlSlug) ?? [];
+const stateName = states[area.state as keyof typeof states];
+const table = hospitalRows(surgery, area.rows);
+const count = formatCount(publishedMedians(surgery, area.rows));
+const tiles = nationalTiles(surgery.benchmarks.national);
+const columns = TABLE_ROLES.map((role) => ({ heading: roles[role], role }));
+const charts = trendScope(surgery, [NATIONAL, area.state], {
+  [NATIONAL]: t.series_national,
+  ...states,
+});
+const others = areas
+  .filter((a) => a.state === area.state && a.slug !== area.slug)
+  .map((a) => ({
+    label: fill(t.near_link, { surgery: ref.name, place: a.prose }),
+    href: nearPath(ref, a.slug),
+  }));
+---
+
+<Base
+  title={fill(t.near_title, { surgery: ref.name, place: area.prose, site })}
+  description={fill(t.near_description, {
+    surgery: ref.name,
+    place: area.prose,
+    period: surgery.period,
+  })}
+  canonicalPath={nearPath(ref, area.slug)}
+>
+  <div class="o-columns">
+    <Breadcrumbs
+      items={[
+        { label: t.crumb_home, href: '/' },
+        { label: t.crumb_surgery, href: SURGERY_PATH },
+        { label: ref.name, href: surgeryPath(ref) },
+        { label: fill(t.near_link, { surgery: ref.name, place: area.prose }) },
+      ]}
+    />
+    <h1>{fill(t.near_link, { surgery: ref.name, place: area.prose })}</h1>
+    <p>
+      {fill(t.near_lede, { surgery: ref.name, place: area.prose, period: surgery.period, count })}
+    </p>
+    <p>
+      {fill(t.near_covers_network, {
+        network: area.network,
+        radius: String(NEAR.radius),
+        anchor: area.anchor,
+      })}
+    </p>
+    {area.hasOutside && <p>{fill(t.near_covers_outside, { radius: String(NEAR.radius) })}</p>}
+
+    {tiles.length > 0 && (
+      <section aria-labelledby="national-heading">
+        <h2 id="national-heading">{t.near_figures_heading}</h2>
+        <p>{t.national_intro}</p>
+        <StatTiles>
+          {tiles.map((tile) => (
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+            <StatTile
+              heading={fill(t.tile_national, { measure: roles[tile.role] })}
+              role={tile.role}
+              figure={tile.figure}
+            />
+          ))}
+        </StatTiles>
+      </section>
+    )}
+  </div>
+
+  <section aria-labelledby="hospitals-heading">
+    <div class="o-columns">
+      <h2 id="hospitals-heading">{fill(t.near_hospitals_heading, { place: area.prose })}</h2>
+      <p>{t.hospitals_intro}</p>
+      <p>{t.ranking}</p>
+    </div>
+    {table !== null && (
+      <DataTable
+        id="hospitals"
+        caption={fill(t.near_hospitals_caption, { surgery: ref.name, place: area.prose })}
+        rowHeading={t.hospitals_row_heading}
+        columns={columns}
+        rows={table.rows}
+        {...(table.span ? { span: table.span } : {})}
+      />
+    )}
+  </section>
+
+  <div class="o-columns">
+    {charts.length > 0 && (
+      <section aria-labelledby="trends-heading">
+        <h2 id="trends-heading">{t.trends_heading}</h2>
+        <p>{t.trends_intro}</p>
+        <p>{fill(t.trends_note_near, { state: stateName })}</p>
+        {charts.map((chart) => (
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+          <TrendChart
+            id={chart.id}
+            name={fill(t.chart_name, { surgery: ref.name })}
+            caption={fill(t.chart_caption, { surgery: ref.name })}
+            role="median_wait"
+            series={chart.series}
+          />
+        ))}
+      </section>
+    )}
+
+    <BlockLink href={surgeryPath(ref)}>{fill(t.back_to_surgery, { surgery: ref.name })}</BlockLink>
+    <BlockLink href={statePath(ref, area.state)}>
+      {fill(t.state_link, { surgery: ref.name, state: stateName })}
+    </BlockLink>
+
+    {others.length > 0 && (
+      <section aria-labelledby="other-places-heading">
+        <h2 id="other-places-heading">{t.near_other_heading}</h2>
+        <p>{fill(t.near_other_intro, { state: stateName })}</p>
+        <LinkList links={others} />
+      </section>
+    )}
+
+    <section aria-labelledby="exclusion-heading">
+      <h2 id="exclusion-heading">{t.exclusion_heading}</h2>
+      <p>{t.exclusion}</p>
+    </section>
+
+    <SafetyBlock id="surgery-safety-heading" />
+    <DataPassport sources={surgery.sources} />
+  </div>
+</Base>

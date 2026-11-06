@@ -115,7 +115,7 @@ describe('TrendChart', () => {
       formatTrendPoint('median_wait', at(own, i)),
       i === 0 ? 'not reported' : formatTrendPoint('median_wait', at(national, i - 1)),
     ]);
-    expect(textsOf(html, 'c-table__value')).toEqual(expected);
+    expect(textsOf(html, 'td')).toEqual(expected);
     expect(expected).toContain('not published: too few patients');
     expect(expected).toContain('0 days');
     expect(textsOf(html, 'c-table__stamp')).toEqual([

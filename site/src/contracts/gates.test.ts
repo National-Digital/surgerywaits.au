@@ -6,11 +6,14 @@ import { describe, expect, it } from 'vitest';
 import type { z } from 'astro/zod';
 
 import {
+  areasSchema,
   hospitalTemplateSchema,
   labelsSchema,
   navigationSchema,
   pageSchema,
   siteSchema,
+  surgeryNamesSchema,
+  surgeryTemplateSchema,
   termsSchema,
 } from '../lib/content-schema';
 import {
@@ -26,6 +29,10 @@ import {
 import DataTable from '../components/DataTable.astro';
 import Figure from '../components/Figure.astro';
 import primitives from '../dev/primitives.astro';
+import SurgeryHub from '../components/SurgeryHub.astro';
+import SurgeryIndex from '../components/SurgeryIndex.astro';
+import SurgeryNear from '../components/SurgeryNear.astro';
+import SurgeryState from '../components/SurgeryState.astro';
 import hospitalPage from '../pages/hospital/[slug].astro';
 import home from '../pages/index.astro';
 import { sampleCharts, surgeryTables } from '../dev/preview';
@@ -35,13 +42,16 @@ import {
   distDirectory,
   listDist,
   readHospital,
+  readSurgery,
   readQueenslandFacility,
   validateDist,
   validateDocument,
 } from '../lib/dist';
-import { getHospitalTemplate } from '../lib/content';
+import { getHospitalTemplate, getSurgeryTemplate } from '../lib/content';
 import { formatDate, formatFigure, formatStamp } from '../lib/format';
 import type { NotPublishedReason, Role } from '../lib/format';
+import { nearRoutes, stateRoutes, surgeryRefs } from '../lib/surgery-page';
+import { cleanUpCopies, withNearbyPair } from '../lib/test-dist';
 import { render, text, textsOf } from '../lib/test-render';
 
 const contractDir = new URL('../../../contract/', import.meta.url);
@@ -247,10 +257,19 @@ describe('Private hospitals', () => {
       expect(main, slug).toContain(exclusion);
     }
   }, 60_000);
-});
-
-describe('Determinism', () => {
-  it.todo('building the site twice gives byte-identical output');
+  it('every surgery page covers public hospitals only and states the exclusion', async () => {
+    const { exclusion_heading, exclusion } = getSurgeryTemplate();
+    const pages = [await render(SurgeryIndex, {})];
+    for (const ref of surgeryRefs()) {
+      expect(readSurgery(ref.kind, ref.slug).scope.sector).toBe('public');
+      pages.push(await render(SurgeryHub, { kind: ref.kind, urlSlug: ref.urlSlug }));
+    }
+    for (const html of pages) {
+      const main = text(html.split('<main')[1] ?? '');
+      expect(main).toContain(exclusion_heading);
+      expect(main).toContain(exclusion);
+    }
+  }, 120_000);
 });
 
 describe('Static pages', () => {
@@ -272,6 +291,21 @@ describe('Static pages', () => {
       }
     }
   }, 60_000);
+  it("every surgery's hospital figures are reachable without script", async () => {
+    for (const ref of surgeryRefs()) {
+      const html = await render(SurgeryHub, { kind: ref.kind, urlSlug: ref.urlSlug });
+      expect(html).not.toContain('<script');
+      const words = text(html);
+      for (const row of readSurgery(ref.kind, ref.slug).hospitals.filter((h) => !h.closed)) {
+        expect(words, `${ref.urlSlug} ${row.slug}`).toContain(row.name);
+        for (const [role, { figure }] of Object.entries(row.measures)) {
+          expect(words, `${ref.urlSlug} ${row.slug} ${role}`).toContain(
+            formatFigure(role as Role, figure),
+          );
+        }
+      }
+    }
+  }, 120_000);
 });
 
 describe('Privacy', () => {
@@ -390,16 +424,33 @@ describe('Copy', () => {
     for (const slug of listDist('hospitals')) {
       pages.push(await render(hospitalPage, { slug }));
     }
+    pages.push(await render(SurgeryIndex, {}));
+    for (const ref of surgeryRefs()) {
+      pages.push(await render(SurgeryHub, { kind: ref.kind, urlSlug: ref.urlSlug }));
+    }
+    for (const { props } of stateRoutes('procedure').slice(0, 20)) {
+      pages.push(
+        await render(SurgeryState, { kind: 'procedure', urlSlug: props.slug, state: props.state }),
+      );
+    }
+    withNearbyPair();
+    for (const { props } of nearRoutes()) {
+      pages.push(await render(SurgeryNear, { urlSlug: props.slug, area: props.area }));
+    }
+    cleanUpCopies();
     for (const found of [...copy, ...pages.flatMap((html) => pageStrings(html))]) {
       expect(found).not.toMatch(promotion);
     }
-  }, 60_000);
+  }, 180_000);
   it('copy lives in typed content files', () => {
     const schemas: Record<string, z.ZodType> = {
       'site.yaml': siteSchema,
       'labels.yaml': labelsSchema,
       'navigation.yaml': navigationSchema,
       'templates/hospital.yaml': hospitalTemplateSchema,
+      'templates/surgery.yaml': surgeryTemplateSchema,
+      'areas.yaml': areasSchema,
+      'surgery-names.yaml': surgeryNamesSchema,
       'terms.yaml': termsSchema,
     };
     const files = readContent();
