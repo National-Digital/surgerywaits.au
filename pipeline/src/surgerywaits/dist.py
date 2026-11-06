@@ -55,6 +55,8 @@ ROLE_UNITS = {
 }
 NON_SLUG = re.compile(r"[^a-z0-9]+")
 APOSTROPHES = re.compile("['\\u2019]")
+TRAILING_QUALIFIER = re.compile(r"\s*\([^)]*\)\s*$")
+URGENT_SLUG = "urgent-elective-surgery"
 # A single period is already on the hospital page, so it is not a trend.
 MIN_POINTS = 2
 READ_SOURCES = (
@@ -104,6 +106,33 @@ def _hospital_slugs(hospitals: list[Hospital]) -> dict[str, str]:
         msg = "hospital slugs are not unique"
         raise DistError(msg)
     return slugs
+
+
+def network_slugs(hospitals: list[Hospital]) -> dict[str, str]:
+    """A slug for each network the hospitals belong to, widened only where names collide."""
+    names = {h.network_code: h.network_name for h in hospitals if h.network_code and h.network_name}
+    by_base: dict[str, list[str]] = defaultdict(list)
+    for code in sorted(names):
+        by_base[slugify(network_heading(names[code])) or slugify(names[code])].append(code)
+    slugs: dict[str, str] = {}
+    for base, codes in sorted(by_base.items()):
+        if len(codes) == 1:
+            slugs[codes[0]] = base
+            continue
+        by_full: dict[str, list[str]] = defaultdict(list)
+        for code in codes:
+            by_full[slugify(names[code])].append(code)
+        for full, same in by_full.items():
+            for code in same:
+                slugs[code] = full if len(same) == 1 else f"{full}-{code.lower()}"
+    if len(set(slugs.values())) != len(slugs) or "" in slugs.values():
+        msg = "network slugs are not unique"
+        raise DistError(msg)
+    return slugs
+
+
+def network_heading(name: str) -> str:
+    return TRAILING_QUALIFIER.sub("", name)
 
 
 def _state(hospitals: list[Hospital], code: str) -> str:
@@ -275,6 +304,7 @@ class _Ctx:
     latest: Mapping[tuple[str, Table, str], DerivedObservation]
     hospitals: Mapping[str, Hospital]
     slugs: Mapping[str, str]
+    network_slugs: Mapping[str, str]
     benchmarks: Mapping[Table, Benchmarks]
 
     @property
@@ -311,6 +341,7 @@ def _context(inputs: Inputs) -> _Ctx:
         latest,
         hospitals,
         _hospital_slugs([hospitals[c] for c in with_data]),
+        network_slugs([hospitals[c] for c in with_data]),
         benchmarks,
     )
 
@@ -334,10 +365,14 @@ def _nearby(ctx: _Ctx, code: str) -> Doc | None:
     }
 
 
-def _network(h: Hospital) -> Doc | None:
-    if h.network_status != "mapped":
+def _network(ctx: _Ctx, h: Hospital) -> Doc | None:
+    if h.network_status != "mapped" or h.network_code is None:
         return None
-    return {"code": h.network_code, "name": h.network_name}
+    return {
+        "code": h.network_code,
+        "name": h.network_name,
+        "slug": ctx.network_slugs[h.network_code],
+    }
 
 
 def _hospital_docs(ctx: _Ctx) -> dict[str, tuple[str, Doc]]:
@@ -349,7 +384,7 @@ def _hospital_docs(ctx: _Ctx) -> dict[str, tuple[str, Doc]]:
             (o for k, o in ctx.latest.items() if k[0] == code),
             key=lambda o: (SCOPE_ORDER[o.table.value], ctx.slug_of(o.table, o.category)),
         )
-        network = _network(h)
+        network = _network(ctx, h)
         docs[f"hospitals/{slug}.json"] = (
             "hospital",
             {
@@ -397,6 +432,67 @@ def _hospital_docs(ctx: _Ctx) -> dict[str, tuple[str, Doc]]:
     docs["hospitals.json"] = (
         "hospital-index",
         {"scope": ctx.scope, "hospitals": rows, "sources": ctx.sources},
+    )
+    return docs
+
+
+def _urgent_on_time(ctx: _Ctx, code: str) -> Doc | None:
+    for (c, table, category), o in ctx.latest.items():
+        if c != code or table is not Table.URGENCY or ctx.slug_of(table, category) != URGENT_SLUG:
+            continue
+        if o.period != ctx.newest[table]:
+            return None
+        found = next((f for f in o.figures if f.role is Role.ON_TIME), None)
+        return _figure(found.figure, o.period, ctx.release_of[table]) if found else None
+    return None
+
+
+def _network_docs(ctx: _Ctx) -> dict[str, tuple[str, Doc]]:
+    """One file for each network with a hospital that has a page, and an index of them."""
+    members: dict[str, list[Hospital]] = defaultdict(list)
+    for code in sorted(ctx.slugs):
+        h = ctx.hospitals[code]
+        if h.network_status == "mapped" and h.network_code is not None:
+            members[h.network_code].append(h)
+    figures: dict[str, int] = defaultdict(int)
+    for code, _, _ in ctx.latest:
+        figures[code] += 1
+    docs: dict[str, tuple[str, Doc]] = {}
+    rows: list[Doc] = []
+    for code, hospitals in sorted(members.items()):
+        name = hospitals[0].network_name or ""
+        slug = ctx.network_slugs[code]
+        head: Doc = {
+            "code": code,
+            "slug": slug,
+            "name": name,
+            "display_name": network_heading(name) or name,
+            "states": sorted({h.state for h in hospitals}),
+        }
+        docs[f"health-services/{slug}.json"] = (
+            "health-service",
+            {
+                **head,
+                "scope": ctx.scope,
+                "hospitals": [
+                    {
+                        "code": h.code,
+                        "slug": ctx.slugs[h.code],
+                        "name": h.name,
+                        "state": h.state,
+                        "closed": h.closed,
+                        "surgeries": figures[h.code],
+                        "urgent_on_time": _urgent_on_time(ctx, h.code),
+                    }
+                    for h in sorted(hospitals, key=lambda h: (h.name, h.code))
+                ],
+                "sources": ctx.sources,
+            },
+        )
+        rows.append({**head, "hospitals": len(hospitals)})
+    docs["health-services.json"] = (
+        "health-service-index",
+        {"networks": sorted(rows, key=lambda r: r["slug"]), "sources": ctx.sources},
     )
     return docs
 
@@ -613,7 +709,7 @@ def assemble(inputs: Inputs) -> dict[str, tuple[str, Doc]]:
     )
     ctx = _context(inputs)
     names = {h.code: h.name for h in inputs.register.hospitals}
-    docs = {**_hospital_docs(ctx), **_trend_docs(ctx), **_surgery_docs(ctx)}
+    docs = {**_hospital_docs(ctx), **_trend_docs(ctx), **_surgery_docs(ctx), **_network_docs(ctx)}
     docs.update(_state_docs(ctx, docs))
     docs["suburbs.json"] = (
         "suburbs",

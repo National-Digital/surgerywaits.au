@@ -583,4 +583,4 @@ def test_the_hospital_index_carries_each_network_code_and_name() -> None:
     rows = real_docs()["hospitals.json"]["hospitals"]
     mapped = [r["network"] for r in rows if r["network"] is not None]
     assert mapped
-    assert all(set(n) == {"code", "name"} for n in mapped)
+    assert all(set(n) == {"code", "name", "slug"} for n in mapped)

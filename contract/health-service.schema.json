@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://surgerywaits.au/contract/health-service.schema.json",
+  "title": "Health service",
+  "description": "health-services/<slug>.json: one local hospital network and its public hospitals that have a page.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["code", "slug", "name", "display_name", "states", "scope", "hospitals", "sources"],
+  "properties": {
+    "code": {
+      "$ref": "common.schema.json#/$defs/text"
+    },
+    "slug": {
+      "$ref": "common.schema.json#/$defs/slug"
+    },
+    "name": {
+      "$ref": "common.schema.json#/$defs/text"
+    },
+    "display_name": {
+      "$ref": "common.schema.json#/$defs/text"
+    },
+    "states": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/state"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "scope": {
+      "$ref": "common.schema.json#/$defs/scope"
+    },
+    "hospitals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "slug", "name", "state", "closed", "surgeries", "urgent_on_time"],
+        "properties": {
+          "code": {
+            "$ref": "common.schema.json#/$defs/code"
+          },
+          "slug": {
+            "$ref": "common.schema.json#/$defs/slug"
+          },
+          "name": {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          "state": {
+            "$ref": "common.schema.json#/$defs/state"
+          },
+          "closed": {
+            "type": "boolean"
+          },
+          "surgeries": {
+            "description": "How many categories the hospital has figures for.",
+            "$ref": "common.schema.json#/$defs/count"
+          },
+          "urgent_on_time": {
+            "description": "The share of urgent patients treated on time, when the hospital has a figure in the newest period.",
+            "oneOf": [
+              {
+                "$ref": "common.schema.json#/$defs/figure"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "minItems": 1
+    },
+    "sources": {
+      "$ref": "common.schema.json#/$defs/sources"
+    }
+  }
+}

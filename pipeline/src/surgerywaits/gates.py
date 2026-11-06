@@ -157,6 +157,32 @@ def check_slugs(docs: Mapping[str, tuple[str, dict[str, Any]]]) -> None:
             msg = f"network code {code!r} is not URL-safe"
             raise GateError(msg)
     _unique("network code", (c.lower() for c in networks))
+    _check_network_slugs(docs)
+
+
+def _check_network_slugs(docs: Mapping[str, tuple[str, dict[str, Any]]]) -> None:
+    """Network slugs are URL-safe and unique, and hospitals, files and index agree on them."""
+    files = {d["code"]: d["slug"] for _, (k, d) in sorted(docs.items()) if k == "health-service"}
+    _unique("network slug", files.values())
+    indexed = {n["code"]: n["slug"] for n in docs["health-services.json"][1]["networks"]}
+    used = {
+        d["network"]["code"]: d["network"]["slug"]
+        for _, (k, d) in sorted(docs.items())
+        if k == "hospital" and d["network"] is not None
+    }
+    if indexed != files or used != files:
+        msg = "the network index, the network files and the hospitals list different slugs"
+        raise GateError(msg)
+    members = {
+        h["slug"]: d["code"]
+        for _, (k, d) in sorted(docs.items())
+        if k == "health-service"
+        for h in d["hospitals"]
+    }
+    listed = {d["slug"] for _, (k, d) in sorted(docs.items()) if k == "hospital" and d["network"]}
+    if set(members) != listed:
+        msg = "the network files and the hospital files do not name the same member hospitals"
+        raise GateError(msg)
 
 
 def check_benchmarks(docs: Mapping[str, tuple[str, dict[str, Any]]]) -> None:
