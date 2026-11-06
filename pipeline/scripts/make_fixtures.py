@@ -83,6 +83,9 @@ SLUGS = [
     "qld-elective-surgery-by-specialty",
     "abs-suburbs-localities-2021",
 ]
+# Two same-named suburbs the ABS qualifies by state, three whose area centroid falls outside the
+# shape (one in two parts), and the special-purpose rows with no shape.
+SUBURB_CODES = {"10003", "20002", "60007", "60071", "60380", "19494", "19797", "ZZZZZ"}
 CATEGORY_COLUMNS = ["urgency_category", "intended_procedure", "surgical_specialty"]
 
 
@@ -232,12 +235,15 @@ def cut(slug: str, table: pa.Table, ctx: dict[str, Any]) -> pa.Table:  # noqa: P
             for w in re.findall(r"[A-Za-z]+", h)
         }
         keep = [
-            (state, name) in words
-            for state, name in zip(
-                table["state_name"].to_pylist(), table["sal_2021_name"].to_pylist(), strict=True
+            (state, name) in words or code in SUBURB_CODES
+            for state, name, code in zip(
+                table["state_name"].to_pylist(),
+                table["sal_2021_name"].to_pylist(),
+                table["sal_2021_code"].to_pylist(),
+                strict=True,
             )
         ]
-        return sort_by(take(table, keep).drop_columns(["geometry"]), ["sal_2021_code"])
+        return sort_by(take(table, keep), ["sal_2021_code"])
     msg = f"no cut defined for {slug}"
     raise SystemExit(msg)
 
