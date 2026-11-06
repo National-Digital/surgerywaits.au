@@ -1,0 +1,47 @@
+---
+import { getNavigation, label } from '../lib/content';
+import { isBuilt } from '../lib/links';
+
+const { compare } = getNavigation();
+const shown = isBuilt(compare.href);
+---
+
+{shown && (
+  <nav class="c-compare-bar" aria-label={label('nav_compare')}>
+    <a class="c-compare-bar__link" href={compare.href}>
+      {compare.label}
+    </a>
+  </nav>
+)}
+
+<style>
+  @layer components {
+    .c-compare-bar {
+      display: none;
+    }
+
+    @media (width <= 640px) {
+      .c-compare-bar {
+        position: sticky;
+        inset-block-end: 0;
+        z-index: 4;
+        display: block;
+        padding: var(--space-3) var(--space-4);
+        border-block-start: 1px solid var(--hairline);
+        background: var(--card);
+      }
+
+      .c-compare-bar__link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 3rem;
+        border-radius: var(--radius-md);
+        background: var(--accent);
+        color: var(--accent-ink);
+        font-weight: 700;
+        text-decoration: none;
+      }
+    }
+  }
+</style>

@@ -40,8 +40,10 @@ npm run typecheck       # astro check on the site, tsc on the Worker, the script
 npm run knip            # unused files, exports and dependencies
 npm test                # vitest, without the browser proofs
 A11Y_TEST=1 npx vitest run scripts/a11y.test.ts   # the accessibility proofs, which need Chromium
+A11Y_TEST=1 npx vitest run scripts/layout.test.ts # the header proof, which needs Chromium and npm run build
 npm run build           # astro build; needs no dist while no page reads figures
 npm run build:preview   # the same build plus the /dev/primitives/ page, written to site/dist-preview
+npm run a11y -- site/dist / /404.html   # the same checks on the built home and 404 pages
 npm run a11y            # accessibility checks on their fixture pages (npx playwright install chromium first)
 npm run a11y -- site/dist-preview /dev/primitives/   # the same checks on the preview page, after build:preview
 npm run worker:types:check   # fails when worker/worker-configuration.d.ts is stale

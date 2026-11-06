@@ -24,3 +24,13 @@ preview_queensland: Queensland figures
 preview_table: Data table
 preview_table_caption: Planned surgery waiting times, ordered by median wait
 preview_table_row_heading: Hospital
+nav_site: Site
+nav_about: About this site
+nav_compare: Compare
+back_to_top: Back to top
+home_link: Go to the Surgery Waits home page
+footer_safety_heading: Before you use these figures
+footer_safety_full: Surgery Waits is not medical advice. It republishes official statistics about waiting times that have already happened. It does not recommend any hospital, doctor or treatment. Your general practitioner and your treating specialist can help you decide what is right for you.
+footer_safety_compact: Surgery Waits is not medical advice. Your general practitioner and your treating specialist can help you decide what is right for you.
+footer_emergency: In an emergency, call 000.
+footer_exclusion: Private hospitals are not included. The figures cover public hospitals only.

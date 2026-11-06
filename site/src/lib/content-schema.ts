@@ -21,6 +21,16 @@ export const siteSchema = z.strictObject({
 // A key here is the only way to name a label, so a stray or missing key fails the build.
 export const labelsSchema = z.strictObject({
   skip_link: text,
+  nav_site: text,
+  nav_about: text,
+  nav_compare: text,
+  back_to_top: text,
+  home_link: text,
+  footer_safety_heading: text,
+  footer_safety_full: text,
+  footer_safety_compact: text,
+  footer_emergency: text,
+  footer_exclusion: text,
   title_home: text,
   title_not_found: text,
   go_home: text,
@@ -46,6 +56,17 @@ export const labelsSchema = z.strictObject({
   preview_table: text,
   preview_table_caption: text,
   preview_table_row_heading: text,
+});
+
+const sitePath = z
+  .string()
+  .regex(/^\/(?:[a-z0-9-]+\/)*$/, 'a path inside the site, ending in a slash');
+const link = z.strictObject({ label: text, href: sitePath });
+
+export const navigationSchema = z.strictObject({
+  site: z.array(link).min(1),
+  about: z.array(link).min(1),
+  compare: link,
 });
 
 export const pageSchema = z.strictObject({

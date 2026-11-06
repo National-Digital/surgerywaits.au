@@ -33,7 +33,7 @@ exact versions in `package.json`, and the playwright version fixes the Chromium 
 with `npx playwright install chromium`.
 
 Each check is proven on a page in `scripts/a11y-fixtures/fail/` built to fail it. A check that
-has several outcomes, such as the header menu, has its own rule name and its own fixture for each
+has several outcomes, such as a menu toggle, has its own rule name and its own fixture for each
 outcome, so switching off any one of them fails the proof. The proof also requires the page in
 `scripts/a11y-fixtures/pass/` to come out clean in every combination of width and colour scheme.
 The same proof runs under `npm test`, where it skips if Chromium is not installed, and in the
@@ -50,7 +50,7 @@ will be named for what it holds when one is added.
 | axe-core at WCAG 2.2 AAA | Every rule axe has through WCAG 2.2, including enhanced contrast at 7:1.               |
 | Painted contrast         | Text that axe cannot measure, such as text on a gradient, is measured from the pixels. |
 | Root scale               | The root text size grows with the screen, so type is relative.                         |
-| Menu                     | The header menu opens, closes on Escape and shows its links without script.            |
+| Menu                     | A menu toggle opens and closes on Escape, and every site link shows without script.    |
 | Focus visible            | A focused control shows an outline of at least 2 pixels.                               |
 | Type size                | Text a person reads is at or above a set minimum size.                                 |
 | Line length              | No paragraph averages more than 80 characters a line.                                  |

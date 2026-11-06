@@ -1,0 +1,81 @@
+---
+import { mark } from '../lib/brand-mark';
+import { getNavigation, getSite, label } from '../lib/content';
+import { builtLinks } from '../lib/links';
+import { requireLinks } from '../lib/require-links';
+import LinkList from './LinkList.astro';
+
+const { name } = getSite();
+const links = requireLinks(builtLinks(getNavigation().site));
+---
+
+<header class="c-masthead">
+  <div class="c-masthead__inner o-wrap o-wrap--flush">
+    <a class="c-masthead__brand" href="/" aria-label={label('home_link')}>
+      <svg class="c-masthead__mark" {...mark.svg}>
+        <circle {...mark.ring} />
+        <path {...mark.hand} />
+        <circle class="c-masthead__knock" {...mark.knock} />
+        <circle {...mark.badge} />
+        <path class="c-masthead__knock-stroke" {...mark.cross} />
+      </svg>
+      {name}
+    </a>
+    <nav class="c-masthead__nav" aria-label={label('nav_site')}>
+      <LinkList links={links} />
+    </nav>
+  </div>
+</header>
+
+<style>
+  @layer components {
+    .c-masthead {
+      border-block-start: 5px solid var(--accent);
+      border-block-end: 1px solid var(--hairline);
+      background: var(--card);
+    }
+
+    .c-masthead__inner {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0 var(--space-5);
+      align-items: center;
+      justify-content: space-between;
+      padding-block: var(--space-1);
+    }
+
+    .c-masthead__brand {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      min-height: var(--target);
+      color: var(--ink);
+      font-size: 1.06rem;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      text-decoration: none;
+    }
+
+    .c-masthead__mark {
+      flex: none;
+      width: 1.9em;
+      height: 1.9em;
+      color: var(--accent);
+    }
+
+    /* The badge is knocked out of the ring with the masthead's own ground, so it holds in both schemes. */
+    .c-masthead__knock {
+      fill: var(--card);
+    }
+
+    .c-masthead__knock-stroke {
+      stroke: var(--card);
+    }
+
+    .c-masthead__nav {
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+  }
+</style>

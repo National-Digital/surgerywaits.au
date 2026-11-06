@@ -6,7 +6,7 @@ import { configDefaults } from 'vitest/config';
 // The built-page proofs also need a build, and the same job runs them with BUILT_PAGES=1.
 const exclude = [...configDefaults.exclude];
 if (process.env['A11Y_TEST'] !== '1') {
-  exclude.push('scripts/a11y.test.ts');
+  exclude.push('scripts/a11y.test.ts', 'scripts/layout.test.ts');
 }
 if (process.env['BUILT_CSS'] !== '1') {
   exclude.push('site/src/styles/built-css.test.ts');

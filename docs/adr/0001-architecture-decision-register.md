@@ -273,7 +273,7 @@ cascade order explicit, and a fixed naming scheme tells a reader what a class is
 
 ### D19: Pages ship no client JavaScript by default
 
-Every page is complete and usable with scripts off, including the menu. The compare tool is the only
+Every page is complete and usable with scripts off. The header shows the site navigation inline at every width, with no menu toggle. The compare tool is the only
 script: one vanilla TypeScript module loaded as `<script type="module">` from the site itself, with
 no framework and no islands runtime. Scripts find their elements through `js-` classes or `data-`
 attributes and never through styling classes, so a CSS rename cannot break behaviour. The tool keeps
@@ -420,7 +420,7 @@ list, and the same stance applies to TypeScript in [D20][d20].
   site. The Worker's tests are planned to run in Cloudflare's Vitest pool, so they use the real
   runtime.
 - Playwright covers anything a browser must do: the accessibility check, print, the compare tool,
-  the 390px layouts and the menu without scripts. Browser versions are pinned with the package.
+  the 390px layouts and the header navigation without scripts. Browser versions are pinned with the package.
 
 Every check ships with a fixture built to fail it. Every bug fix adds a test that fails without the
 fix. Tests never touch the network and use fixtures and a fixed clock. Tests assert specific facts,

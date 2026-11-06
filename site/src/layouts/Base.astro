@@ -1,15 +1,19 @@
 ---
 // The global sheet is first so its layer order precedes any component layer in the bundle.
 import '../styles/global.css';
-import OperatorLine from '../components/OperatorLine.astro';
+import CompareBar from '../components/CompareBar.astro';
+import Footer from '../components/Footer.astro';
+import Masthead from '../components/Masthead.astro';
 import SkipLink from '../components/SkipLink.astro';
 
 interface Props {
   title: string;
   noindex?: boolean;
+  compactFooter?: boolean;
+  compareBar?: boolean;
 }
 
-const { title, noindex = false } = Astro.props;
+const { title, noindex = false, compactFooter = false, compareBar = true } = Astro.props;
 ---
 
 <!doctype html>
@@ -22,11 +26,11 @@ const { title, noindex = false } = Astro.props;
   </head>
   <body>
     <SkipLink />
+    <Masthead />
     <main id="main" class="o-wrap">
       <slot />
     </main>
-    <footer class="o-wrap">
-      <OperatorLine />
-    </footer>
+    {compareBar && <CompareBar />}
+    <Footer compact={compactFooter} />
   </body>
 </html>

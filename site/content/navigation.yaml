@@ -1,0 +1,27 @@
+# A link whose page does not exist yet is left out of the build, and appears when the page lands.
+site:
+  - label: Home
+    href: /
+  - label: Surgery
+    href: /surgery/
+  - label: Hospitals
+    href: /hospitals/
+  - label: States
+    href: /state/
+  - label: Methodology
+    href: /methodology/
+about:
+  - label: About
+    href: /about/
+  - label: Privacy
+    href: /privacy/
+  - label: Terms of use
+    href: /terms/
+  - label: Accessibility
+    href: /accessibility/
+  - label: Corrections
+    href: /corrections/
+# The compare page is not built yet, so the bar stays out of every page until it is.
+compare:
+  label: Compare near you
+  href: /compare/

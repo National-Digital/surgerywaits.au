@@ -1,6 +1,6 @@
 import { getCollection, getEntry } from 'astro:content';
 import { z } from 'astro/zod';
-import { labelsSchema, pageSchema, siteSchema } from './content-schema';
+import { labelsSchema, navigationSchema, pageSchema, siteSchema } from './content-schema';
 import type { LabelKey } from './content-schema';
 
 // Parsing here types the entries, because astro:content falls back to any when its types clash.
@@ -17,6 +17,7 @@ const single = async <S extends z.ZodType>(
 // Loaded once at import, so a page reads the tables without awaiting.
 const site = await single('site', 'site', siteSchema);
 const labels = await single('labels', 'labels', labelsSchema);
+const navigation = await single('navigation', 'navigation', navigationSchema);
 const pages = new Map(
   z
     .array(z.object({ id: z.string(), data: pageSchema }))
@@ -26,6 +27,10 @@ const pages = new Map(
 
 export function getSite(): typeof site {
   return site;
+}
+
+export function getNavigation(): typeof navigation {
+  return navigation;
 }
 
 export function getPage(id: 'home' | 'not-found'): z.output<typeof pageSchema> {
