@@ -42,8 +42,10 @@ whose names are stable enough to require as status checks.
 
 - `Site checks` runs `npm ci`, then lint, format check, typecheck, knip and vitest.
 - `Pipeline checks` installs the `uv` version in `pipeline/uv.toml`, runs `uv sync --locked`, then
-  ruff, pyright and pytest, leaving out `tests/test_repo.py` because the next job runs it.
-- `Repository tests` runs `pipeline/tests/test_repo.py`, which reads every workflow and checks
+  ruff, pyright and pytest, leaving out `tests/test_repo.py` and `tests/test_docs.py` because the next job runs them.
+- `Repository tests` runs `pipeline/tests/test_repo.py` and `pipeline/tests/test_docs.py`. The
+  second fails when a document links to a missing file or heading, names a missing path or npm
+  script, or lists a check that no workflow defines. The first reads every workflow and checks
   that jobs with side effects are guarded by the repository name, that no pull request workflow
   runs Lighthouse or PageSpeed Insights, that `pull_request_target` is unused, that every action
   is pinned to a commit SHA with a version comment, that each workflow declares top-level
