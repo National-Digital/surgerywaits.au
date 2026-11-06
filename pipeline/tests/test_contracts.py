@@ -16,8 +16,8 @@ def test_every_null_has_a_publisher_marker_or_is_reported() -> None:
     raise NotImplementedError
 
 
-@pytest.mark.skip(reason="planned: every publisher marker maps to one of the three reasons")
-def test_every_marker_maps_to_one_of_three_reasons() -> None:
+@pytest.mark.skip(reason="planned: every publisher marker maps to a known reason")
+def test_every_marker_maps_to_a_known_reason() -> None:
     raise NotImplementedError
 
 

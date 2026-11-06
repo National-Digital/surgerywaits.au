@@ -46,8 +46,8 @@ also shows how a site builds on publicdata.au.
 
 ### D3: Three reasons explain a suppressed cell
 
-A suppressed cell is shown as "not published" with one of three reasons, taken from the publisher
-code in the `markers` column:
+A suppressed cell in a hospital's own figures is shown as "not published" with one of three
+reasons, taken from the publisher code in the `markers` column:
 
 - "<5": too few patients.
 - "-": no patients reported.
@@ -55,6 +55,11 @@ code in the `markers` column:
 
 The methodology page, once built, says that "NP" covers more than one reason AIHW gives. A
 suppressed cell is never shown as 0, never left blank and never ranked.
+
+The `markers` column also holds "Not peered", which appears only in place of the peer-group
+columns. AIHW does not define that code. It is not one of the three reasons. It applies only to
+the peer-group figures, and the site shows it as "not published: no peer group comparison"
+without giving it a meaning of its own. A code the pipeline does not know will fail the build.
 
 Why: each code means something different to a reader. A zero reads as "no patients waited", which is
 false for "<5" and "NP". Naming the reason lets a reader judge whether a gap is small, absent or
