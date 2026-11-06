@@ -81,7 +81,7 @@ Cloudflare Worker    serves the static assets (planned)
   whose figures are from another period is marked and never ranked. All copy is in `site/content/templates/surgery.yaml`.
   Each current row of each procedure has a pair page at `/hospital/<hospital>/<surgery>/`, with the surgery's
   everyday-name slug, as the earlier site had. It holds the hospital's figures as tiles with national ranks, the state and
-  national rows beside them, the hospitals among its four nearest that published a shorter median, the hospital's own history for the surgery, a median-wait chart, links up to the hospital, the surgery and the state page, the exclusion
+  national rows beside them, the hospitals on its nearby list (up to eight) that published a shorter median, the hospital's own history for the surgery, a median-wait chart, links up to the hospital, the surgery and the state page, the exclusion
   statement, the safety block and the data passport, under the compact footer, from `site/content/templates/pair.yaml`.
   A pair is thin, and carries `noindex,follow`, when its median is not published, or when it has no earlier published year, no
   open hospital in its own nearby mesh with a published median, no long-wait share beside a national one and no nearest area

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import PairPage from '../components/PairPage.astro';
 import { getPairTemplate, getSite, label } from '../lib/content';
 import { history, loadPair, pairRoutes, shorterNearby } from '../lib/pair-page';
-import { formatRank, formatStamp } from '../lib/format';
+import { formatDays, formatHospitals, formatPeriod, formatRank, formatStamp } from '../lib/format';
 import { fill } from '../lib/slots';
 import { elementsOf, render, text, textsOf } from '../lib/test-render';
 
@@ -138,13 +138,32 @@ describe('Pair pages', () => {
       const earlier = history(pair);
       expect(html.includes('id="nearby-heading"'), slug).toBe(shorter !== null);
       expect(html.includes('id="history-heading"'), slug).toBe(earlier !== null);
+      const count = formatHospitals(pair.hospital.nearby?.hospitals.length ?? 0);
+      if (shorter !== null) {
+        expect(text(html), slug).toContain(
+          shorter.length > 0
+            ? fill(t.nearby_intro, { hospital: pair.hospital.name, surgery: pair.ref.name, count })
+            : fill(t.nearby_none, {
+                hospital: pair.hospital.name,
+                surgery: pair.ref.name,
+                period: pair.surgery.period,
+                count,
+              }),
+        );
+      }
       for (const near of shorter ?? []) {
         expect(html, slug).toContain(`href="${near.href}"`);
         expect(html, slug).toContain(near.name);
       }
       if (earlier !== null) {
-        expect(text(html), slug).toContain(`(${formatStamp(earlier.from)})`);
-        expect(text(html), slug).toContain(`(${formatStamp(earlier.to)})`);
+        expect(text(html), slug).toContain(
+          `${formatDays(earlier.from.value)} in ${formatPeriod(earlier.from.period)}`,
+        );
+        expect(text(html), slug).toContain(
+          `${formatDays(earlier.to.value)} in ${formatPeriod(earlier.to.period)}`,
+        );
+        expect(text(html), slug).toContain(`from ${formatStamp(earlier.from)}`);
+        expect(text(html), slug).toContain(`from ${formatStamp(earlier.to)}`);
       }
       listed += shorter?.length ?? 0;
       told += earlier === null ? 0 : 1;

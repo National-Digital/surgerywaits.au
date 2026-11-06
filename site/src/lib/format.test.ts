@@ -82,6 +82,18 @@ describe('formatKilometres', () => {
     expect(format.formatKilometres(188)).toBe('188 kilometres');
     expect(format.formatKilometres(1250)).toBe('1,250 kilometres');
   });
+
+  it('says less than one kilometre for a distance under one', () => {
+    expect(format.formatKilometres(0)).toBe('less than 1 kilometre');
+    expect(format.formatKilometres(0.4)).toBe('less than 1 kilometre');
+  });
+});
+
+describe('formatHospitals', () => {
+  it('counts public hospitals with the singular for one', () => {
+    expect(format.formatHospitals(1)).toBe('1 public hospital');
+    expect(format.formatHospitals(8)).toBe('8 public hospitals');
+  });
 });
 
 describe('formatPercent', () => {
@@ -386,6 +398,7 @@ describe('every export', () => {
     formatCount: () => format.formatCount(0),
     formatDays: () => format.formatDays(0),
     formatSurgeries: () => format.formatSurgeries(0),
+    formatHospitals: () => format.formatHospitals(0),
     formatKilometres: () => format.formatKilometres(0),
     formatPercent: () => format.formatPercent('on_time', 0),
     formatQueenslandFigure: () => format.formatQueenslandFigure('treated', qldPublished),

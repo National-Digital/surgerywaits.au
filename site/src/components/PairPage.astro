@@ -24,7 +24,13 @@ import {
   pairTiles,
   shorterNearby,
 } from '../lib/pair-page';
-import { formatDays, formatKilometres, formatStamp } from '../lib/format';
+import {
+  formatDays,
+  formatHospitals,
+  formatKilometres,
+  formatPeriod,
+  formatStamp,
+} from '../lib/format';
 import { fill } from '../lib/slots';
 import { roleLabels, statePath, statesWithRows, surgeryPath } from '../lib/surgery-page';
 
@@ -61,6 +67,7 @@ const rows = compareRows(pair, {
 });
 const charts = pairCharts(pair, { national: t.series_national, state });
 const shorter = shorterNearby(pair);
+const count = formatHospitals(pair.hospital.nearby?.hospitals.length ?? 0);
 const earlier = history(pair);
 const linkedState = statesWithRows(surgery).includes(hospital.state);
 ---
@@ -125,7 +132,7 @@ const linkedState = statesWithRows(surgery).includes(hospital.state);
       <NearbyHospitals
         id="nearby-heading"
         heading={t.nearby_heading}
-        intro={fill(t.nearby_intro, names)}
+        intro={fill(t.nearby_intro, { ...names, count })}
         items={shorter.map((near) => ({
           name: near.name,
           href: near.href,
@@ -137,7 +144,7 @@ const linkedState = statesWithRows(surgery).includes(hospital.state);
     {shorter !== null && shorter.length === 0 && (
       <section aria-labelledby="nearby-heading">
         <h2 id="nearby-heading">{t.nearby_heading}</h2>
-        <p>{fill(t.nearby_none, { ...names, period: surgery.period })}</p>
+        <p>{fill(t.nearby_none, { ...names, count, period: surgery.period })}</p>
       </section>
     )}
     {earlier !== null && (
@@ -153,8 +160,10 @@ const linkedState = statesWithRows(surgery).includes(hospital.state);
             {
               ...names,
               from: formatDays(earlier.from.value),
+              from_period: formatPeriod(earlier.from.period),
               from_stamp: formatStamp(earlier.from),
               to: formatDays(earlier.to.value),
+              to_period: formatPeriod(earlier.to.period),
               to_stamp: formatStamp(earlier.to),
             },
           )}
