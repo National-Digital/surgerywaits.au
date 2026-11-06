@@ -4,6 +4,8 @@ import Base from '../layouts/Base.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import DataPassport from '../components/DataPassport.astro';
 import DataTable from '../components/DataTable.astro';
+import TrendChart from '../components/TrendChart.astro';
+import WaitBars from '../components/WaitBars.astro';
 import Figure from '../components/Figure.astro';
 import SafetyBlock from '../components/SafetyBlock.astro';
 import StatTile from '../components/StatTile.astro';
@@ -11,11 +13,13 @@ import StatTiles from '../components/StatTiles.astro';
 import { getNavigation, label } from '../lib/content';
 import type { QueenslandColumn } from '../lib/format';
 import {
+  sampleCharts,
   sampleFigures,
   samplePage,
   sampleQueensland,
   sampleTable,
   sampleTiles,
+  sampleWaitBars,
   withheldFigures,
 } from './preview';
 
@@ -36,6 +40,11 @@ const tiles = sampleTiles();
 const queensland = sampleQueensland();
 const table = sampleTable();
 const page = samplePage();
+const charts = sampleCharts({
+  hospital: label('preview_chart_this'),
+  national: label('preview_chart_national'),
+});
+const bars = sampleWaitBars();
 const [first] = figures;
 const withheld = first
   ? withheldFigures({ period: first.figure.period, release: first.figure.release })
@@ -125,4 +134,30 @@ const withheld = first
 
   <h2>{label('preview_passport')}</h2>
   <DataPassport sources={page.sources} />
+
+  <h2>{label('preview_chart')}</h2>
+  <TrendChart
+    id="preview-chart"
+    name={label('preview_chart_name')}
+    caption={label('preview_chart_caption')}
+    role="median_wait"
+    series={charts.plain.series}
+  />
+
+  <h2>{label('preview_chart_gap')}</h2>
+  <TrendChart
+    id="preview-chart-gaps"
+    name={label('preview_chart_name')}
+    caption={label('preview_chart_table_caption')}
+    role="median_wait"
+    series={charts.gaps.series}
+  />
+
+  <h2>{label('preview_wait_bars')}</h2>
+  <WaitBars
+    id="preview-bars"
+    caption={label('preview_wait_bars_caption')}
+    role="median_wait"
+    {bars}
+  />
 </Base>

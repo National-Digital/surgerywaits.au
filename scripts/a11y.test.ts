@@ -86,6 +86,24 @@ browsers('each check fires on the fixture built to fail it', () => {
     T * PROOF.length,
   );
 
+  it(
+    'measures SVG text at its painted size',
+    async () => {
+      const findings = await auditPage({
+        browser: up(browser),
+        base: up(server).base,
+        path: '/fail/type-floor-svg.html',
+        scheme: 'light',
+        viewport: { name: 'desktop', width: 1280, height: 900 },
+        exceptions: [],
+        used: new Set(),
+      });
+      const found = findings.find((f) => f.rule === 'type-floor');
+      expect(found?.lines.join(' ')).toMatch(/6\.\d+px/);
+    },
+    T,
+  );
+
   it('names a fixture file for every check, and one rule for each fixture', () => {
     for (const p of PROOF) {
       expect(existsSync(resolve(root, p.fixture)), p.fixture).toBe(true);

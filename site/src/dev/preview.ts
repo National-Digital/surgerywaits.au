@@ -2,6 +2,7 @@ import { listDist, readDist, readHospital, readQueenslandFacility } from '../lib
 import type { HospitalSurgery } from '../lib/dist';
 import { sortRows } from '../lib/table';
 import type { TableRow } from '../lib/table';
+import type { ChartSeries } from '../lib/chart';
 import type {
   Figure,
   NotPublishedReason,
@@ -230,4 +231,89 @@ export function samplePage(): { name: string; sources: string[] } {
   }
   const hospital = readDist(`hospitals/${slug}.json`) as { name: string; sources: string[] };
   return { name: hospital.name, sources: hospital.sources };
+}
+
+interface BenchmarkTrend {
+  scope: string;
+  role: Role;
+  release: string;
+  periods: string[];
+  points: ChartSeries['points'];
+}
+
+export interface ChartSample {
+  series: ChartSeries[];
+}
+
+export interface WaitBarSample {
+  name: string;
+  figure: Figure;
+  stale: boolean;
+}
+
+// The hospital history with the most periods and a withheld one, beside its national and state benchmark.
+export function sampleCharts(names: { hospital: string; national: string }): {
+  plain: ChartSample;
+  gaps: ChartSample;
+} {
+  let best: { series: ChartSeries; kind: string; slug: string; state: string } | undefined;
+  for (const code of listDist('hospitals')) {
+    const hospital = readHospital(code);
+    const trend = readDist(`trends/${code}.json`) as {
+      series: (Trend['series'][number] & { release: string; periods: string[] })[];
+    };
+    for (const s of trend.series) {
+      const withheld = s.points.some((p) => p[1] === null);
+      const score = s.points.length + (withheld ? 100 : 0);
+      const bestScore = best
+        ? best.series.points.length + (best.series.points.some((p) => p[1] === null) ? 100 : 0)
+        : -1;
+      if (s.role === 'median_wait' && s.kind !== 'urgency' && score > bestScore) {
+        best = {
+          series: {
+            name: names.hospital,
+            release: s.release,
+            periods: s.periods,
+            points: s.points as ChartSeries['points'],
+          },
+          kind: s.kind,
+          slug: s.slug,
+          state: (hospital as unknown as { state: string }).state,
+        };
+      }
+    }
+  }
+  if (best === undefined) {
+    throw new Error('the fixture dist has no hospital history to chart');
+  }
+  const surgery = readDist(`surgeries/${best.kind}/${best.slug}.json`) as {
+    benchmarks: { trends: BenchmarkTrend[] };
+  };
+  const bench = (scope: string, name: string): ChartSeries[] =>
+    surgery.benchmarks.trends
+      .filter((t) => t.scope === scope && t.role === 'median_wait')
+      .map((t) => ({ name, release: t.release, periods: t.periods, points: t.points }));
+  const series = [best.series, ...bench('NAT', names.national), ...bench(best.state, best.state)];
+  // Every history that has a withheld year is shown; where none does, one is withheld here to show the state.
+  const hasGap = best.series.points.some((p) => p[1] === null);
+  const withGap: ChartSeries[] = series.map((s, i) => ({
+    ...s,
+    points: s.points.map((p, j) =>
+      !hasGap && i === 0 && j === 1
+        ? ([p[0], null, null, 'not_published:too_few_patients'] as const)
+        : p,
+    ),
+  }));
+  return { plain: { series }, gaps: { series: withGap } };
+}
+
+// Hospitals on the sample table's median wait, in the table's order, so the bars show every state.
+export function sampleWaitBars(): WaitBarSample[] {
+  return sampleTable().rows.map((row) => {
+    const cell = row.cells[0];
+    if (cell === undefined) {
+      throw new Error('a sample row has no median wait');
+    }
+    return { name: row.name, figure: cell.figure, stale: row.stale === true };
+  });
 }

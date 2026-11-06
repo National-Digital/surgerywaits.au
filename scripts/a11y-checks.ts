@@ -142,11 +142,13 @@ export function house(args: { cfg: HouseConfig; mode: Mode }): Found[] {
         continue;
       }
       const el = n.parentElement;
-      if (!el || seen.has(el) || el.closest('svg') || !visible(el)) {
+      if (!el || seen.has(el) || !visible(el)) {
         continue;
       }
       seen.add(el);
-      const rem = parseFloat(getComputedStyle(el).fontSize) / root;
+      // SVG text is measured as painted: its user-unit size times the scale of the picture it sits in.
+      const scale = el instanceof SVGGraphicsElement ? Math.abs(el.getScreenCTM()?.a ?? 1) : 1;
+      const rem = (parseFloat(getComputedStyle(el).fontSize) * scale) / root;
       const floor = inAA(el)
         ? cfg.anyFloorRem
         : el.closest(PROSE)

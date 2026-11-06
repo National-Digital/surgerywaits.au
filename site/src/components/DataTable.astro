@@ -3,7 +3,7 @@ import { label } from '../lib/content';
 import { formatFigureParts, formatRank, formatStamp, isPublished } from '../lib/format';
 import type { Role } from '../lib/format';
 import { assertTable, pairCells, tableIds } from '../lib/table';
-import type { TableRow } from '../lib/table';
+import type { Span, TableRow } from '../lib/table';
 
 interface Props {
   id: string;
@@ -11,12 +11,14 @@ interface Props {
   rowHeading: string;
   columns: { heading: string; role: Role }[];
   rows: TableRow[];
+  // A table that spans periods states its own range, since its rows cannot share one period.
+  span?: Span;
 }
 
-const { id, caption, rowHeading, columns, rows } = Astro.props;
+const { id, caption, rowHeading, columns, rows, span } = Astro.props;
 const ids = tableIds(id);
 // A table with no period or release, with current rows that disagree, or with a rank on a stale or withheld cell throws here.
-const stamp = assertTable(columns, rows);
+const stamp = assertTable(columns, rows, span);
 ---
 
 <p class="c-table__hint" id={ids.hint}>

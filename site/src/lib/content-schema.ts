@@ -59,6 +59,10 @@ export const labelsSchema = z.strictObject({
   qld_percent_change_treated_on_prior_year: text,
   table_earlier_marker: text,
   table_scroll_hint: text,
+  chart_period_heading: text,
+  chart_table_summary: text,
+  chart_key: text,
+  chart_gap_key: text,
   title_primitives: text,
   preview_heading: text,
   preview_intro: text,
@@ -69,6 +73,15 @@ export const labelsSchema = z.strictObject({
   preview_table: text,
   preview_table_caption: text,
   preview_table_row_heading: text,
+  preview_chart: text,
+  preview_chart_gap: text,
+  preview_chart_caption: text,
+  preview_chart_name: text,
+  preview_chart_this: text,
+  preview_chart_national: text,
+  preview_chart_table_caption: text,
+  preview_wait_bars: text,
+  preview_wait_bars_caption: text,
 });
 
 const sitePath = z
