@@ -1,14 +1,25 @@
 import { recommended as comments } from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import js from '@eslint/js';
+import astro from 'eslint-plugin-astro';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['**/dist/', '**/.astro/', '**/coverage/', '**/node_modules/', 'pipeline/'] },
+  {
+    ignores: [
+      '**/dist/',
+      '**/.astro/',
+      '**/coverage/',
+      '**/node_modules/',
+      'pipeline/',
+      'worker/worker-configuration.d.ts',
+    ],
+  },
   js.configs.recommended,
   tseslint.configs.strictTypeChecked,
   tseslint.configs.stylisticTypeChecked,
   comments,
+  astro.configs.recommended,
   {
     linterOptions: {
       reportUnusedDisableDirectives: 'error',

@@ -575,3 +575,37 @@ def test_report_job_must_need_every_other_job() -> None:
         "${{ needs.work.result }}", ALL_RESULTS
     )
     assert not unreported_schedule(both)
+
+
+def _jsonc(text: str) -> dict[Any, Any]:
+    stripped = re.sub(r'"(?:\\.|[^"\\])*"|//[^\n]*|/\*.*?\*/', _keep_strings, text, flags=re.DOTALL)
+    return _map(json.loads(re.sub(r",(\s*[}\]])", r"\1", stripped)))
+
+
+def _keep_strings(match: re.Match[str]) -> str:
+    return match.group(0) if match.group(0).startswith('"') else ""
+
+
+def exposed_hostnames(text: str) -> list[str]:
+    config = _jsonc(text)
+    return [k for k in ("workers_dev", "preview_urls") if config.get(k) is not False]
+
+
+def test_a_missing_or_enabled_public_hostname_setting_is_caught() -> None:
+    assert exposed_hostnames("{}") == ["workers_dev", "preview_urls"]
+    assert exposed_hostnames('{"workers_dev": true, "preview_urls": false}') == ["workers_dev"]
+    assert exposed_hostnames('{"workers_dev": "false", "preview_urls": 0}') == [
+        "workers_dev",
+        "preview_urls",
+    ]
+
+
+def test_jsonc_comments_are_stripped_but_urls_in_strings_are_kept() -> None:
+    text = '{"a": "https://x.test", // note\n "workers_dev": false, /* c */ "preview_urls": false}'
+    assert exposed_hostnames(text) == []
+    assert _jsonc(text)["a"] == "https://x.test"
+
+
+def test_the_worker_does_not_publish_a_workers_dev_hostname() -> None:
+    config = (ROOT / "worker" / "wrangler.jsonc").read_text(encoding="utf-8")
+    assert exposed_hostnames(config) == []

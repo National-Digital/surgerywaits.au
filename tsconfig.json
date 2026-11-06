@@ -20,5 +20,5 @@
     "noUnusedParameters": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["site/src"]
+  "files": []
 }
