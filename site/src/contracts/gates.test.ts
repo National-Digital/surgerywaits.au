@@ -1,4 +1,34 @@
-import { describe, it } from 'vitest';
+import { readdirSync, readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+
+import { formatFigure } from '../lib/format';
+import type { NotPublishedReason, Role } from '../lib/format';
+
+const contractDir = new URL('../../../contract/', import.meta.url);
+
+function propertyNames(node: unknown): string[] {
+  if (Array.isArray(node)) {
+    return node.flatMap(propertyNames);
+  }
+  if (typeof node !== 'object' || node === null) {
+    return [];
+  }
+  return Object.entries(node).flatMap(([key, value]) => [
+    ...(key === 'properties' && typeof value === 'object' && value !== null
+      ? Object.keys(value as object)
+      : []),
+    ...propertyNames(value),
+  ]);
+}
+
+const roles: Role[] = ['median_wait', 'volume', 'long_wait', 'on_time'];
+const reasons = (
+  JSON.parse(
+    readFileSync(new URL('../../../contract/common.schema.json', import.meta.url), 'utf8'),
+  ) as {
+    $defs: { not_published_figure: { properties: { reason: { enum: NotPublishedReason[] } } } };
+  }
+).$defs.not_published_figure.properties.reason.enum;
 
 describe('Contract: dist files', () => {
   it.todo('validate against their JSON Schemas in contract/');
@@ -12,10 +42,37 @@ describe('Suppressed values', () => {
 });
 
 describe('Suppressed cells', () => {
-  it.todo('a suppressed cell is never rendered blank or as 0');
-  it.todo(
-    "'not peered' shows as 'not published: no peer group comparison' and only in place of the peer-group columns",
-  );
+  it('a suppressed cell is never rendered blank or as 0', () => {
+    const stamp = { period: '2024–25', release: '2026-08-19' };
+    for (const role of roles) {
+      for (const reason of reasons) {
+        const text = formatFigure(role, { state: 'not_published', reason, ...stamp });
+        expect(text).toMatch(/^not published: \D+$/);
+      }
+      const reported = formatFigure(role, {
+        state: 'not_reported',
+        reason: 'not_reported_by_source',
+        ...stamp,
+      });
+      expect(reported).toBe('not reported');
+    }
+  });
+  it("'not peered' shows as 'not published: no peer group comparison' and only in place of the peer-group columns", () => {
+    const stamp = { period: '2024–25', release: '2026-08-19' };
+    expect(
+      formatFigure('median_wait', {
+        state: 'not_published',
+        reason: 'no_peer_group_comparison',
+        ...stamp,
+      }),
+    ).toBe('not published: no peer group comparison');
+    // The dist has no peer-group column, so no figure in it has a place to carry this reason.
+    const properties = readdirSync(contractDir).flatMap((file) =>
+      propertyNames(JSON.parse(readFileSync(new URL(file, contractDir), 'utf8'))),
+    );
+    expect(properties.length).toBeGreaterThan(0);
+    expect(properties.filter((name) => /peer/i.test(name))).toEqual([]);
+  });
 });
 
 describe('Reference period and release date', () => {
