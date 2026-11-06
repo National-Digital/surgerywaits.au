@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://surgerywaits.au/contract/state.schema.json",
+  "title": "State benchmarks",
+  "description": "states/<slug>.json: one state's figure for each category in the table's newest period, beside the national figure. Benchmarks are never ranked.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["state", "slug", "name", "scope", "surgeries", "sources"],
+  "properties": {
+    "state": {
+      "$ref": "common.schema.json#/$defs/benchmark_state"
+    },
+    "slug": {
+      "$ref": "common.schema.json#/$defs/slug"
+    },
+    "name": {
+      "$ref": "common.schema.json#/$defs/text"
+    },
+    "scope": {
+      "$ref": "common.schema.json#/$defs/scope"
+    },
+    "surgeries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "slug", "name", "period", "release", "measures", "national"],
+        "properties": {
+          "kind": {
+            "$ref": "common.schema.json#/$defs/kind"
+          },
+          "slug": {
+            "$ref": "common.schema.json#/$defs/slug"
+          },
+          "name": {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          "period": {
+            "$ref": "common.schema.json#/$defs/period"
+          },
+          "release": {
+            "$ref": "common.schema.json#/$defs/date"
+          },
+          "measures": {
+            "$ref": "common.schema.json#/$defs/benchmark_measures"
+          },
+          "national": {
+            "oneOf": [
+              {
+                "$ref": "common.schema.json#/$defs/benchmark_measures"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "sources": {
+      "$ref": "common.schema.json#/$defs/sources"
+    }
+  }
+}

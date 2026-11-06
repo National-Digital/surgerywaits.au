@@ -1,3 +1,4 @@
+import copy
 import hashlib
 import json
 import re
@@ -10,6 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from surgerywaits.benchmarks import SCOPES, Benchmarks, derive_benchmarks
 from surgerywaits.catalogue import Catalogue, Role
 from surgerywaits.contract import validate
 from surgerywaits.derive import Derived, DerivedFigure, DerivedObservation, RankStatus, TrendPoint
@@ -19,7 +21,7 @@ from surgerywaits.manifest import Entry
 from surgerywaits.queensland import FacilityQuarter, Overlay
 from surgerywaits.suburbs import Suburbs
 from surgerywaits.suppression import Figure, FigureState, SuppressedTable
-from surgerywaits.waiting_times import Table
+from surgerywaits.waiting_times import NATIONAL_SCOPE, Table
 
 Doc = dict[str, Any]
 SUMS = "SHA256SUMS"
@@ -288,6 +290,7 @@ class _Ctx:
     latest: Mapping[tuple[str, Table, str], DerivedObservation]
     hospitals: Mapping[str, Hospital]
     slugs: Mapping[str, str]
+    benchmarks: Mapping[Table, Benchmarks]
 
     @property
     def sources(self) -> list[str]:
@@ -307,6 +310,8 @@ def _context(inputs: Inputs) -> _Ctx:
         if key not in latest or latest[key].period < o.period:
             latest[key] = o
     hospitals = {h.code: h for h in register.hospitals}
+    newest = dict(inputs.derived.newest_periods)
+    benchmarks = {t: derive_benchmarks(s, newest[t]) for t, s in inputs.tables.items()}
     with_data = sorted({k[0] for k in latest})
     unknown = sorted(set(with_data) - set(hospitals))
     if unknown:
@@ -321,6 +326,7 @@ def _context(inputs: Inputs) -> _Ctx:
         latest,
         hospitals,
         _hospital_slugs([hospitals[c] for c in with_data]),
+        benchmarks,
     )
 
 
@@ -447,6 +453,80 @@ def _trend_docs(ctx: _Ctx) -> dict[str, tuple[str, Doc]]:
     return docs
 
 
+def _benchmark_measures(figures: tuple[tuple[Role, Figure], ...], period: str, release: str) -> Doc:
+    return {role.value: _figure(f, period, release) for role, f in figures}
+
+
+def _benchmark_doc(ctx: _Ctx, table: Table, name: str) -> Doc:
+    found = ctx.benchmarks[table]
+    period, release = ctx.newest[table], ctx.release_of[table]
+
+    def measures(scope: str) -> Doc | None:
+        figures = found.current.get((name, scope))
+        return _benchmark_measures(figures, period, release) if figures else None
+
+    series = [
+        {
+            "scope": scope,
+            "role": role.value,
+            "release": release,
+            "periods": [p.period for p in points],
+            "points": [_point(p) for p in points],
+        }
+        for scope in SCOPES
+        for role in Role
+        if len(points := found.series.get((name, scope, role), ())) >= MIN_POINTS
+    ]
+    return {
+        "national": measures(NATIONAL_SCOPE),
+        "states": [
+            {"state": scope, "measures": m} for scope in SCOPES[1:] if (m := measures(scope))
+        ],
+        "trends": series,
+    }
+
+
+def _state_docs(
+    ctx: _Ctx, surgery_docs: Mapping[str, tuple[str, Doc]]
+) -> dict[str, tuple[str, Doc]]:
+    """One file for each state: its figure for every category beside the national figure."""
+    rows: dict[str, list[Doc]] = defaultdict(list)
+    used: dict[str, set[str]] = defaultdict(set)
+    for _, (kind, d) in sorted(surgery_docs.items()):
+        if kind != "surgery":
+            continue
+        for entry in d["benchmarks"]["states"]:
+            rows[entry["state"]].append(
+                {
+                    "kind": d["kind"],
+                    "slug": d["slug"],
+                    "name": d["name"],
+                    "period": d["period"],
+                    "release": d["release"],
+                    "measures": copy.deepcopy(entry["measures"]),
+                    "national": copy.deepcopy(d["benchmarks"]["national"]),
+                }
+            )
+            used[entry["state"]].add(TABLE_SOURCES[Table(d["kind"])])
+    docs: dict[str, tuple[str, Doc]] = {}
+    for code in SCOPES[1:]:
+        if code not in rows:
+            continue
+        ordered = sorted(rows[code], key=lambda r: (SCOPE_ORDER[r["kind"]], r["slug"]))
+        docs[f"states/{code.lower()}.json"] = (
+            "state",
+            {
+                "state": code,
+                "slug": code.lower(),
+                "name": STATES[code],
+                "scope": ctx.scope,
+                "surgeries": ordered,
+                "sources": sorted({*REGISTER_SOURCES, CATALOGUE_SOURCE, *used[code]}),
+            },
+        )
+    return docs
+
+
 def _median_order(ctx: _Ctx, o: DerivedObservation) -> tuple[int, int, str, str]:
     median = next((f for f in o.figures if f.role is Role.MEDIAN_WAIT), None)
     position = median.rank if median is not None else None
@@ -493,6 +573,7 @@ def _surgery_docs(ctx: _Ctx) -> dict[str, tuple[str, Doc]]:
                     }
                     for o in sorted(current, key=lambda o: _median_order(ctx, o))
                 ],
+                "benchmarks": _benchmark_doc(ctx, table, name),
                 "sources": sorted({*REGISTER_SOURCES, CATALOGUE_SOURCE, TABLE_SOURCES[table]}),
             },
         )
@@ -548,6 +629,7 @@ def assemble(inputs: Inputs) -> dict[str, tuple[str, Doc]]:
     ctx = _context(inputs)
     names = {h.code: h.name for h in inputs.register.hospitals}
     docs = {**_hospital_docs(ctx), **_trend_docs(ctx), **_surgery_docs(ctx)}
+    docs.update(_state_docs(ctx, docs))
     docs["suburbs.json"] = (
         "suburbs",
         {

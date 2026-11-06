@@ -122,6 +122,28 @@ def write_old(base: Path, spec: Spec) -> None:
         base / "procedures" / f"{SLUG}.json",
         {
             "hospitals": rows,
+            "trend": {
+                "national": [
+                    {
+                        "reporting_unit_code": "NAT",
+                        "periods": [
+                            {
+                                "reference_period": PERIODS[0],
+                                "median_wait": {
+                                    **bench,
+                                    "reference_period": PERIODS[0],
+                                    "value": 80.0,
+                                },
+                            },
+                            {
+                                "reference_period": PERIODS[1],
+                                "median_wait": {**bench, "value": 90.0},
+                            },
+                        ],
+                    }
+                ],
+                "states": [],
+            },
             "benchmarks": {
                 "national": {
                     "median_wait": {**bench, "value": 90.0},
@@ -151,7 +173,35 @@ def new_fig(period: str, value: float | None, role: str) -> dict[str, Any]:
     return {**common, "state": "published", "value": value / 100 if role == "long_wait" else value}
 
 
-def write_new(base: Path, spec: Spec) -> None:
+def new_benchmarks(median: float = 90.0) -> dict[str, Any]:
+    stamp = {"period": PERIODS[-1].replace("-", DASH), "release": NEW_RELEASE}
+    return {
+        "national": {
+            "median_wait": {**stamp, "state": "published", "value": median},
+            "volume": {**stamp, "state": "published", "value": 5},
+        },
+        "states": [
+            {
+                "state": "NSW",
+                "measures": {
+                    "median_wait": {**stamp, "state": "published", "value": 95},
+                    "long_wait": new_fig(PERIODS[-1], None, "long_wait"),
+                },
+            }
+        ],
+        "trends": [
+            {
+                "scope": "NAT",
+                "role": "median_wait",
+                "release": NEW_RELEASE,
+                "periods": [p.replace("-", DASH) for p in PERIODS],
+                "points": [[2023, 80, None], [2024, median, median - 80]],
+            }
+        ],
+    }
+
+
+def write_new(base: Path, spec: Spec, benchmarks: dict[str, Any] | None = None) -> None:
     put(
         base / "hospitals.json",
         {
@@ -191,7 +241,13 @@ def write_new(base: Path, spec: Spec) -> None:
         page_rows.append({"code": code, "measures": measures})
     put(
         base / "surgeries" / "procedure" / f"{SLUG}.json",
-        {"kind": "procedure", "code": CAT, "slug": SLUG, "hospitals": page_rows},
+        {
+            "kind": "procedure",
+            "code": CAT,
+            "slug": SLUG,
+            "hospitals": page_rows,
+            "benchmarks": benchmarks or new_benchmarks(),
+        },
     )
     put(
         base / "suburbs.json",
@@ -237,9 +293,11 @@ def write_new_hospital(base: Path, spec: Spec, code: str) -> None:
     )
 
 
-def run(tmp_path: Path, old: Spec, new: Spec) -> dict[str, Any]:
+def run(
+    tmp_path: Path, old: Spec, new: Spec, benchmarks: dict[str, Any] | None = None
+) -> dict[str, Any]:
     write_old(tmp_path / "old", old)
-    write_new(tmp_path / "new", new)
+    write_new(tmp_path / "new", new, benchmarks)
     report: dict[str, Any] = parity.compare(
         parity.load_new(tmp_path / "new"), parity.load_old(tmp_path / "old")
     )
@@ -473,12 +531,31 @@ def test_a_new_suppressed_point_with_no_old_figure_is_only_new() -> None:
     assert rows[0]["new"] == {"state": "suppressed", "value": None}
 
 
-def test_old_benchmarks_are_counted_and_the_new_dist_has_none(tmp_path: Path) -> None:
-    report = run(tmp_path, base_spec(), base_spec())
-    bench = report["benchmarks"]
-    assert bench["old_figures"] == bench["old_national_figures"] + bench["old_state_figures"]
-    assert (bench["old_national_figures"], bench["old_state_figures"]) == (2, 2)
-    assert (bench["old_published"], bench["old_suppressed"]) == (3, 1)
-    assert bench["old_by_role"] == {"long_wait": 1, "median_wait": 2, "volume": 1}
-    assert bench["new_figures"] == 0
-    assert "no benchmark counterpart" in bench["status"]
+def test_old_and_new_benchmarks_are_counted_and_compared(tmp_path: Path) -> None:
+    bench = run(tmp_path, base_spec(), base_spec())["benchmarks"]
+    old = bench["old_current"]
+    assert old["figures"] == old["national"] + old["state"]
+    assert (old["national"], old["state"]) == (2, 2)
+    assert (old["published"], old["suppressed"]) == (3, 1)
+    assert old["by_role"] == {"long_wait": 1, "median_wait": 2, "volume": 1}
+    assert bench["new_current"] == bench["new_current_in_shared_categories"]
+    assert (bench["new_current"]["national"], bench["new_current"]["state"]) == (2, 2)
+    assert bench["current"]["by_class"] == {"equal": 4}
+    assert bench["history"]["by_class"] == {"equal": 5}
+    assert bench["new_only_categories"] == []
+
+
+def test_a_revised_benchmark_is_a_difference_with_an_explanation(tmp_path: Path) -> None:
+    bench = run(tmp_path, base_spec(), base_spec(), new_benchmarks(median=100.0))["benchmarks"]
+    assert bench["current"]["by_class"] == {"differs": 1, "equal": 3}
+    assert bench["current"]["explained"] == {"explained": 1}
+    (label,) = bench["current"]["examples"]
+    assert label.startswith("differs (explained)")
+
+
+def test_a_benchmark_missing_from_the_new_dist_is_unexplained(tmp_path: Path) -> None:
+    gone = new_benchmarks()
+    del gone["national"]["volume"]
+    bench = run(tmp_path, base_spec(), base_spec(), gone)["benchmarks"]
+    assert bench["current"]["by_class"] == {"equal": 3, "only_old": 1}
+    assert bench["current"]["explained"] == {"unexplained": 1}

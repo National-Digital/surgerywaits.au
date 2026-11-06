@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import cast
 
-from surgerywaits.waiting_times import Cell, Observation, WaitingTimes
+from surgerywaits.waiting_times import Benchmark, Cell, Observation, WaitingTimes
 
 
 class SuppressionError(Exception):
@@ -115,10 +115,18 @@ class SuppressedObservation:
 
 
 @dataclass(frozen=True)
+class SuppressedBenchmark:
+    benchmark: Benchmark
+    figures: tuple[Figure, ...]
+
+
+@dataclass(frozen=True)
 class SuppressedTable:
     observations: tuple[SuppressedObservation, ...]
     # Counts of published cells and of each reason, in a fixed order.
     counts: tuple[tuple[str, int], ...]
+    # State and national figures: the same states and reasons as hospitals, never ranked.
+    benchmarks: tuple[SuppressedBenchmark, ...] = ()
 
 
 def _gap(where: str, text: str) -> str:
@@ -159,11 +167,22 @@ def suppress(result: WaitingTimes) -> SuppressedTable:
             figures.append(figure)
             tally[figure.reason.value if figure.reason else FigureState.PUBLISHED.value] += 1
         done.append(SuppressedObservation(o, tuple(figures)))
+    benchmarks: list[SuppressedBenchmark] = []
+    for b in result.benchmarks:
+        where = f"{result.table.value} {b.scope} {b.category!r} {b.period}"
+        try:
+            benchmarks.append(
+                SuppressedBenchmark(b, tuple(figure_for_cell(c, where) for c in b.cells))
+            )
+        except SuppressionError as err:
+            problems.append(str(err))
     if problems:
         msg = f"{result.table.value}: {len(problems)} cells fail: " + "; ".join(problems[:20])
         raise SuppressionError(msg)
     order = [FigureState.PUBLISHED.value, *(r.value for r in Reason)]
-    return SuppressedTable(tuple(done), tuple((k, tally[k]) for k in order if tally[k]))
+    return SuppressedTable(
+        tuple(done), tuple((k, tally[k]) for k in order if tally[k]), tuple(benchmarks)
+    )
 
 
 def qld_figures(

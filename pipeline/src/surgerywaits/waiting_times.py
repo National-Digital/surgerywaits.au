@@ -20,8 +20,10 @@ Row = Mapping[str, object]
 MatchedBy = Literal["name", "alternative_name"]
 
 HOSPITAL_LEVEL = "Hospital"
-# Rows above hospital level carry no hospital name, so they are counted and left out.
+# Rows above hospital level carry no hospital name, so they never join the register.
 OTHER_LEVELS = frozenset({"Local Hospital Network", "State", "National"})
+BENCHMARK_LEVELS = frozenset({"State", "National"})
+NATIONAL_SCOPE = "NAT"
 PERIOD = re.compile(r"\d{4}\u2013\d{2}")
 SUPPRESSED_LIST = "suppressed"
 BASE_COLUMNS = ("reporting_unit", "reporting_unit_type", "state", "peer_group", "year", "markers")
@@ -112,11 +114,22 @@ class Observation:
 
 
 @dataclass(frozen=True)
+class Benchmark:
+    # NAT, or the state's short code as the publisher writes it.
+    scope: str
+    period: str
+    category: str
+    # Only the cells that carry a catalogue role; the peer-group columns are left out.
+    cells: tuple[Cell, ...]
+
+
+@dataclass(frozen=True)
 class WaitingTimes:
     table: Table
     observations: tuple[Observation, ...]
-    # Rows above hospital level that were left out, by level.
+    # Every row above hospital level, by level; State and National rows are also kept as benchmarks.
     other_levels: tuple[tuple[str, int], ...]
+    benchmarks: tuple[Benchmark, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -227,22 +240,65 @@ def _identity(o: Observation) -> tuple[str, str, str]:
     return o.code, o.category, o.period
 
 
+def _level(row: Row, where: str) -> str:
+    level = _text(row, "reporting_unit_type", where)
+    if level != HOSPITAL_LEVEL and level not in OTHER_LEVELS:
+        msg = f"{where}: unknown reporting unit type {level!r}"
+        raise WaitingTimesError(msg)
+    return level
+
+
+def _benchmark(row: Row, spec: Spec, where: str) -> Benchmark:
+    scope = _text(row, "state", where)
+    level = row["reporting_unit_type"]
+    if (scope == NATIONAL_SCOPE) != (level == "National"):
+        msg = f"{where}: a {level} row is scoped {scope!r}"
+        raise WaitingTimesError(msg)
+    period = _text(row, "year", where)
+    if not PERIOD.fullmatch(period):
+        msg = f"{where}: {period!r} is not a reference period"
+        raise WaitingTimesError(msg)
+    markers = _markers(row, spec.columns, where)
+    cells = tuple(
+        Cell(c.name, c.role, _number(row, c, where), markers.get(c.name))
+        for c in spec.columns
+        if c.role is not None
+    )
+    return Benchmark(scope, period, _text(row, spec.category_column, where), cells)
+
+
+def _unique_benchmarks(table: Table, found: list[Benchmark]) -> tuple[Benchmark, ...]:
+    ordered = sorted(found, key=lambda b: (b.category, b.scope, b.period))
+    for before, after in itertools.pairwise(ordered):
+        if (before.category, before.scope, before.period) == (
+            after.category,
+            after.scope,
+            after.period,
+        ):
+            msg = (
+                f"{table.value}: {after.scope} has two benchmark rows for "
+                f"{after.category!r} in {after.period}"
+            )
+            raise WaitingTimesError(msg)
+    return tuple(ordered)
+
+
 def build(rows: Sequence[Row], table: Table, register: Register) -> WaitingTimes:
     """Every hospital row joined to a register code, or a WaitingTimesError naming each failure."""
     spec = SPECS[table]
     _check_columns(rows, spec)
     index = HospitalIndex(register)
     observations: list[Observation] = []
+    benchmarks: list[Benchmark] = []
     failures: dict[tuple[str, str], str] = {}
     levels: Counter[str] = Counter()
     for i, row in enumerate(rows):
         where = f"{table.value} row {i}"
-        level = _text(row, "reporting_unit_type", where)
+        level = _level(row, where)
         if level != HOSPITAL_LEVEL:
-            if level not in OTHER_LEVELS:
-                msg = f"{where}: unknown reporting unit type {level!r}"
-                raise WaitingTimesError(msg)
             levels[level] += 1
+            if level in BENCHMARK_LEVELS:
+                benchmarks.append(_benchmark(row, spec, where))
             continue
         name, state = _text(row, "reporting_unit", where), _text(row, "state", where)
         found = index.match(name, state)
@@ -284,7 +340,12 @@ def build(rows: Sequence[Row], table: Table, register: Register) -> WaitingTimes
                 f"in {after.period} ({before.published_name!r} and {after.published_name!r})"
             )
             raise WaitingTimesError(msg)
-    return WaitingTimes(table, tuple(ordered), tuple(sorted(levels.items())))
+    return WaitingTimes(
+        table,
+        tuple(ordered),
+        tuple(sorted(levels.items())),
+        _unique_benchmarks(table, benchmarks),
+    )
 
 
 def load(path: Path, table: Table, register: Register) -> WaitingTimes:

@@ -176,6 +176,24 @@ def derive_table(
     return tuple(out), newest
 
 
+def trend_points(found: list[tuple[str, Figure]]) -> tuple[TrendPoint, ...]:
+    """One point for each (period, figure), oldest first, with a change across consecutive years."""
+    points: list[TrendPoint] = []
+    ordered = sorted(found, key=lambda pf: pf[0])
+    for earlier, later in itertools.pairwise([None, *ordered]):
+        assert later is not None  # noqa: S101
+        change: Number | None = None
+        if (
+            earlier is not None
+            and _start_year(later[0]) == _start_year(earlier[0]) + 1
+            and earlier[1].value is not None
+            and later[1].value is not None
+        ):
+            change = later[1].value - earlier[1].value
+        points.append(TrendPoint(later[0], later[1], change))
+    return tuple(points)
+
+
 def derive_trends(table: Table, suppressed: SuppressedTable) -> tuple[Trend, ...]:
     series: dict[tuple[str, str, Role], list[tuple[str, Figure]]] = {}
     for o in suppressed.observations:
@@ -186,20 +204,7 @@ def derive_trends(table: Table, suppressed: SuppressedTable) -> tuple[Trend, ...
     for (code, category, role), found in sorted(
         series.items(), key=lambda kv: (kv[0][1], kv[0][0], ROLE_ORDER.index(kv[0][2]))
     ):
-        found.sort(key=lambda pf: pf[0])
-        points: list[TrendPoint] = []
-        for earlier, later in itertools.pairwise([None, *found]):
-            assert later is not None  # noqa: S101
-            change: Number | None = None
-            if (
-                earlier is not None
-                and _start_year(later[0]) == _start_year(earlier[0]) + 1
-                and earlier[1].value is not None
-                and later[1].value is not None
-            ):
-                change = later[1].value - earlier[1].value
-            points.append(TrendPoint(later[0], later[1], change))
-        trends.append(Trend(table, code, category, role, tuple(points)))
+        trends.append(Trend(table, code, category, role, trend_points(found)))
     return tuple(trends)
 
 

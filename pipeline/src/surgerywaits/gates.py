@@ -146,6 +146,29 @@ def check_slugs(docs: Mapping[str, tuple[str, dict[str, Any]]]) -> None:
     _unique("network code", (c.lower() for c in networks))
 
 
+def check_benchmarks(docs: Mapping[str, tuple[str, dict[str, Any]]]) -> None:
+    """Each state file repeats exactly what the surgery files say about its benchmarks."""
+    expected: dict[str, list[tuple[str, str, Any, Any]]] = {}
+    for _, (kind, d) in sorted(docs.items()):
+        if kind != "surgery":
+            continue
+        b = d["benchmarks"]
+        for e in b["states"]:
+            expected.setdefault(e["state"], []).append(
+                (d["kind"], d["slug"], e["measures"], b["national"])
+            )
+    found: dict[str, list[tuple[str, str, Any, Any]]] = {
+        d["state"]: [(r["kind"], r["slug"], r["measures"], r["national"]) for r in d["surgeries"]]
+        for _, (kind, d) in sorted(docs.items())
+        if kind == "state"
+    }
+    order = {"urgency": 0, "procedure": 1, "specialty": 2}
+    want = {k: sorted(v, key=lambda r: (order[r[0]], r[1])) for k, v in expected.items()}
+    if found != want:
+        msg = "the state files and the surgery files disagree about the benchmarks"
+        raise GateError(msg)
+
+
 def check_docs(entries: Sequence[Entry], docs: Mapping[str, tuple[str, dict[str, Any]]]) -> None:
     credited = _credited(docs)
     check_licences(e for e in entries if e.slug in credited)
@@ -161,3 +184,4 @@ def check_docs(entries: Sequence[Entry], docs: Mapping[str, tuple[str, dict[str,
             msg = f"{path} cites sources with no credit: {', '.join(missing)}"
             raise GateError(msg)
     check_slugs(docs)
+    check_benchmarks(docs)

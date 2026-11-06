@@ -86,7 +86,51 @@ def _trend_problem(document: Mapping[str, Any]) -> str | None:
     return None
 
 
-SEMANTIC_CHECKS: Mapping[str, Callable[[Mapping[str, Any]], str | None]] = {"trend": _trend_problem}
+_STATE_ORDER = ("NSW", "Vic", "Qld", "WA", "SA", "Tas", "ACT", "NT")
+
+
+def _stamp_problem(measures: Mapping[str, Any] | None, period: str, release: str) -> str | None:
+    for role, figure in (measures or {}).items():
+        if figure["period"] != period or figure["release"] != release:
+            return f"the {role} figure's period or release is not the page's"
+    return None
+
+
+def _benchmark_problem(document: Mapping[str, Any]) -> str | None:
+    """A benchmark states the page's period and release, and its history has no gaps in change."""
+    b = document["benchmarks"]
+    where = "benchmarks"
+    stamps = [("national", b["national"]), *((e["state"], e["measures"]) for e in b["states"])]
+    for scope, measures in stamps:
+        if problem := _stamp_problem(measures, document["period"], document["release"]):
+            return f"{where}/{scope}: {problem}"
+    scopes = [e["state"] for e in b["states"]]
+    if len(scopes) != len(set(scopes)) or scopes != sorted(scopes, key=_STATE_ORDER.index):
+        return f"{where}/states: a state is listed twice or out of order"
+    keys = [(s["scope"], s["role"]) for s in b["trends"]]
+    if len(keys) != len(set(keys)):
+        return f"{where}/trends: a scope and role has two series"
+    for i, series in enumerate(b["trends"]):
+        if problem := _series_problem(series):
+            return f"{where}/trends/{i}: {problem}"
+    if document["kind"] == "urgency" and (b["national"] or scopes or b["trends"]):
+        return f"{where}: the urgency table publishes no benchmark"
+    return None
+
+
+def _state_problem(document: Mapping[str, Any]) -> str | None:
+    for i, row in enumerate(document["surgeries"]):
+        for measures in (row["measures"], row["national"]):
+            if problem := _stamp_problem(measures, row["period"], row["release"]):
+                return f"surgeries/{i}: {problem}"
+    return None
+
+
+SEMANTIC_CHECKS: Mapping[str, Callable[[Mapping[str, Any]], str | None]] = {
+    "trend": _trend_problem,
+    "surgery": _benchmark_problem,
+    "state": _state_problem,
+}
 
 
 def validate(name: str, document: Any, directory: Path = CONTRACT_DIR) -> None:  # noqa: ANN401

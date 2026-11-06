@@ -40,8 +40,8 @@
     "attribution": "Based on Australian Institute of Health and Welfare material. Australian Institute of Health and Welfare, Australian Government, MyHospitals Data API, elective surgery waiting times data extract, sourced 19 October 2026, https://myhospitalsapi.aihw.gov.au/, licensed under CC BY 4.0.",
     "cite": "Based on Australian Institute of Health and Welfare material. Australian Institute of Health and Welfare, Australian Government, MyHospitals Data API, elective surgery waiting times data extract, sourced 19 October 2026, https://myhospitalsapi.aihw.gov.au/, licensed under CC BY 4.0. Serialised and versioned by National Digital at publicdata.au, https://publicdata.au/d/au-elective-surgery-waiting-times-by-procedure/v/2026-10-20/",
     "extract": "au-elective-surgery-waiting-times-by-procedure/data.parquet",
-    "extract_rows": 3865,
-    "extract_sha256": "e6d37ceb0250a448b083fd906bca9775dfc071db30eb842ed2afec4bc17b7cf6",
+    "extract_rows": 5191,
+    "extract_sha256": "c461d42e716a9685fd4f9549d3b07775dda6f5d8dcb65cec18ba154dbabbe6be",
     "licence": "CC-BY-4.0",
     "marker_form": "markers",
     "markers": [
@@ -60,8 +60,8 @@
     "attribution": "Based on Australian Institute of Health and Welfare material. Australian Institute of Health and Welfare, Australian Government, MyHospitals Data API, elective surgery waiting times data extract, sourced 19 October 2026, https://myhospitalsapi.aihw.gov.au/, licensed under CC BY 4.0.",
     "cite": "Based on Australian Institute of Health and Welfare material. Australian Institute of Health and Welfare, Australian Government, MyHospitals Data API, elective surgery waiting times data extract, sourced 19 October 2026, https://myhospitalsapi.aihw.gov.au/, licensed under CC BY 4.0. Serialised and versioned by National Digital at publicdata.au, https://publicdata.au/d/au-elective-surgery-waiting-times-by-specialty/v/2026-10-20/",
     "extract": "au-elective-surgery-waiting-times-by-specialty/data.parquet",
-    "extract_rows": 534,
-    "extract_sha256": "ce79ee8f36d38cc2499f7270b064b43a481485e0a716b04c91673ffbb6eed1f7",
+    "extract_rows": 652,
+    "extract_sha256": "12d3d4d1ae00b63723e31ec2d6e330735f56305c4bdff5256569de9f67ac4d47",
     "licence": "CC-BY-4.0",
     "marker_form": "markers",
     "markers": [

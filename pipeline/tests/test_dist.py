@@ -481,7 +481,7 @@ def _real_build() -> tuple[Inputs, dict[str, bytes], bytes]:
     return inputs, first, second[SUMS]
 
 
-def _real_docs() -> dict[str, Any]:
+def real_docs() -> dict[str, Any]:
     _, files, _ = _real_build()
     return {p: json.loads(d) for p, d in files.items() if p.endswith(".json")}
 
@@ -517,7 +517,7 @@ def test_the_real_dist_credits_every_source_and_holds_no_stray_dates() -> None:
 
 def test_every_real_rank_sits_inside_its_cohort() -> None:
     ranked = 0
-    for path, doc in _real_docs().items():
+    for path, doc in real_docs().items():
         if not path.startswith(("hospitals/", "surgeries/")):
             continue
         entries = doc["hospitals"] if path.startswith("surgeries/") else doc["surgeries"]
@@ -531,7 +531,7 @@ def test_every_real_rank_sits_inside_its_cohort() -> None:
 
 def test_every_real_trend_change_is_the_difference_of_two_published_points() -> None:
     changes = 0
-    for path, doc in _real_docs().items():
+    for path, doc in real_docs().items():
         if not path.startswith("trends/"):
             continue
         for series in doc["series"]:
@@ -556,7 +556,7 @@ def test_every_real_trend_change_is_the_difference_of_two_published_points() -> 
 
 
 def test_every_real_hospital_surgery_says_whether_it_is_stale() -> None:
-    docs = _real_docs()
+    docs = real_docs()
     newest = {t["kind"]: t["newest_period"] for t in docs["index.json"]["tables"]}
     stale = 0
     for path, doc in docs.items():
@@ -580,7 +580,7 @@ def test_a_hospital_without_the_stale_field_is_rejected() -> None:
 
 
 def test_the_hospital_index_carries_each_network_code_and_name() -> None:
-    rows = _real_docs()["hospitals.json"]["hospitals"]
+    rows = real_docs()["hospitals.json"]["hospitals"]
     mapped = [r["network"] for r in rows if r["network"] is not None]
     assert mapped
     assert all(set(n) == {"code", "name"} for n in mapped)

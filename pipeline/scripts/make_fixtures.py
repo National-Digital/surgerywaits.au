@@ -78,6 +78,9 @@ STATE_NAMES = {
     "Vic": "Victoria",
     "Qld": "Queensland",
 }
+# Each kept state, and the national row, with a state benchmark beside the national one.
+BENCHMARK_STATES = {NATIONAL, *STATE_NAMES}
+BENCHMARK_LEVELS = {"State", "National"}
 KEEP_YEARS = 2
 WAITS = "au-elective-surgery-waiting-times"
 SLUGS = [
@@ -171,6 +174,27 @@ def cut_waits(table: pa.Table, names: set[str]) -> pa.Table:
         strict=True,
     )
     keep = [u in names and (y in newest[u] or m is not None) for u, y, m in rows]
+    hospitals = take(table, keep)
+    return pa.concat_tables([hospitals, cut_benchmarks(table, hospitals)])
+
+
+def cut_benchmarks(table: pa.Table, hospitals: pa.Table) -> pa.Table:
+    """State and national rows for the kept categories, in the table's two newest years."""
+    column = next(c for c in CATEGORY_COLUMNS if c in table.column_names)
+    categories = set(hospitals[column].to_pylist())
+    levels = table["reporting_unit_type"].to_pylist()
+    scopes = table["state"].to_pylist()
+    kinds = table[column].to_pylist()
+    years = table["year"].to_pylist()
+    newest = set(
+        sorted({y for y, k in zip(years, levels, strict=True) if k in BENCHMARK_LEVELS})[
+            -KEEP_YEARS:
+        ]
+    )
+    keep = [
+        k in BENCHMARK_LEVELS and s in BENCHMARK_STATES and c in categories and y in newest
+        for k, s, c, y in zip(levels, scopes, kinds, years, strict=True)
+    ]
     return take(table, keep)
 
 
