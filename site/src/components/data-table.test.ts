@@ -150,4 +150,21 @@ describe('sortRows determinism', () => {
     expect(order(input)).toEqual(['a', 'b', 'c', 'k', 'm', 'z']);
     expect(order([...input].reverse())).toEqual(['a', 'b', 'c', 'k', 'm', 'z']);
   });
+
+  it('builds a stated range from structured parts and rejects a malformed one', async () => {
+    const span = { first: '2023–24', last: '2024–25', release: '2026-08-19' };
+    const html = await render(DataTable, { ...props, span });
+    expect(textsOf(html, 'c-table__stamp')).toEqual([
+      '2023–24 to 2024–25, released 19 August 2026',
+    ]);
+    for (const bad of [
+      { ...span, first: '' },
+      { ...span, release: '' },
+      { ...span, first: '2025–26' },
+      { ...span, release: '2025-01-01' },
+      { ...span, last: '2023–24', first: '2023–24' },
+    ]) {
+      await expect(render(DataTable, { ...props, span: bad })).rejects.toThrow();
+    }
+  });
 });

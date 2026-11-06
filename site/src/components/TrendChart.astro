@@ -1,0 +1,245 @@
+---
+import { label } from '../lib/content';
+import { SWATCH, crossPath, markerPath, planChart, tableFigures } from '../lib/chart';
+import type { ChartSeries } from '../lib/chart';
+import type { Role } from '../lib/format';
+import type { TableRow } from '../lib/table';
+import DataTable from './DataTable.astro';
+
+interface Props {
+  id: string;
+  // The accessible name of the picture; the caption beside it is the visible title.
+  name: string;
+  caption: string;
+  role: Role;
+  series: ChartSeries[];
+}
+
+const { id, name, caption, role, series } = Astro.props;
+// A series that disagrees on its release, its periods or its length throws here, so the chart cannot ship.
+const plan = planChart(role, series);
+const figures = tableFigures(role, series, plan.periods, plan.release);
+const rows: TableRow[] = plan.periods.map((period, i) => ({
+  code: period,
+  name: period,
+  cells: (figures[i] ?? []).map((figure) => ({ figure })),
+}));
+const columns = series.map((s) => ({ heading: s.name, role }));
+---
+
+<figure class="c-chart">
+  <figcaption class="c-chart__caption" id={`${id}-caption`}>
+    {caption}
+    <small class="c-chart__stamp">{plan.stamp}</small>
+  </figcaption>
+  <div class="c-chart__scroll" role="region" aria-labelledby={`${id}-caption`} tabindex="0">
+    <svg
+      class="c-chart__plot"
+      viewBox={plan.viewBox}
+      role="img"
+      aria-label={name}
+      aria-describedby={`${id}-caption`}
+    >
+      {plan.ticks.map((tick) => (
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+        <>
+          <line class="c-chart__grid" x1={plan.left} x2={plan.right} y1={tick.y} y2={tick.y} />
+          <text class="c-chart__tick c-chart__tick--end" x={plan.left - 6} y={tick.y}>
+            {tick.text}
+          </text>
+        </>
+      ))}
+      <line
+        class="c-chart__axis"
+        x1={plan.left}
+        x2={plan.right}
+        y1={plan.bottom}
+        y2={plan.bottom}
+      />
+      {plan.xLabels.map((tick) => (
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+        <text class="c-chart__tick c-chart__tick--middle" x={tick.x} y={plan.bottom + 18}>
+          {tick.text}
+        </text>
+      ))}
+      {plan.series.map((s) => (
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+        <g class={`c-chart__series c-chart__series--${s.modifier}`}>
+          {s.segments.map((d) => (
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+            <path class="c-chart__line" {d} stroke-dasharray={s.dash} />
+          ))}
+          {s.dots.map((dot) => (
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+            <path class="c-chart__dot" d={dot.d} />
+          ))}
+          {s.gaps.map((gap) => (
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+            <path class="c-chart__gap" d={gap.d} />
+          ))}
+        </g>
+      ))}
+    </svg>
+  </div>
+  <ul class="c-chart__key" aria-label={label('chart_key')}>
+    {plan.series.map((s) => (
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+      <li class="c-chart__key-item">
+        <svg class="c-chart__swatch" viewBox={SWATCH.viewBox} aria-hidden="true">
+          <g class={`c-chart__series c-chart__series--${s.modifier}`}>
+            <path class="c-chart__line" d={SWATCH.line} stroke-dasharray={s.dash} />
+            <path class="c-chart__dot" d={markerPath(s.shape, SWATCH.x, SWATCH.y)} />
+          </g>
+        </svg>
+        {s.name}
+      </li>
+    ))}
+    {plan.series.some((s) => s.gaps.length > 0) && (
+      <li class="c-chart__key-item">
+        <svg class="c-chart__swatch" viewBox={SWATCH.viewBox} aria-hidden="true">
+          <path class="c-chart__gap" d={crossPath(SWATCH.x, SWATCH.y)} />
+        </svg>
+        {label('chart_gap_key')}
+      </li>
+    )}
+  </ul>
+  <details class="c-chart__table">
+    <summary class="c-chart__summary">{label('chart_table_summary')}</summary>
+    <DataTable
+      id={`${id}-table`}
+      {caption}
+      rowHeading={label('chart_period_heading')}
+      {columns}
+      {rows}
+      span={plan.span}
+    />
+  </details>
+</figure>
+
+<style>
+  @layer components {
+    .c-chart {
+      margin: 0 0 var(--space-6);
+      padding: var(--space-4);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-md);
+      background: var(--card);
+    }
+
+    .c-chart__caption {
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .c-chart__stamp {
+      display: block;
+      margin-block-start: var(--space-1);
+      font-size: var(--fs-small);
+      font-weight: 400;
+      color: var(--muted);
+    }
+
+    .c-chart__scroll {
+      overflow-x: auto;
+      margin-block: var(--space-3);
+    }
+
+    .c-chart__plot {
+      display: block;
+      width: 100%;
+      min-width: 24rem;
+      height: auto;
+    }
+
+    .c-chart__grid {
+      stroke: var(--grid);
+      stroke-width: 1;
+    }
+
+    .c-chart__axis {
+      stroke: var(--axis);
+      stroke-width: 1;
+    }
+
+    .c-chart__tick {
+      fill: var(--muted);
+      font: var(--fs-label) var(--sans);
+    }
+
+    .c-chart__tick--end {
+      text-anchor: end;
+      dominant-baseline: central;
+    }
+
+    .c-chart__tick--middle {
+      text-anchor: middle;
+    }
+
+    .c-chart__line {
+      fill: none;
+      stroke: var(--series);
+      stroke-width: 2.5;
+      stroke-linejoin: round;
+    }
+
+    .c-chart__dot {
+      fill: var(--series);
+      stroke: var(--card);
+      stroke-width: 1;
+    }
+
+    .c-chart__gap {
+      fill: none;
+      stroke: var(--ink-2);
+      stroke-width: 1.5;
+    }
+
+    .c-chart__series--first {
+      --series: var(--s1);
+    }
+
+    .c-chart__series--second {
+      --series: var(--s2);
+    }
+
+    .c-chart__series--third {
+      --series: var(--s3);
+    }
+
+    .c-chart__series--fourth {
+      --series: var(--s4);
+    }
+
+    .c-chart__key {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2) var(--space-5);
+      margin: 0 0 var(--space-3);
+      padding: 0;
+      list-style: none;
+      font-size: var(--fs-small);
+      color: var(--ink-2);
+    }
+
+    .c-chart__key-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .c-chart__swatch {
+      flex: none;
+      width: 2rem;
+      height: 0.75rem;
+    }
+
+    .c-chart__summary {
+      display: flex;
+      align-items: center;
+      min-height: var(--target);
+      color: var(--accent);
+      font-weight: 700;
+      cursor: pointer;
+    }
+  }
+</style>

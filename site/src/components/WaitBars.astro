@@ -1,0 +1,186 @@
+---
+import { label } from '../lib/content';
+import { formatFigure, formatStamp, isPublished } from '../lib/format';
+import type { Figure, Role } from '../lib/format';
+import { BAR, barWidth, publishedValue } from '../lib/chart';
+import { assertTable } from '../lib/table';
+
+interface Bar {
+  name: string;
+  href?: string;
+  figure: Figure;
+  stale?: boolean;
+}
+
+// The caller sorts by the measured values; the bars keep the order they are given.
+interface Props {
+  id: string;
+  caption: string;
+  role: Role;
+  bars: Bar[];
+}
+
+const { id, caption, role, bars } = Astro.props;
+// Current bars that disagree on their period or release throw here, as they do in a table.
+const stamp = assertTable(
+  [{ role }],
+  bars.map((bar) => ({
+    code: bar.name,
+    name: bar.name,
+    ...(bar.stale === true ? { stale: true } : {}),
+    cells: [{ figure: bar.figure }],
+  })),
+);
+const items = bars.map((bar) => ({ ...bar, value: publishedValue(bar.figure) }));
+const values = items.flatMap((item) => (item.value === null ? [] : [item.value]));
+const peak = Math.max(...values, 0);
+---
+
+<figure class="c-waits">
+  <figcaption class="c-waits__caption" id={`${id}-caption`}>
+    {caption}
+    <small class="c-waits__stamp">{stamp}</small>
+  </figcaption>
+  <ol class="c-waits__list" aria-labelledby={`${id}-caption`}>
+    {items.map((bar) => (
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+      <li class:list={['c-waits__item', { 'c-waits__item--earlier': bar.stale === true }]}>
+        <span class="c-waits__label">
+          {bar.href !== undefined ? <a href={bar.href}>{bar.name}</a> : bar.name}
+          {bar.stale === true && (
+            <small class="c-waits__marker">{label('table_earlier_marker')}</small>
+          )}
+        </span>
+        <span class:list={['c-waits__value', { 'is-not-published': !isPublished(bar.figure) }]}>
+          {formatFigure(role, bar.figure)}
+        </span>
+        {bar.stale === true && <small class="c-waits__period">{formatStamp(bar.figure)}</small>}
+        {bar.value !== null && (
+          <svg
+            class="c-wait-bar"
+            viewBox={BAR.viewBox}
+            preserveAspectRatio={BAR.ratio}
+            aria-hidden="true"
+          >
+            <rect
+              class="c-wait-bar__track"
+              x={BAR.origin}
+              y={BAR.origin}
+              width={BAR.width}
+              height={BAR.height}
+            />
+            <rect
+              class="c-wait-bar__fill"
+              x={BAR.origin}
+              y={BAR.origin}
+              width={barWidth(role, bar.value, peak)}
+              height={BAR.height}
+            />
+            {bar.value === 0 && (
+              <rect
+                class="c-wait-bar__marker"
+                x={BAR.origin}
+                y={BAR.origin}
+                width={BAR.marker}
+                height={BAR.height}
+              />
+            )}
+          </svg>
+        )}
+      </li>
+    ))}
+  </ol>
+</figure>
+
+<style>
+  @layer components {
+    .c-waits {
+      margin: 0 0 var(--space-6);
+      padding: var(--space-4);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-md);
+      background: var(--card);
+    }
+
+    .c-waits__caption {
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .c-waits__stamp {
+      display: block;
+      margin-block-start: var(--space-1);
+      font-size: var(--fs-small);
+      font-weight: 400;
+      color: var(--muted);
+    }
+
+    .c-waits__list {
+      display: grid;
+      gap: var(--space-4);
+      margin: var(--space-4) 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .c-waits__item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: var(--space-1) var(--space-4);
+      align-items: baseline;
+    }
+
+    .c-waits__label {
+      overflow-wrap: break-word;
+      font-weight: 700;
+    }
+
+    .c-waits__value {
+      font: var(--fs-figure-sm) / 1.3 var(--serif);
+      max-width: 12rem;
+      font-variant-numeric: tabular-nums;
+      text-align: end;
+    }
+
+    .c-waits__value.is-not-published {
+      font: italic 400 var(--fs-small) / var(--lh-body) var(--sans);
+      color: var(--ink-2);
+    }
+
+    .c-waits__marker,
+    .c-waits__period {
+      display: block;
+      font-size: var(--fs-small);
+      font-weight: 400;
+      color: var(--ink-2);
+    }
+
+    .c-waits__item--earlier .c-waits__label {
+      padding-inline-start: var(--space-2);
+      border-inline-start: var(--space-1) solid var(--muted);
+    }
+
+    .c-waits__period {
+      grid-column: 1 / -1;
+    }
+
+    .c-wait-bar {
+      grid-column: 1 / -1;
+      display: block;
+      width: 100%;
+      height: 0.75rem;
+    }
+
+    .c-wait-bar__track {
+      fill: var(--wait-track);
+    }
+
+    .c-wait-bar__fill {
+      fill: var(--wait-fill);
+    }
+
+    .c-wait-bar__marker {
+      fill: var(--ink);
+    }
+  }
+</style>

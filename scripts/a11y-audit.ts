@@ -71,6 +71,7 @@ export const PROOF: Proof[] = [
   { check: 'painted contrast', rule: 'painted-contrast', fixture: 'fail/painted-contrast.html' },
   { check: 'root scale', rule: 'root-scale', fixture: 'fail/root-scale.html' },
   { check: 'type size', rule: 'type-floor', fixture: 'fail/type-floor.html' },
+  { check: 'type size, svg', rule: 'type-floor', fixture: 'fail/type-floor-svg.html' },
   { check: 'line length', rule: 'measure', fixture: 'fail/measure.html' },
   { check: 'target size', rule: 'target-size', fixture: 'fail/target-size.html' },
   {

@@ -14,6 +14,10 @@ qld_percent_treated_in_time: Treated within the recommended time
 qld_percent_change_treated_on_prior_year: Change in patients treated on the year before
 table_earlier_marker: Earlier period
 table_scroll_hint: This table scrolls sideways on a narrow screen.
+chart_period_heading: Financial year
+chart_table_summary: Show the figures as a table
+chart_key: Key to the chart
+chart_gap_key: No figure published for this year. The table gives the reason.
 title_primitives: Figure, tile and table preview
 preview_heading: Figure, tile and table preview
 preview_intro: This page shows each state of the figure, tile and table, using the fixture data. It is a development preview and is not part of the published site.
@@ -47,3 +51,12 @@ footer_safety_full: Surgery Waits is not medical advice. It republishes official
 footer_safety_compact: Surgery Waits is not medical advice. Your general practitioner and your treating specialist can help you decide what is right for you.
 footer_emergency: In an emergency, call 000.
 footer_exclusion: Private hospitals are not included. The figures cover public hospitals only.
+preview_chart: Trend chart
+preview_chart_gap: Trend chart with years the source withheld
+preview_chart_caption: Median wait by financial year
+preview_chart_name: Median wait by financial year at the sample hospital, with the national figure
+preview_chart_this: This hospital
+preview_chart_national: Australia
+preview_chart_table_caption: Median wait by financial year, with years the source withheld
+preview_wait_bars: Wait bars
+preview_wait_bars_caption: Median wait, in the order the table gives

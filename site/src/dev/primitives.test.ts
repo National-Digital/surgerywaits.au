@@ -34,7 +34,8 @@ describe('the primitives preview page', () => {
 
   it('shows the data table with one stamp, a stale row and a withheld cell', async () => {
     const html = await render(primitives, {});
-    expect(textsOf(html, 'c-table__stamp')).toHaveLength(1);
+    // The two chart tables each state their own range.
+    expect(textsOf(html, 'c-table__stamp')).toHaveLength(3);
     expect(textsOf(html, 'c-table__marker').length).toBeGreaterThan(0);
     expect(textsOf(html, 'c-table__rank').length).toBeGreaterThan(0);
     expect(textsOf(html, 'c-table__value').join(' ')).toContain('not published');
@@ -45,5 +46,14 @@ describe('the primitives preview page', () => {
     expect(textsOf(html, 'c-safety__heading')).toHaveLength(1);
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
     expect(textsOf(html, 'c-passport__citation').length).toBeGreaterThan(0);
+  });
+
+  it('shows both charts with a gap marker and the wait bars with a withheld value', async () => {
+    const html = await render(primitives, {});
+    expect(textsOf(html, 'c-chart__stamp')).toHaveLength(2);
+    expect(html.match(/role="img"/g)).toHaveLength(2);
+    expect(html).toContain('c-chart__gap');
+    expect(textsOf(html, 'c-waits__stamp')).toHaveLength(1);
+    expect(html).not.toMatch(/<script/i);
   });
 });

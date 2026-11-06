@@ -1,4 +1,4 @@
-import { formatStamp, isPublished } from './format';
+import { formatDate, formatPeriod, formatStamp, isPublished } from './format';
 import { assertCurrent } from './tile';
 import type { Figure, Role } from './format';
 
@@ -36,8 +36,43 @@ function tableStamp(rows: readonly TableRow[]): string {
   return [...stamps][0] ?? '';
 }
 
-export function assertTable(columns: readonly unknown[], rows: readonly TableRow[]): string {
-  const stamp = tableStamp(rows);
+// A table across periods names the first and last period and the one release; the words are built here.
+export interface Span {
+  first: string;
+  last: string;
+  release: string;
+}
+
+export function spanStamp(span: Span): string {
+  if (span.first === '' || span.last === '' || span.first > span.last || span.release === '') {
+    throw new RangeError('a span needs a first period, a last period after it, and a release');
+  }
+  return `${formatPeriod(span.first)} to ${formatPeriod(span.last)}, released ${formatDate(span.release)}`;
+}
+
+function assertWithin(rows: readonly TableRow[], span: Span): void {
+  for (const row of rows.filter((r) => r.stale !== true)) {
+    for (const { figure } of row.cells) {
+      if (
+        figure.release !== span.release ||
+        figure.period < span.first ||
+        figure.period > span.last
+      ) {
+        throw new RangeError('a figure falls outside the period range or release the table states');
+      }
+    }
+  }
+}
+
+export function assertTable(
+  columns: readonly unknown[],
+  rows: readonly TableRow[],
+  span?: Span,
+): string {
+  const stamp = span === undefined ? tableStamp(rows) : spanStamp(span);
+  if (span !== undefined) {
+    assertWithin(rows, span);
+  }
   for (const row of rows) {
     if (row.cells.length !== columns.length) {
       throw new RangeError('a row needs one cell for each column');

@@ -24,7 +24,9 @@ import {
 } from '../lib/content-files';
 import DataTable from '../components/DataTable.astro';
 import Figure from '../components/Figure.astro';
-import { surgeryTables } from '../dev/preview';
+import primitives from '../dev/primitives.astro';
+import { sampleCharts, surgeryTables } from '../dev/preview';
+import { planChart } from '../lib/chart';
 import {
   DistError,
   distDirectory,
@@ -267,7 +269,22 @@ describe('Accessibility', () => {
   it.todo('no page scrolls sideways at 320 CSS pixels wide');
   it.todo('with the WCAG text-spacing settings forced, nothing is cut off');
   it.todo("every size is relative, so a reader's own browser text size applies");
-  it.todo('colour is never the only carrier of meaning');
+  // The charts and bars are the only marks that carry data in colour, so the gate covers them.
+  it('colour is never the only carrier of meaning', async () => {
+    const { plain, gaps } = sampleCharts({ hospital: 'This hospital', national: 'Australia' });
+    for (const { series } of [plain, gaps]) {
+      const plan = planChart('median_wait', series);
+      const marks = plan.series.map((s) => `${s.shape}|${s.dash ?? ''}`);
+      expect(new Set(marks).size).toBe(marks.length);
+      expect(plan.series.every((s) => s.name !== '')).toBe(true);
+    }
+    const html = await render(primitives, {});
+    const items = textsOf(html, 'c-waits__label').length;
+    expect(items).toBeGreaterThan(0);
+    expect(textsOf(html, 'c-waits__value')).toHaveLength(items);
+    expect(textsOf(html, 'c-waits__value').every((t) => t !== '')).toBe(true);
+    expect(html.match(/<details/g)?.length).toBeGreaterThanOrEqual(2);
+  });
 });
 
 describe('Contrast', () => {
