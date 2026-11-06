@@ -76,6 +76,14 @@ describe('formatCount and formatSurgeries', () => {
   });
 });
 
+describe('formatKilometres', () => {
+  it('uses the singular for one kilometre and groups thousands', () => {
+    expect(format.formatKilometres(1)).toBe('1 kilometre');
+    expect(format.formatKilometres(188)).toBe('188 kilometres');
+    expect(format.formatKilometres(1250)).toBe('1,250 kilometres');
+  });
+});
+
 describe('formatPercent', () => {
   it.each([
     [0.268, '26.8%'],
@@ -378,6 +386,7 @@ describe('every export', () => {
     formatCount: () => format.formatCount(0),
     formatDays: () => format.formatDays(0),
     formatSurgeries: () => format.formatSurgeries(0),
+    formatKilometres: () => format.formatKilometres(0),
     formatPercent: () => format.formatPercent('on_time', 0),
     formatQueenslandFigure: () => format.formatQueenslandFigure('treated', qldPublished),
     formatPercentPoints: () => format.formatPercentPoints(0),

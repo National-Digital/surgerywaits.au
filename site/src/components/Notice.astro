@@ -1,0 +1,37 @@
+---
+interface Props {
+  id: string;
+  heading: string;
+}
+
+const { id, heading } = Astro.props;
+---
+
+<section class="c-notice" aria-labelledby={id}>
+  <h2 class="c-notice__heading" id={id}>
+    {heading}
+  </h2>
+  <slot />
+</section>
+
+<style>
+  @layer components {
+    .c-notice {
+      margin-block: var(--space-5);
+      padding: var(--space-3) var(--space-5);
+      border: 1px solid var(--hairline);
+      border-inline-start: var(--space-1) solid var(--accent);
+      border-radius: var(--radius-sm);
+      background: var(--card-2);
+    }
+
+    .c-notice__heading {
+      margin-block: 0 var(--space-2);
+      font-size: 1.125rem;
+    }
+
+    .c-notice p {
+      margin-block: 0;
+    }
+  }
+</style>

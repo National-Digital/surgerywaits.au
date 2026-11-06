@@ -5,15 +5,27 @@ import CompareBar from '../components/CompareBar.astro';
 import Footer from '../components/Footer.astro';
 import Masthead from '../components/Masthead.astro';
 import SkipLink from '../components/SkipLink.astro';
+import { getSite } from '../lib/content';
 
 interface Props {
   title: string;
+  description?: string;
+  // The page's own path; the origin comes from the site entity.
+  canonicalPath?: string;
   noindex?: boolean;
   compactFooter?: boolean;
   compareBar?: boolean;
 }
 
-const { title, noindex = false, compactFooter = false, compareBar = true } = Astro.props;
+const {
+  title,
+  description,
+  canonicalPath,
+  noindex = false,
+  compactFooter = false,
+  compareBar = true,
+} = Astro.props;
+const canonical = canonicalPath === undefined ? undefined : new URL(canonicalPath, getSite().url);
 ---
 
 <!doctype html>
@@ -22,6 +34,8 @@ const { title, noindex = false, compactFooter = false, compareBar = true } = Ast
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
+    {description !== undefined && <meta name="description" content={description} />}
+    {canonical !== undefined && <link rel="canonical" href={canonical.href} />}
     {noindex && <meta name="robots" content="noindex" />}
   </head>
   <body>

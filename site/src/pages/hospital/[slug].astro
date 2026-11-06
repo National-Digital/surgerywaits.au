@@ -1,0 +1,251 @@
+---
+// Base comes first so its global sheet, and with it the layer order, precedes every component sheet.
+import Base from '../../layouts/Base.astro';
+import AboutCard from '../../components/AboutCard.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import DataPassport from '../../components/DataPassport.astro';
+import DataTable from '../../components/DataTable.astro';
+import NearbyHospitals from '../../components/NearbyHospitals.astro';
+import Notice from '../../components/Notice.astro';
+import QueenslandTiles from '../../components/QueenslandTiles.astro';
+import SafetyBlock from '../../components/SafetyBlock.astro';
+import StatTile from '../../components/StatTile.astro';
+import StatTiles from '../../components/StatTiles.astro';
+import TrendChart from '../../components/TrendChart.astro';
+import { getHospitalTemplate, getSite, label } from '../../lib/content';
+import { formatKilometres, formatQuarter } from '../../lib/format';
+import {
+  HOSPITALS_PATH,
+  hasCurrentFigures,
+  hospitalPath,
+  hospitalSlugs,
+  latestPeriod,
+  loadHospital,
+  newestQuarter,
+  sourcesOf,
+  procedureTable,
+  queenslandTiles,
+  specialtyTable,
+  TABLE_ROLES,
+  trendCharts,
+  urgencyTiles,
+} from '../../lib/hospital-page';
+import { isBuilt } from '../../lib/links';
+import { fill } from '../../lib/slots';
+import type { Role } from '../../lib/format';
+
+interface Props {
+  slug: string;
+}
+
+export function getStaticPaths(): { params: { slug: string }; props: Props }[] {
+  return hospitalSlugs().map((slug) => ({ params: { slug }, props: { slug } }));
+}
+
+const { slug } = Astro.props;
+const t = getHospitalTemplate();
+const data = loadHospital(slug);
+const { hospital, queensland } = data;
+const state = t.states[hospital.state];
+const site = getSite().name;
+
+const roleLabel: Record<Role, string> = {
+  median_wait: label('role_median_wait'),
+  volume: label('role_volume'),
+  long_wait: label('role_long_wait'),
+  on_time: label('role_on_time'),
+};
+
+const title = fill(hospital.closed ? t.title_closed : t.title, { hospital: hospital.name, site });
+const description = hospital.closed
+  ? fill(t.description_closed, { hospital: hospital.name })
+  : fill(t.description, { hospital: hospital.name, state, period: latestPeriod(hospital) });
+
+const crumbs = [
+  { label: t.crumb_home, href: '/' },
+  ...(isBuilt(HOSPITALS_PATH) ? [{ label: t.crumb_hospitals, href: HOSPITALS_PATH }] : []),
+  { label: hospital.name },
+];
+
+const about = [
+  { term: t.about_state, value: state },
+  { term: t.about_network, value: hospital.network?.name ?? t.network_none },
+  { term: t.about_status, value: hospital.closed ? t.status_closed : t.status_open },
+  ...(hospital.alternative_names.length > 0
+    ? [{ term: t.about_names, value: hospital.alternative_names.join('; ') }]
+    : []),
+];
+
+const order = Object.keys(t.urgency);
+const tiles = urgencyTiles(data, t.urgency, order);
+const procedures = procedureTable(hospital);
+const specialties = specialtyTable(hospital);
+const columns = TABLE_ROLES.map((role) => ({ heading: roleLabel[role], role }));
+const charts = trendCharts(data.trend, t.urgency, order);
+const chartText: Record<Role, { name: string; caption: string }> = {
+  median_wait: {
+    name: fill(t.chart_median_name, { hospital: hospital.name }),
+    caption: fill(t.chart_median_caption, { hospital: hospital.name }),
+  },
+  on_time: {
+    name: fill(t.chart_on_time_name, { hospital: hospital.name }),
+    caption: fill(t.chart_on_time_caption, { hospital: hospital.name }),
+  },
+  volume: { name: '', caption: '' },
+  long_wait: { name: '', caption: '' },
+};
+const quarter = queensland === null ? undefined : newestQuarter(queensland);
+const nearby = hospital.nearby;
+const nearbyItems =
+  nearby?.hospitals.map((n) => ({
+    name: n.name,
+    href: n.slug === null ? undefined : hospitalPath(n.slug),
+    distance: fill(t.nearby_distance, { distance: formatKilometres(n.distance_km) }),
+  })) ?? [];
+---
+
+<Base title={title} description={description} canonicalPath={hospitalPath(hospital.slug)}>
+  <div class="o-columns">
+    <Breadcrumbs items={crumbs} />
+    <h1>{hospital.name}</h1>
+    <p>{fill(hospital.closed ? t.lede_closed : t.lede, { state })}</p>
+
+    {hospital.closed && (
+      <Notice id="closed-heading" heading={t.closed_heading}>
+        <p>{fill(t.closed_notice, { hospital: hospital.name })}</p>
+      </Notice>
+    )}
+    {!hospital.closed && !hasCurrentFigures(hospital) && (
+      <Notice id="earlier-heading" heading={t.earlier_only_heading}>
+        <p>{fill(t.earlier_only_notice, { hospital: hospital.name })}</p>
+      </Notice>
+    )}
+
+    <AboutCard id="about-heading" heading={t.about_heading} rows={about} />
+
+    {hospital.closed && nearbyItems.length > 0 && (
+      <NearbyHospitals
+        id="nearby-heading"
+        heading={t.nearby_heading_closed}
+        intro={fill(t.nearby_intro, { hospital: hospital.name })}
+        items={nearbyItems}
+      />
+    )}
+
+    {tiles.length > 0 && (
+      <section aria-labelledby="urgency-heading">
+        <h2 id="urgency-heading">{t.urgency_heading}</h2>
+        <p>{t.urgency_intro}</p>
+        <p>{t.urgency_note}</p>
+        <p>{t.ranking}</p>
+        <StatTiles>
+          {tiles.map((tile) => (
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+            <StatTile
+              heading={fill(t.tile_heading, {
+                measure: roleLabel[tile.measure],
+                category: tile.category,
+              })}
+              role={tile.measure}
+              figure={tile.figure}
+              stale={tile.stale}
+              {...(tile.rank ? { rank: tile.rank } : {})}
+              change={tile.change}
+            />
+          ))}
+        </StatTiles>
+      </section>
+    )}
+  </div>
+
+  {procedures !== null && (
+    <section aria-labelledby="procedures-heading">
+      <div class="o-columns">
+        <h2 id="procedures-heading">{t.procedures_heading}</h2>
+        <p>{t.procedures_intro}</p>
+      </div>
+      <DataTable
+        id="procedures"
+        caption={fill(t.procedures_caption, { hospital: hospital.name })}
+        rowHeading={t.procedures_row_heading}
+        columns={columns}
+        rows={procedures.rows}
+        {...(procedures.span ? { span: procedures.span } : {})}
+      />
+    </section>
+  )}
+
+  {specialties !== null && (
+    <section aria-labelledby="specialties-heading">
+      <div class="o-columns">
+        <h2 id="specialties-heading">{t.specialties_heading}</h2>
+        <p>{t.specialties_intro}</p>
+      </div>
+      <DataTable
+        id="specialties"
+        caption={fill(t.specialties_caption, { hospital: hospital.name })}
+        rowHeading={t.specialties_row_heading}
+        columns={columns}
+        rows={specialties.rows}
+        {...(specialties.span ? { span: specialties.span } : {})}
+      />
+    </section>
+  )}
+
+  <div class="o-columns">
+    {charts.length > 0 && (
+      <section aria-labelledby="trends-heading">
+        <h2 id="trends-heading">{t.trends_heading}</h2>
+        <p>{t.trends_intro}</p>
+        {charts.map((chart) => (
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+          <TrendChart
+            id={chart.id}
+            name={chartText[chart.role].name}
+            caption={chartText[chart.role].caption}
+            role={chart.role}
+            series={chart.series}
+          />
+        ))}
+      </section>
+    )}
+
+    {quarter !== undefined && (
+      <section aria-labelledby="qld-heading">
+        <h2 id="qld-heading">{t.qld_heading}</h2>
+        <p>{fill(t.qld_intro, { hospital: hospital.name })}</p>
+        <h3>{fill(t.qld_quarter, { quarter: formatQuarter(quarter.period_end) })}</h3>
+        <QueenslandTiles
+          tiles={queenslandTiles(quarter, {
+            treated: label('qld_treated'),
+            timely: label('qld_percent_treated_in_time'),
+            change: label('qld_percent_change_treated_on_prior_year'),
+          })}
+        />
+      </section>
+    )}
+
+    {!hospital.closed && nearbyItems.length > 0 && (
+      <NearbyHospitals
+        id="nearby-heading"
+        heading={t.nearby_heading}
+        intro={fill(t.nearby_intro, { hospital: hospital.name })}
+        items={nearbyItems}
+      />
+    )}
+    {nearbyItems.length === 0 && (
+      <section aria-labelledby="nearby-heading">
+        <h2 id="nearby-heading">{hospital.closed ? t.nearby_heading_closed : t.nearby_heading}</h2>
+        <p>{fill(t.nearby_none, { hospital: hospital.name })}</p>
+      </section>
+    )}
+
+    <section aria-labelledby="exclusion-heading">
+      <h2 id="exclusion-heading">{t.exclusion_heading}</h2>
+      <p>{t.exclusion}</p>
+    </section>
+
+    <SafetyBlock id="hospital-safety-heading" />
+    <DataPassport sources={sourcesOf(data)} />
+  </div>
+</Base>

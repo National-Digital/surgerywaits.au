@@ -7,6 +7,8 @@ export const OPERATOR_SLOT = '{operator}';
 
 export const siteSchema = z.strictObject({
   name: text,
+  // Canonical URLs are this origin plus a page path.
+  url: httpsUrl,
   operator: z.strictObject({
     name: text,
     line: text.refine((line) => line.split(OPERATOR_SLOT).length === 2, {
@@ -103,6 +105,82 @@ export const pageSchema = z.strictObject({
 export const termsSchema = z.strictObject({
   terms: z.array(z.strictObject({ preferred: text, replaces: z.array(text).min(1) })).min(1),
   quotes: z.array(z.strictObject({ page: text, term: text, reason: text })),
+});
+
+const slots = (text_: string): string[] => [...new Set(text_.match(/\{[a-z_]+\}/g) ?? [])].sort();
+
+// A sentence names exactly the slots its page fills, so a missing or unknown one fails the build.
+const slotted = (...names: string[]): z.ZodString => {
+  const want = names.map((n) => `{${n}}`).sort();
+  return text.refine((value) => slots(value).join() === want.join(), {
+    message: `the text must hold exactly the slots ${want.join(', ') || '(none)'}`,
+  });
+};
+
+const states = z.strictObject({
+  NSW: text,
+  Vic: text,
+  Qld: text,
+  WA: text,
+  SA: text,
+  Tas: text,
+  ACT: text,
+  NT: text,
+  OT: text,
+});
+
+export const hospitalTemplateSchema = z.strictObject({
+  title: slotted('hospital', 'site'),
+  title_closed: slotted('hospital', 'site'),
+  description: slotted('hospital', 'state', 'period'),
+  description_closed: slotted('hospital'),
+  crumb_home: text,
+  crumb_hospitals: text,
+  lede: slotted('state'),
+  lede_closed: slotted('state'),
+  closed_heading: slotted(),
+  closed_notice: slotted('hospital'),
+  earlier_only_heading: slotted(),
+  earlier_only_notice: slotted('hospital'),
+  about_heading: slotted(),
+  about_state: slotted(),
+  about_network: slotted(),
+  about_status: slotted(),
+  about_names: slotted(),
+  status_open: slotted(),
+  status_closed: slotted(),
+  network_none: slotted(),
+  states,
+  urgency: z.record(z.string().regex(/^[a-z0-9-]+$/), text),
+  urgency_heading: slotted(),
+  urgency_intro: slotted(),
+  urgency_note: slotted(),
+  tile_heading: slotted('measure', 'category'),
+  procedures_heading: slotted(),
+  procedures_intro: slotted(),
+  procedures_caption: slotted('hospital'),
+  procedures_row_heading: slotted(),
+  specialties_heading: slotted(),
+  specialties_intro: slotted(),
+  specialties_caption: slotted('hospital'),
+  specialties_row_heading: slotted(),
+  trends_heading: slotted(),
+  trends_intro: slotted(),
+  chart_median_caption: slotted('hospital'),
+  chart_median_name: slotted('hospital'),
+  chart_on_time_caption: slotted('hospital'),
+  chart_on_time_name: slotted('hospital'),
+  qld_heading: slotted(),
+  qld_intro: slotted('hospital'),
+  qld_quarter: slotted('quarter'),
+  nearby_heading: slotted(),
+  nearby_heading_closed: slotted(),
+  nearby_intro: slotted('hospital'),
+  nearby_distance: slotted('distance'),
+  nearby_none: slotted('hospital'),
+  exclusion_heading: slotted(),
+  exclusion: slotted(),
+  ranking: slotted(),
 });
 
 export type LabelKey = keyof z.infer<typeof labelsSchema>;

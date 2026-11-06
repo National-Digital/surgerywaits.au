@@ -1,0 +1,64 @@
+---
+interface Props {
+  id: string;
+  heading: string;
+  intro: string;
+  items: { name: string; href: string | undefined; distance: string }[];
+}
+
+const { id, heading, intro, items } = Astro.props;
+---
+
+<section aria-labelledby={id}>
+  <h2 id={id}>{heading}</h2>
+  <p>{intro}</p>
+  <ol class="c-nearby">
+    {items.map((item) => (
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+      <li class="c-nearby__item">
+        {item.href === undefined ? (
+          <span class="c-nearby__name">{item.name}</span>
+        ) : (
+          <a class="c-nearby__name" href={item.href}>
+            {item.name}
+          </a>
+        )}
+        <span class="c-nearby__distance">{item.distance}</span>
+      </li>
+    ))}
+  </ol>
+</section>
+
+<style>
+  @layer components {
+    .c-nearby {
+      display: grid;
+      gap: var(--space-1);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .c-nearby__item {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--space-1) var(--space-4);
+      padding-block: var(--space-2);
+      border-block-end: 1px solid var(--hairline);
+    }
+
+    .c-nearby__name {
+      display: inline-flex;
+      align-items: center;
+      min-height: var(--target);
+    }
+
+    .c-nearby__distance {
+      color: var(--ink-2);
+      font-size: var(--fs-small);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+</style>

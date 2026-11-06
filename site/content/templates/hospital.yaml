@@ -1,0 +1,63 @@
+title: '{hospital} planned surgery waiting times: {site}'
+title_closed: '{hospital} (closed) planned surgery waiting times: {site}'
+description: 'Planned surgery waiting times at {hospital}, a public hospital in {state}. The latest figures cover {period}.'
+description_closed: '{hospital} has closed. This page keeps its past planned surgery waiting times and lists the open public hospitals nearby.'
+crumb_home: Home
+crumb_hospitals: Hospitals
+lede: A public hospital in {state}.
+lede_closed: A closed public hospital in {state}.
+closed_heading: This hospital has closed
+closed_notice: '{hospital} has closed. This page keeps its past figures for the record. It shows no current wait and does not rank the hospital. The hospitals nearby are open.'
+earlier_only_heading: Every figure is from an earlier period
+earlier_only_notice: '{hospital} has not reported a figure for the latest period. Each figure below is from an earlier period, and none is ranked.'
+about_heading: About this hospital
+about_state: State or territory
+about_network: Health network
+about_status: Status
+about_names: Also known as
+status_open: Open
+status_closed: Closed
+network_none: The source names no network
+states:
+  NSW: New South Wales
+  Vic: Victoria
+  Qld: Queensland
+  WA: Western Australia
+  SA: South Australia
+  Tas: Tasmania
+  ACT: Australian Capital Territory
+  NT: Northern Territory
+  OT: Other Territories
+urgency:
+  urgent-elective-surgery: Category 1, urgent
+  semi-urgent-elective-surgery: Category 2, semi-urgent
+  non-urgent-elective-surgery: Category 3, non-urgent
+urgency_heading: Waiting times by urgency category
+urgency_intro: Each tile shows one measure for all planned surgery at this hospital in one urgency category.
+urgency_note: Your treating specialist gives you an urgency category. You do not choose it. Surgery in category 1 is recommended within 30 days, category 2 within 90 days and category 3 within 365 days.
+tile_heading: '{measure}: {category}'
+procedures_heading: Waiting times by procedure
+procedures_intro: The shortest median wait comes first. A procedure with no published figure follows, in name order.
+procedures_caption: 'Planned surgery procedures at {hospital}'
+procedures_row_heading: Procedure
+specialties_heading: Waiting times by specialty
+specialties_intro: The shortest median wait comes first. A specialty with no published figure follows, in name order.
+specialties_caption: 'Planned surgery specialties at {hospital}'
+specialties_row_heading: Specialty
+trends_heading: How waits have changed
+trends_intro: Each chart shows one figure for each year the source published it. A year with no published figure is a gap in the line, and the table under the chart gives the reason.
+chart_median_caption: 'Median wait at {hospital}, by urgency category'
+chart_median_name: 'Line chart of the median wait at {hospital} for each urgency category'
+chart_on_time_caption: 'Share treated within the recommended time at {hospital}, by urgency category'
+chart_on_time_name: 'Line chart of the share treated within the recommended time at {hospital} for each urgency category'
+qld_heading: Queensland Health quarterly figures
+qld_intro: 'Queensland Health also publishes figures for {hospital} each quarter. They come from a different source, so this page keeps them apart from the national figures. It does not rank them or compare them with other hospitals.'
+qld_quarter: 'All planned surgery, {quarter}'
+nearby_heading: Hospitals nearby
+nearby_heading_closed: Open hospitals nearby
+nearby_intro: 'These are the open public hospitals nearest {hospital}, nearest first. Each distance is a straight line, not a travel time.'
+nearby_distance: '{distance} away'
+nearby_none: 'The source gives no location for {hospital}, so this page cannot list hospitals near it.'
+exclusion_heading: What this page leaves out
+exclusion: Private hospitals are excluded. This page covers public hospitals only, so it shows no private hospital.
+ranking: A rank compares this hospital with the other public hospitals that published the same figure for the same period. The page shows a rank only on a current published figure. It never ranks a figure that is withheld, not reported or from an earlier period.

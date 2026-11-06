@@ -10,7 +10,10 @@ import {
   readContent,
   replacedTerms,
 } from '../lib/content-files';
-import { termsSchema } from '../lib/content-schema';
+import { hospitalTemplateSchema, termsSchema } from '../lib/content-schema';
+import { readHospitalIndex } from '../lib/dist';
+import { fill } from '../lib/slots';
+import { elementsOf, text, textsOf } from '../lib/test-render';
 
 const dist = new URL('../../dist/', import.meta.url);
 if (!existsSync(dist)) {
@@ -32,11 +35,42 @@ describe('Built pages', () => {
     ).toEqual([]);
   });
 
+  // The passport quotes dataset titles as the publisher gives them, so only it is left out.
+  const scan = (path: string, html: string): string[] =>
+    replacedTerms(distSlug(path), pageStrings(html, true), terms);
+  const terms = termsSchema.parse(readContent().find(({ path }) => path === 'terms.yaml')?.data);
+
   it('use no term the terms file replaces', () => {
-    const terms = termsSchema.parse(readContent().find(({ path }) => path === 'terms.yaml')?.data);
-    expect(
-      pages.flatMap(({ path, html }) => replacedTerms(distSlug(path), pageStrings(html), terms)),
-    ).toEqual([]);
+    expect(pages.flatMap(({ path, html }) => scan(path, html))).toEqual([]);
+  });
+
+  it('catch hand-written "elective" on a hospital page, and excuse only the passport', () => {
+    const page = pages.find(({ path }) => path.startsWith('hospital/'));
+    expect(page).toBeDefined();
+    const { path = '', html = '' } = page ?? {};
+    expect(scan(path, html.replace('</main>', '<p>elective</p></main>'))).not.toEqual([]);
+    expect(html).toContain('c-passport');
+    expect(pageStrings(html).some((t) => /elective/i.test(t))).toBe(true);
+    expect(pageStrings(html, true).some((t) => /elective/i.test(t))).toBe(false);
+    const fake = html.replace('</main>', '<p class="c-passport">elective</p></main>');
+    expect(scan(path, fake)).not.toEqual([]);
+    const sections = html.replace(
+      '</main>',
+      '<section class="c-passport">elective</section></main>',
+    );
+    expect(scan(path, sections)).not.toEqual([]);
+  });
+
+  it('carry the data passport at most once', () => {
+    for (const { path, html } of pages) {
+      expect([path, (html.match(/class="c-passport"/g) ?? []).length <= 1]).toEqual([path, true]);
+    }
+  });
+
+  it('keep every page under 300 KB of raw HTML', () => {
+    for (const { path, html } of pages) {
+      expect([path, Buffer.byteLength(html) <= 300_000]).toEqual([path, true]);
+    }
   });
 
   it('hold no development preview route', () => {
@@ -103,6 +137,86 @@ describe('Built pages', () => {
       expect([path, handlers.length]).toEqual([path, 0]);
       expect(html).not.toMatch(/href="javascript:/i);
     }
+  });
+});
+
+describe('Built hospital pages', () => {
+  const index = readHospitalIndex();
+  const template = hospitalTemplateSchema.parse(
+    readContent().find(({ path }) => path === 'templates/hospital.yaml')?.data,
+  );
+  const hospitalPages = pages.filter(({ path }) => path.startsWith('hospital/'));
+
+  it('hold one page at /hospital/<slug>/ for every hospital in the index', () => {
+    expect(index.length).toBeGreaterThan(0);
+    expect(hospitalPages.map(({ path }) => path).sort()).toEqual(
+      index.map(({ slug }) => `hospital/${slug}/index.html`).sort(),
+    );
+  });
+
+  it('carry a canonical address, a description and one h1', () => {
+    for (const { path, html } of hospitalPages) {
+      const slug = path.split('/')[1] ?? '';
+      expect(html, path).toContain(
+        `<link rel="canonical" href="https://surgerywaits.au/hospital/${slug}/">`,
+      );
+      expect(html, path).toContain('<meta name="description" content="');
+      expect(html.match(/<h1[ >]/g), path).toHaveLength(1);
+    }
+  });
+
+  it('state the private hospital exclusion in the page and say a closed hospital has closed', () => {
+    for (const row of index) {
+      const html =
+        hospitalPages.find(({ path }) => path === `hospital/${row.slug}/index.html`)?.html ?? '';
+      const main = text(html.split('<main')[1] ?? '');
+      expect(main, row.slug).toContain(template.exclusion);
+      expect(main.includes(fill(template.closed_notice, { hospital: row.name })), row.slug).toBe(
+        row.closed,
+      );
+    }
+    expect(index.some(({ closed }) => closed)).toBe(true);
+  });
+
+  it('give every figure a stamp and every table a stated period', () => {
+    for (const { path, html } of hospitalPages) {
+      expect(textsOf(html, 'c-stamp'), path).toHaveLength(textsOf(html, 'c-figure').length);
+      expect(textsOf(html, 'c-table__stamp'), path).toHaveLength(
+        html.match(/<table[ >]/g)?.length ?? 0,
+      );
+    }
+  });
+
+  it('rank no stale, withheld or closed figure', () => {
+    let ranks = 0;
+    for (const { path, html } of hospitalPages) {
+      const closed = index.some(
+        ({ slug, closed: c }) => c && path === `hospital/${slug}/index.html`,
+      );
+      const found = [
+        ...elementsOf(html, 'c-tiles__tile').map((tile) => ({
+          withheld: tile.classes.has('c-tiles__earlier') || tile.inside.has('is-not-published'),
+          ranked: tile.inside.has('c-tiles__line'),
+          text: tile.text,
+        })),
+        ...elementsOf(html, 'c-table__row').map((row) => ({
+          withheld: row.classes.has('c-table__row--earlier'),
+          ranked: row.inside.has('c-table__rank'),
+          text: row.text,
+        })),
+        ...elementsOf(html, 'c-table__cell').map((cell) => ({
+          withheld: cell.inside.has('is-not-published'),
+          ranked: cell.inside.has('c-table__rank'),
+          text: cell.text,
+        })),
+      ];
+      for (const item of found) {
+        expect([path, item.text, item.withheld && item.ranked]).toEqual([path, item.text, false]);
+        expect([path, item.text, closed && item.ranked]).toEqual([path, item.text, false]);
+        ranks += item.ranked ? 1 : 0;
+      }
+    }
+    expect(ranks).toBeGreaterThan(0);
   });
 });
 

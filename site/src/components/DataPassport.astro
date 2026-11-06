@@ -93,6 +93,12 @@ const entries = creditsFor(sources, credits);
       margin: 0;
     }
 
+    @media (width <= 520px) {
+      .c-passport__facts {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
     .c-passport__facts dt {
       color: var(--muted);
     }

@@ -146,6 +146,10 @@ export function formatDays(n: number): string {
   return withUnit(n, 'day', 'days');
 }
 
+export function formatKilometres(n: number): string {
+  return withUnit(n, 'kilometre', 'kilometres');
+}
+
 export function formatSurgeries(n: number): string {
   return withUnit(n, 'surgery', 'surgeries');
 }

@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { isAbsolute, join } from 'node:path';
 import { Ajv2020 } from 'ajv/dist/2020.js';
-import type { Figure, QueenslandColumn, QueenslandFigure, Role } from './format';
+import type { Figure, QueenslandColumn, QueenslandFigure, Role, TrendPoint } from './format';
 
 export const DIST_ENV = 'SURGERYWAITS_DIST';
 
@@ -94,7 +94,7 @@ export function readDist(path: string): unknown {
   return document;
 }
 
-interface Measure {
+export interface Measure {
   figure: Figure;
   rank: { status: 'ranked'; position: number; of: number } | { status: 'unranked'; why: string };
 }
@@ -107,19 +107,59 @@ export interface HospitalSurgery {
   measures: Partial<Record<Role, Measure>>;
 }
 
+type State = 'NSW' | 'Vic' | 'Qld' | 'WA' | 'SA' | 'Tas' | 'ACT' | 'NT' | 'OT';
+
+interface NearbyHospital {
+  code: string;
+  name: string;
+  slug: string | null;
+  distance_km: number;
+}
+
 export interface Hospital {
   code: string;
   slug: string;
   name: string;
+  alternative_names: string[];
+  state: State;
   closed: boolean;
+  scope: { sector: 'public'; private_excluded: string[] };
+  network: { code: string; name: string } | null;
+  // Null where the source gave no coordinates, so there is no nearby list either.
+  nearby: { radius_km: number; hospitals: NearbyHospital[] } | null;
   surgeries: HospitalSurgery[];
+  sources: string[];
+}
+
+export interface HospitalIndexRow {
+  code: string;
+  slug: string;
+  name: string;
+  state: State;
+  closed: boolean;
+}
+
+interface TrendSeries {
+  kind: HospitalSurgery['kind'];
+  slug: string;
+  role: Role;
+  release: string;
+  periods: string[];
+  points: TrendPoint[];
+}
+
+export interface Trend {
+  series: TrendSeries[];
+  sources: string[];
 }
 
 export interface QueenslandFacility {
   code: string;
   name: string;
+  sources: string[];
   quarters: {
     period: string;
+    period_end: string;
     release: string;
     total: Record<QueenslandColumn, QueenslandFigure>;
   }[];
@@ -130,11 +170,19 @@ export function readHospital(slug: string): Hospital {
   return readDist(`hospitals/${slug}.json`) as Hospital;
 }
 
+export function readHospitalIndex(): HospitalIndexRow[] {
+  return (readDist('hospitals.json') as { hospitals: HospitalIndexRow[] }).hospitals;
+}
+
+export function readTrend(slug: string): Trend {
+  return readDist(`trends/${slug}.json`) as Trend;
+}
+
 export function readQueenslandFacility(code: string): QueenslandFacility {
   return readDist(`queensland/${code}.json`) as QueenslandFacility;
 }
 
-export function listDist(folder: 'hospitals' | 'queensland'): string[] {
+export function listDist(folder: 'hospitals' | 'queensland' | 'trends'): string[] {
   return readdirSync(join(distDirectory(), folder))
     .filter((file) => file.endsWith('.json'))
     .map((file) => file.slice(0, -'.json'.length))

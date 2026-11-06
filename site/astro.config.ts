@@ -13,6 +13,8 @@ export default defineConfig({
   build: { format: 'directory' },
   outDir: preview ? './dist-preview' : './dist',
   devToolbar: { enabled: false },
+  // One sheet keeps the layer order ahead of the component layers that a page's own chunk would put first.
+  vite: { build: { cssCodeSplit: false } },
   integrations: preview
     ? [
         {
