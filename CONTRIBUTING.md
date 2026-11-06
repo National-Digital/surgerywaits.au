@@ -81,6 +81,25 @@ right hash is not fetched again. The pull retries transport errors and 5xx respo
 then stops. It stops at once on a 4xx or a hash that differs from the pin, and it keeps nothing
 from a failed download. The tests never use the network.
 
+### Checking the dist against the previous site's data
+
+`pipeline/scripts/parity.py` compares a built dist with the previous site's built data directory.
+It is a hand-run tool. CI does not run it, because that directory is not in this repository. Build
+the dist first, then run this from `pipeline/`:
+
+```
+uv run python -m surgerywaits.pull
+uv run python -m surgerywaits.build
+uv run python scripts/parity.py dist <the previous site's built data directory> -o /tmp/parity.json
+```
+
+The script prints a short summary and, with `-o`, writes a deterministic JSON report that lists every
+difference. It maps the old hospital codes, procedure and urgency identifiers, periods and roles
+onto the new ones, then compares each figure, the ranks in the newest common period, the nearby
+meshes and the suburb centres. A difference is marked as explained when the newer release accounts
+for it, as a new period or a revision in a period both releases carry, and as unexplained otherwise.
+Keep the report out of the repository.
+
 ### Git hooks
 
 `git config core.hooksPath .githooks` turns on three hooks.
