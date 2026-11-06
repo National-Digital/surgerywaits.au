@@ -1,0 +1,148 @@
+---
+import { label } from '../lib/content';
+import { assertRanking } from '../lib/ranking-table';
+import type { RankingModel } from '../lib/ranking-table';
+import { isPublished } from '../lib/format';
+
+interface Props extends RankingModel {
+  id: string;
+  caption: string;
+}
+
+const { id, caption, columns, rows, span } = Astro.props;
+// A row with no published figure behind its order, or two stamps in one table, throws here.
+const stamp = assertRanking({ columns, rows, span });
+---
+
+<p class="c-ranking__hint" id={`${id}-hint`}>
+  {label('table_scroll_hint')}
+</p>
+<div class="o-table-scroll" role="region" aria-labelledby={`${id}-caption`} tabindex="0">
+  <table class="c-ranking">
+    <caption class="c-ranking__caption" id={`${id}-caption`}>
+      {caption}
+      <small class="c-ranking__stamp">{stamp}</small>
+    </caption>
+    <thead>
+      <tr>
+        {columns.map((column) => (
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+          <th class="c-ranking__head" scope="col">
+            {column}
+          </th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      {rows.map((row) => (
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+        <tr>
+          {row.cells.map((cell) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- the Astro parser types JSX as error
+            const inner = (
+              <>
+                {cell.href === undefined ? (
+                  cell.text
+                ) : (
+                  <a href={cell.href} aria-label={cell.label}>
+                    {cell.text}
+                  </a>
+                )}
+                {cell.note !== undefined && <small class="c-ranking__note">{cell.note}</small>}
+              </>
+            );
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+            return cell.heading === true ? (
+              <th class="c-ranking__row" scope="row">
+                {inner}
+              </th>
+            ) : (
+              <td
+                class:list={{
+                  'is-not-published': cell.figure !== undefined && !isPublished(cell.figure),
+                }}
+              >
+                {inner}
+              </td>
+            );
+          })}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+<style is:global>
+  @layer components {
+    .c-ranking {
+      width: 100%;
+      border-collapse: collapse;
+      font-variant-numeric: tabular-nums;
+      font-size: var(--fs-small);
+    }
+
+    .c-ranking__caption {
+      padding: var(--space-3) var(--space-4) 0;
+      text-align: start;
+      color: var(--ink-2);
+    }
+
+    .c-ranking__stamp {
+      display: block;
+      margin-block-start: var(--space-1);
+      font-size: var(--fs-small);
+      color: var(--muted);
+    }
+
+    .c-ranking__hint {
+      margin: 0 0 var(--space-2);
+      font-size: var(--fs-small);
+      color: var(--muted);
+    }
+
+    .c-ranking__head,
+    .c-ranking th,
+    .c-ranking td {
+      padding: var(--space-3) var(--space-4);
+      border-block-end: 1px solid var(--hairline);
+      text-align: start;
+      vertical-align: top;
+    }
+
+    .c-ranking__head {
+      background: var(--card-2);
+      font-size: var(--fs-small);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+
+    .c-ranking__row {
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .c-ranking a {
+      display: inline-block;
+      min-height: var(--target);
+      line-height: var(--target);
+    }
+
+    .c-ranking tbody tr:last-child > * {
+      border-block-end: 0;
+    }
+
+    .c-ranking__note {
+      display: block;
+      margin-block-start: var(--space-1);
+      font-size: var(--fs-small);
+      font-weight: 400;
+      color: var(--ink-2);
+    }
+
+    .c-ranking td.is-not-published {
+      font-style: italic;
+      color: var(--ink-2);
+    }
+  }
+</style>

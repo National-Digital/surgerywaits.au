@@ -8,6 +8,7 @@ import {
   hospitalTemplateSchema,
   pairTemplateSchema,
   labelsSchema,
+  longestTemplateSchema,
   navigationSchema,
   pageSchema,
   siteSchema,
@@ -53,6 +54,10 @@ export const collections = {
   home: defineCollection({
     loader: glob({ pattern: 'home.yaml', base: './content/templates' }),
     schema: homeTemplateSchema,
+  }),
+  longest: defineCollection({
+    loader: glob({ pattern: 'longest.yaml', base: './content/templates' }),
+    schema: longestTemplateSchema,
   }),
   pages: defineCollection({
     loader: glob({ pattern: '*.yaml', base: './content/pages' }),

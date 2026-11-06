@@ -1,0 +1,57 @@
+---
+// Base comes first so its global sheet, and with it the layer order, precedes every component sheet.
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+import LongestTail from './LongestTail.astro';
+import RankingTable from './RankingTable.astro';
+import { getLongestTemplate, getSite } from '../lib/content';
+import { formatCount } from '../lib/format';
+import { LONGEST_PATH, longestEntries, longestStamp } from '../lib/longest-page';
+import { longestTable, waitText } from '../lib/longest-tables';
+import { fill } from '../lib/slots';
+import { stateName } from '../lib/state-page';
+
+const t = getLongestTemplate();
+const stamp = longestStamp();
+const entries = longestEntries();
+const first = entries[0];
+const count = formatCount(entries.length);
+const ledeText =
+  first === undefined
+    ? fill(t.index_none, { period: stamp.period })
+    : fill(t.index_lede, {
+        period: stamp.period,
+        days: waitText(first.figure),
+        surgery: first.ref.name,
+        hospital: first.row.name,
+        state: stateName(first.row.state),
+      });
+---
+
+<Base
+  title={fill(t.index_title, { count, period: stamp.period, site: getSite().name })}
+  description={fill(t.index_description, { count, period: stamp.period })}
+  canonicalPath={LONGEST_PATH}
+>
+  <div class="o-columns">
+    <Breadcrumbs items={[{ label: t.crumb_home, href: '/' }, { label: t.crumb_longest }]} />
+    <h1>{fill(t.index_heading, { count })}</h1>
+    <p>{ledeText}</p>
+    <p>{fill(t.stamp, { period: stamp.period, release: stamp.release })}</p>
+    <p>{fill(t.index_intro, { period: stamp.period })}</p>
+
+    {first !== undefined && (
+      <section aria-labelledby="table-heading">
+        <h2 id="table-heading">{fill(t.index_table_heading, { count })}</h2>
+        <p>{t.index_rank_note}</p>
+        <RankingTable
+          id="longest"
+          caption={fill(t.index_table_caption, { count })}
+          {...longestTable(entries)}
+        />
+      </section>
+    )}
+
+    <LongestTail current={LONGEST_PATH} />
+  </div>
+</Base>

@@ -1,0 +1,98 @@
+---
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+import LongestTail from './LongestTail.astro';
+import RankingTable from './RankingTable.astro';
+import { getLongestTemplate, getSite } from '../lib/content';
+import { formatDate, formatDays } from '../lib/format';
+import {
+  CHANGES_PATH,
+  LONGEST_PATH,
+  falls,
+  hospitalMoves,
+  movePeriods,
+  rises,
+  stateMoves,
+} from '../lib/longest-page';
+import { changeSections, floorText, waitText } from '../lib/longest-tables';
+import { fill } from '../lib/slots';
+import { stateName } from '../lib/state-page';
+
+const t = getLongestTemplate();
+const { previous, period, release } = movePeriods();
+const states = stateMoves();
+const hospitals = hospitalMoves();
+const floor = floorText();
+const biggest = states[0];
+const slots = { previous, period };
+const ledeText =
+  biggest === undefined
+    ? fill(t.changes_none, slots)
+    : fill(t.changes_lede, {
+        ...slots,
+        surgery: biggest.ref.name,
+        state: stateName(biggest.state),
+        from: waitText(biggest.from),
+        to: waitText(biggest.to),
+        change: fill(biggest.change > 0 ? t.change_up : t.change_down, {
+          days: formatDays(Math.abs(biggest.change)),
+        }),
+      });
+const { states: stateSections, hospitals: hospitalSections } = changeSections(
+  { rises: rises(states), falls: falls(states) },
+  { rises: rises(hospitals), falls: falls(hospitals) },
+  period,
+);
+---
+
+<Base
+  title={fill(t.changes_title, { ...slots, site: getSite().name })}
+  description={fill(t.changes_description, slots)}
+  canonicalPath={CHANGES_PATH}
+>
+  <div class="o-columns">
+    <Breadcrumbs
+      items={[
+        { label: t.crumb_home, href: '/' },
+        { label: t.crumb_longest, href: LONGEST_PATH },
+        { label: t.crumb_changes },
+      ]}
+    />
+    <h1>{t.changes_heading}</h1>
+    <p>{ledeText}</p>
+    <p>{fill(t.stamp, { period, release: formatDate(release) })}</p>
+    <p>{fill(t.changes_intro, slots)}</p>
+
+    {stateSections.map((section) => (
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+      <section aria-labelledby={`${section.id}-heading`}>
+        <h2 id={`${section.id}-heading`}>{section.heading}</h2>
+        {section.model.rows.length === 0 ? (
+          <p>{t.rows_none}</p>
+        ) : (
+          <RankingTable id={section.id} caption={section.caption} {...section.model} />
+        )}
+      </section>
+    ))}
+
+    <section aria-labelledby="hospital-heading">
+      <h2 id="hospital-heading">{t.hospital_heading}</h2>
+      <p>{fill(t.hospital_intro, { floor, period })}</p>
+      {hospitalSections.map((section) => (
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+        <>
+          <h3 id={`${section.id}-heading`}>{section.heading}</h3>
+          {section.model.rows.length === 0 ? (
+            <p>{t.rows_none}</p>
+          ) : (
+            <RankingTable id={section.id} caption={section.caption} {...section.model} />
+          )}
+        </>
+      ))}
+    </section>
+
+    <p>{t.changes_note}</p>
+
+    <LongestTail current={CHANGES_PATH} />
+  </div>
+</Base>

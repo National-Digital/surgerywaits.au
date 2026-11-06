@@ -11,6 +11,7 @@ import {
   hospitalTemplateSchema,
   hospitalsIndexSchema,
   labelsSchema,
+  longestTemplateSchema,
   navigationSchema,
   pageSchema,
   pairTemplateSchema,
@@ -461,6 +462,7 @@ describe('Copy', () => {
       'templates/state.yaml': stateTemplateSchema,
       'templates/urgency.yaml': urgencyTemplateSchema,
       'templates/home.yaml': homeTemplateSchema,
+      'templates/longest.yaml': longestTemplateSchema,
       'terms.yaml': termsSchema,
     };
     const files = readContent();

@@ -25,7 +25,8 @@ function entries(collection: string): { id: string; data: unknown }[] {
     if (
       (collection === 'state' && path === 'templates/state.yaml') ||
       (collection === 'urgency' && path === 'templates/urgency.yaml') ||
-      (collection === 'home' && path === 'templates/home.yaml')
+      (collection === 'home' && path === 'templates/home.yaml') ||
+      (collection === 'longest' && path === 'templates/longest.yaml')
     ) {
       return [{ id: collection, data }];
     }

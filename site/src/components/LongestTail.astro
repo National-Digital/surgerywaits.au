@@ -1,0 +1,49 @@
+---
+import DataPassport from './DataPassport.astro';
+import LinkList from './LinkList.astro';
+import SafetyBlock from './SafetyBlock.astro';
+import { getLongestTemplate } from '../lib/content';
+import {
+  BORDER_PATH,
+  BY_SURGERY_PATH,
+  CHANGES_PATH,
+  LONGEST_PATH,
+  longestSources,
+} from '../lib/longest-page';
+
+interface Props {
+  // The page this block closes, which it leaves out of its own list of related pages.
+  current: string;
+}
+
+const { current } = Astro.props;
+const t = getLongestTemplate();
+const related = [
+  { label: t.link_longest, href: LONGEST_PATH },
+  { label: t.link_by_surgery, href: BY_SURGERY_PATH },
+  { label: t.link_border, href: BORDER_PATH },
+  { label: t.link_changes, href: CHANGES_PATH },
+].filter(({ href }) => href !== current);
+---
+
+<section aria-labelledby="reading-heading">
+  <h2 id="reading-heading">{t.reading_heading}</h2>
+  {t.reading.map((paragraph) => (
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+    <p>{paragraph}</p>
+  ))}
+</section>
+
+<section aria-labelledby="related-heading">
+  <h2 id="related-heading">{t.companions_heading}</h2>
+  <p>{t.companions_intro}</p>
+  <LinkList links={related} />
+</section>
+
+<section aria-labelledby="exclusion-heading">
+  <h2 id="exclusion-heading">{t.exclusion_heading}</h2>
+  <p>{t.exclusion}</p>
+</section>
+
+<SafetyBlock id="longest-safety-heading" />
+<DataPassport sources={longestSources()} />
