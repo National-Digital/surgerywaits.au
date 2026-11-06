@@ -221,3 +221,13 @@ export function sampleTable(): SurgeryTable {
   );
   return best ?? { key: '', roles: TABLE_ROLES, rows: [] };
 }
+
+// The first fixture hospital stands in for a page that draws on several sources.
+export function samplePage(): { name: string; sources: string[] } {
+  const [slug] = listDist('hospitals');
+  if (slug === undefined) {
+    throw new Error('the dist holds no hospital to preview');
+  }
+  const hospital = readDist(`hospitals/${slug}.json`) as { name: string; sources: string[] };
+  return { name: hospital.name, sources: hospital.sources };
+}

@@ -1,14 +1,18 @@
 ---
 // Base comes first so its global sheet, and with it the layer order, precedes every component sheet.
 import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import DataPassport from '../components/DataPassport.astro';
 import DataTable from '../components/DataTable.astro';
 import Figure from '../components/Figure.astro';
+import SafetyBlock from '../components/SafetyBlock.astro';
 import StatTile from '../components/StatTile.astro';
 import StatTiles from '../components/StatTiles.astro';
-import { label } from '../lib/content';
+import { getNavigation, label } from '../lib/content';
 import type { QueenslandColumn } from '../lib/format';
 import {
   sampleFigures,
+  samplePage,
   sampleQueensland,
   sampleTable,
   sampleTiles,
@@ -31,6 +35,7 @@ const figures = sampleFigures();
 const tiles = sampleTiles();
 const queensland = sampleQueensland();
 const table = sampleTable();
+const page = samplePage();
 const [first] = figures;
 const withheld = first
   ? withheldFigures({ period: first.figure.period, release: first.figure.release })
@@ -105,4 +110,19 @@ const withheld = first
     columns={table.roles.map((role) => ({ heading: roleLabel[role], role }))}
     rows={table.rows}
   />
+
+  <h2>{label('preview_breadcrumbs')}</h2>
+  <Breadcrumbs
+    items={[
+      { label: label('title_home'), href: '/' },
+      { label: label('preview_crumb_hospital'), href: getNavigation().site[0]?.href },
+      { label: page.name },
+    ]}
+  />
+
+  <h2>{label('preview_safety')}</h2>
+  <SafetyBlock id="preview-safety-heading" />
+
+  <h2>{label('preview_passport')}</h2>
+  <DataPassport sources={page.sources} />
 </Base>

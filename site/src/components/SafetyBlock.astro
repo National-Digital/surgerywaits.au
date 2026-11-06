@@ -1,0 +1,44 @@
+---
+import { label } from '../lib/content';
+
+interface Props {
+  full?: boolean;
+  // The heading's id; a page may hold several blocks if each has its own.
+  id: string;
+}
+
+const { full = false, id } = Astro.props;
+---
+
+<aside class="c-safety" aria-labelledby={id}>
+  <h2 class="c-safety__heading" id={id}>
+    {label('footer_safety_heading')}
+  </h2>
+  <p>{label(full ? 'footer_safety_full' : 'footer_safety_compact')}</p>
+  <p>
+    <strong>{label('footer_emergency')}</strong>
+  </p>
+</aside>
+
+<style>
+  @layer components {
+    .c-safety {
+      margin-block: var(--space-6);
+      padding: var(--space-3) var(--space-5);
+      border-inline-start: 4px solid var(--sky);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      background: var(--foot-panel);
+      color: var(--foot-safety);
+    }
+
+    .c-safety__heading {
+      margin-block: 0 var(--space-2);
+      color: var(--foot-strong);
+      font-size: 1rem;
+    }
+
+    .c-safety p {
+      max-width: 26rem;
+    }
+  }
+</style>

@@ -1,0 +1,115 @@
+---
+import { label } from '../lib/content';
+import { creditsFor, licenceUrl, readCredits } from '../lib/credits';
+import type { Credit } from '../lib/credits';
+import { formatDate, formatLicence } from '../lib/format';
+
+interface Props {
+  // The slugs a dist file lists in its `sources`.
+  sources: readonly string[];
+  credits?: readonly Credit[];
+}
+
+const { sources, credits = readCredits() } = Astro.props;
+const entries = creditsFor(sources, credits);
+---
+
+<section class="c-passport" aria-labelledby="passport-heading">
+  <h2 class="c-passport__heading" id="passport-heading">
+    {label('passport_heading')}
+  </h2>
+  <ul class="c-passport__list">
+    {entries.map((credit) => (
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+      <li class="c-passport__source">
+        <dl class="c-passport__facts">
+          <dt>{label('passport_dataset')}</dt>
+          <dd>
+            <a class="c-passport__link" href={credit.dataset_url}>
+              {credit.title}
+            </a>
+          </dd>
+          <dt>{label('passport_publisher')}</dt>
+          <dd>
+            <a class="c-passport__link" href={credit.publisher.url}>
+              {credit.publisher.name}
+            </a>
+          </dd>
+          <dt>{label('passport_version')}</dt>
+          <dd>{formatDate(credit.version)}</dd>
+          <dt>{label('passport_released')}</dt>
+          <dd>
+            {credit.as_at === null ? label('passport_released_none') : formatDate(credit.as_at)}
+          </dd>
+          <dt>{label('passport_licence')}</dt>
+          <dd>
+            <a class="c-passport__link" href={licenceUrl(credit.licence)}>
+              {formatLicence(credit.licence)}
+            </a>
+          </dd>
+          <dt>{label('passport_citation')}</dt>
+          <dd class="c-passport__citation">{credit.citation}</dd>
+        </dl>
+      </li>
+    ))}
+  </ul>
+</section>
+
+<style>
+  @layer components {
+    .c-passport {
+      margin-block: var(--space-6);
+      padding: var(--space-4);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-sm);
+      background: var(--card);
+      color: var(--ink-2);
+      font-size: var(--fs-small);
+    }
+
+    .c-passport__heading {
+      margin-block: 0 var(--space-3);
+      color: var(--ink);
+      font-size: 1rem;
+    }
+
+    .c-passport__list {
+      display: grid;
+      gap: var(--space-4);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .c-passport__source + .c-passport__source {
+      padding-block-start: var(--space-4);
+      border-block-start: 1px solid var(--hairline);
+    }
+
+    .c-passport__facts {
+      display: grid;
+      grid-template-columns: max-content 1fr;
+      gap: var(--space-1) var(--space-4);
+      margin: 0;
+    }
+
+    .c-passport__facts dt {
+      color: var(--muted);
+    }
+
+    .c-passport__facts dd {
+      margin: 0;
+    }
+
+    .c-passport__link {
+      display: inline-flex;
+      align-items: center;
+      min-height: var(--target);
+      overflow-wrap: anywhere;
+    }
+
+    .c-passport__citation {
+      overflow-wrap: anywhere;
+    }
+  }
+</style>

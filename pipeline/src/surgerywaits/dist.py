@@ -17,7 +17,7 @@ from surgerywaits.contract import validate
 from surgerywaits.derive import Derived, DerivedFigure, DerivedObservation, RankStatus, TrendPoint
 from surgerywaits.gates import check_docs, check_freshness
 from surgerywaits.hospitals import STATES, Hospital, Register
-from surgerywaits.manifest import Entry
+from surgerywaits.manifest import Entry, as_credit
 from surgerywaits.queensland import FacilityQuarter, Overlay
 from surgerywaits.suburbs import Suburbs
 from surgerywaits.suppression import Figure, FigureState, SuppressedTable
@@ -153,22 +153,7 @@ def _credits(entries: tuple[Entry, ...], used: set[str]) -> Doc:
         msg = f"the manifest has no entry for {', '.join(missing)}"
         raise DistError(msg)
     rows = sorted((e for e in entries if e.slug in used), key=lambda e: e.slug)
-    return {
-        "sources": [
-            {
-                "slug": e.slug,
-                "version": e.version,
-                "release": e.release,
-                "as_at": e.as_at,
-                "licence": e.licence,
-                "attribution": e.attribution,
-                "citation": e.citation,
-                "url": e.url,
-                "sha256": e.sha256,
-            }
-            for e in rows
-        ]
-    }
+    return {"sources": [as_credit(e) for e in rows]}
 
 
 def _categories(inputs: Inputs) -> dict[tuple[Table, str], tuple[str, str]]:

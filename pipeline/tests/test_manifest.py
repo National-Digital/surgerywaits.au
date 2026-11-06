@@ -20,6 +20,9 @@ def entry(slug: str = "demo", version: str = "2026-01-02", **over: Any) -> dict[
         "licence": "CC-BY-4.0",
         "attribution": "A publisher.",
         "citation": "A publisher. Versioned at publicdata.au.",
+        "title": "A dataset",
+        "publisher": {"name": "A publisher", "url": "https://publisher.example/"},
+        "dataset_url": f"https://publicdata.au/d/{slug}/v/{version}/",
         "url": f"https://publicdata.au/d/{slug}/v/{version}/data.parquet",
         "sha256": DIGEST,
     }
@@ -46,6 +49,9 @@ def test_every_entry_matches_the_fixture_manifest() -> None:
         assert entries[slug].sha256 == pin["source_sha256"]
         assert entries[slug].url == pin["source_url"]
         assert entries[slug].licence == pin["licence"]
+        assert entries[slug].title == pin["title"]
+        assert entries[slug].publisher.name == pin["publisher"]
+        assert entries[slug].publisher.url == pin["publisher_url"]
 
 
 def test_a_valid_entry_loads(tmp_path: Path) -> None:
@@ -77,6 +83,17 @@ def test_a_url_naming_another_slug_or_version_is_rejected(tmp_path: Path) -> Non
     other = "https://publicdata.au/d/other/v/2026-01-02/data.parquet"
     with pytest.raises(ManifestError, match="own slug and version"):
         load(write(tmp_path, entry(url=other)))
+
+
+def test_a_dataset_url_naming_another_version_is_rejected(tmp_path: Path) -> None:
+    other = "https://publicdata.au/d/demo/v/2026-02-03/"
+    with pytest.raises(ManifestError, match="dataset_url"):
+        load(write(tmp_path, entry(dataset_url=other)))
+
+
+def test_an_unknown_publisher_field_is_rejected(tmp_path: Path) -> None:
+    with pytest.raises(ManifestError, match="Additional"):
+        load(write(tmp_path, entry(publisher={"name": "A", "url": "https://a.example/", "x": 1})))
 
 
 def test_a_duplicate_slug_is_rejected(tmp_path: Path) -> None:

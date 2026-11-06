@@ -3,7 +3,7 @@ from collections.abc import Collection, Iterable, Mapping, Sequence
 from datetime import date
 from typing import Any, cast
 
-from surgerywaits.manifest import Entry
+from surgerywaits.manifest import Entry, as_credit
 from surgerywaits.queensland import FacilityQuarter
 
 ALLOWED_LICENCES = frozenset({"CC-BY-4.0", "CC-BY-3.0-AU"})
@@ -12,7 +12,20 @@ MAX_PERIOD_AGE_YEARS = 2
 # Quarterly data is published within a quarter of its end; the pinned quarter took about 70 days.
 MAX_QLD_LAG_DAYS = 200
 CREDIT_KEYS = frozenset(
-    {"slug", "version", "release", "as_at", "licence", "attribution", "citation", "url", "sha256"}
+    {
+        "slug",
+        "version",
+        "release",
+        "as_at",
+        "licence",
+        "attribution",
+        "citation",
+        "title",
+        "publisher",
+        "dataset_url",
+        "url",
+        "sha256",
+    }
 )
 URL_SAFE = re.compile(r"[a-z0-9]+(-[a-z0-9]+)*")
 CODE_SAFE = re.compile(r"[A-Za-z0-9]+")
@@ -95,7 +108,7 @@ def check_credits(entries: Sequence[Entry], credited: Mapping[str, dict[str, Any
     by_slug = {e.slug: e for e in entries}
     for slug, credit in sorted(credited.items()):
         entry = by_slug.get(slug)
-        if entry is None or credit != {k: getattr(entry, k) for k in CREDIT_KEYS}:
+        if entry is None or credit != as_credit(entry):
             msg = f"credit for {slug} does not match the manifest"
             raise GateError(msg)
         if credit["licence"] not in ALLOWED_LICENCES:

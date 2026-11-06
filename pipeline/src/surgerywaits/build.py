@@ -10,6 +10,7 @@ from surgerywaits.dist import DistError, Inputs, build_dist
 from surgerywaits.gates import GateError
 from surgerywaits.hospitals import load_register
 from surgerywaits.manifest import MANIFEST_PATH, Entry, ManifestError, load
+from surgerywaits.metadata import MetadataError, check_metadata
 from surgerywaits.pull import CACHE_DIR, PullError, pull
 from surgerywaits.queensland import load_overlay
 from surgerywaits.suburbs import read_suburbs
@@ -60,8 +61,9 @@ def main(argv: list[str] | None = None) -> int:
     try:
         entries = load(args.manifest)
         files = pull(entries, args.cache)
+        check_metadata(entries, files)
         built = build_dist(read_inputs(entries, files), args.out)
-    except (ManifestError, PullError, DistError, GateError) as err:
+    except (ManifestError, PullError, MetadataError, DistError, GateError) as err:
         sys.stderr.write(f"build failed: {err}\n")
         return 1
     total = sum(len(b) for b in built.values())

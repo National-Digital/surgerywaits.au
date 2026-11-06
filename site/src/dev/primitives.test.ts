@@ -39,4 +39,11 @@ describe('the primitives preview page', () => {
     expect(textsOf(html, 'c-table__rank').length).toBeGreaterThan(0);
     expect(textsOf(html, 'c-table__value').join(' ')).toContain('not published');
   });
+
+  it('shows the safety block, the breadcrumbs and the data passport', async () => {
+    const html = await render(primitives, {});
+    expect(textsOf(html, 'c-safety__heading')).toHaveLength(1);
+    expect(html.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(textsOf(html, 'c-passport__citation').length).toBeGreaterThan(0);
+  });
 });
