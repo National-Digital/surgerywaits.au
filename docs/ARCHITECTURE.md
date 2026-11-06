@@ -57,10 +57,15 @@ when its part lands.
 3. **One source.** Data comes only from publicdata.au's pinned dated versions, each verified by
    sha256. The build never reads another source and has no fallback to one.
 4. **Suppressed values.** A suppressed value renders as "not published" with the reason. It is
-   never shown as 0, never left blank and never ranked. The three reasons are:
+   never shown as 0, never left blank and never ranked. The three reasons apply to a hospital's
+   own figures:
    - "<5": too few patients.
    - "-": no patients reported.
    - "NP": not published by AIHW.
+
+   "Not peered" appears only in place of the peer-group columns. AIHW does not define it. The
+   site shows it as "not published: no peer group comparison" and gives it no other meaning.
+
 5. **Reference period and release date.** Every rendered figure carries its reference period and
    the data release date. A figure that cannot state both does not ship.
 6. **Terminology.** "Planned surgery" names the category. Copy and URLs use plain "surgery".

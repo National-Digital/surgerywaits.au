@@ -13,6 +13,7 @@ dev = [
   "types-pyyaml==6.0.12.20261103",
   "ruff==0.17.4",
   "pyright==1.1.414",
+  "pyarrow==26.0.1",
 ]
 
 [build-system]
@@ -46,6 +47,7 @@ convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "PLR2004"]
+"scripts/**" = ["INP001", "T201"]
 
 [tool.pyright]
 include = ["src", "tests"]
