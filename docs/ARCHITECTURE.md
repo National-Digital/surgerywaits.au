@@ -34,8 +34,13 @@ Cloudflare Worker    serves the static assets (planned)
   null in the prior-year change column that the list does not name is "not reported". Any other
   unflagged null fails the build. The credit line uses the citation that publicdata.au publishes
   with each version.
-- **`pipeline/` (planned).** A Python 3.13 package built with uv, and checked with ruff, pyright in
-  strict mode and pytest. It turns the pinned files into the output files.
+- **`pipeline/` (planned).** A Python 3.13 package built with uv, and checked with ruff, pyright
+  in strict mode and pytest. It turns the pinned files into the output files. Its derive step
+  builds ranks, trends and a nearby mesh: each located hospital gets its 8 nearest open public
+  hospitals by great-circle distance, searched out to 250 km and doubled until 8 are found, across
+  state borders and stopping at the Earth's half-circumference. Neighbours are always open
+  hospitals, and a closed hospital still gets a mesh so its page can point to open ones. A
+  hospital with no coordinates gets no mesh and is listed as such.
 - **`contract/` (planned).** JSON Schemas that define every file in the output. The pipeline
   writes to them and the site reads from them.
 - **`site/` (planned).** An Astro project with static output. It consumes only the pipeline's
@@ -60,7 +65,16 @@ planned marker that does not match the test.
 - **Not peered.** "Not peered" appears only in place of the peer-group columns, AIHW does not define it, and the site shows it as "not published: no peer group comparison" with no other meaning. — enforced by `site/src/contracts/gates.test.ts` › "'not peered' shows as 'not published: no peer group comparison' and only in place of the peer-group columns" (planned).
 - **Reference period and release date.** Every rendered figure carries both, or it does not ship. — enforced by `site/src/contracts/gates.test.ts` › "every rendered figure shows its reference period and the data release date" (planned).
 - **Terminology.** "Planned surgery" names the category, copy and URLs say "surgery", and "elective" appears only where the methodology quotes a source. — enforced by `site/src/contracts/gates.test.ts` › "'elective' appears only where the methodology quotes a source" (planned).
-- **Ordering.** Hospitals are ordered by measured numbers only, never on suppressed or stale figures, with no "best hospital" language and no practitioner promotion. — enforced by `site/src/contracts/gates.test.ts` › "a hospital with suppressed or stale figures is never ranked" (planned); `site/src/contracts/gates.test.ts` › "no 'best hospital' or practitioner-promotion language appears" (planned).
+- **Ordering.** Hospitals are ordered by measured numbers only, never on suppressed, not-reported,
+  closed or stale figures, with no "best hospital" language and no practitioner promotion. A rank
+  is a competition rank (1, 2, 2, 4) over one category in the newest period of its table: a lower
+  median wait or long-wait share ranks first, a higher on-time share ranks first, and a volume is
+  never ranked. A figure is stale when its hospital's latest period for that category is older
+  than the newest period in the table.
+  — enforced by
+  `pipeline/tests/test_contracts.py::test_no_ranking_uses_suppressed_or_stale_rows`;
+  `site/src/contracts/gates.test.ts` › "a hospital with suppressed, closed or stale figures (latest period older than the newest in the table) is never ranked" (planned);
+  `site/src/contracts/gates.test.ts` › "no 'best hospital' or practitioner-promotion language appears" (planned).
 - **Suburb centres.** Each suburb's centre is the area centroid of its ABS shape when that lies inside the shape and otherwise the pole of inaccessibility of its largest part, rounded to 5 decimal places, special-purpose codes are excluded, and a suburb without a shape or a name shared twice within a state fails the build ([ADR 0002](adr/0002-suburb-centre-points.md)). The real-data check runs where the pinned files are cached and will run in CI once a data job pulls them. — enforced by `pipeline/tests/test_suburbs.py::test_centroid_of_a_concave_shape_is_its_area_centroid`; `pipeline/tests/test_suburbs.py::test_fixture_suburbs_whose_centroid_is_outside_get_a_point_inside`; `pipeline/tests/test_suburbs.py::test_special_purpose_codes_are_excluded`; `pipeline/tests/test_suburbs.py::test_a_row_without_a_shape_fails`; `pipeline/tests/test_suburbs.py::test_a_name_shared_within_a_state_fails`.
 - **Private hospitals.** Private hospitals are excluded and each page says so. — enforced by `pipeline/tests/test_contracts.py::test_private_sector_is_excluded`; `site/src/contracts/gates.test.ts` › "private hospitals are excluded and the page states the exclusion" (planned).
 - **Privacy.** The compare tool is stateless: no cookies, no localStorage or sessionStorage, no search state in the URL or history, and nothing a person enters is sent anywhere. The page-view count with Cloudflare Web Analytics sets no cookie. — enforced by `site/src/contracts/gates.test.ts` › "the site sets no cookies and uses no localStorage or sessionStorage" (planned); `site/src/contracts/gates.test.ts` › "the compare tool puts no search state in the URL or history" (planned); `site/src/contracts/gates.test.ts` › "the page-view count sets no cookie and sends nothing a person enters" (planned); `site/src/contracts/gates.test.ts` › "the privacy check allows exactly the Web Analytics beacon and report hosts" (planned).

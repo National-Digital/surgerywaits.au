@@ -5,6 +5,8 @@ from pathlib import Path
 import pytest
 
 from fakes import FakeOpener, FakeResponse, Sleeps, make_entry
+from surgerywaits.catalogue import Role
+from surgerywaits.derive import RankStatus, derive_table
 from surgerywaits.hospitals import (
     LATITUDE_RANGE,
     LONGITUDE_RANGE,
@@ -24,7 +26,7 @@ from surgerywaits.suppression import (
     qld_figures,
     suppress,
 )
-from surgerywaits.waiting_times import Table, WaitingTimes, WaitingTimesError
+from surgerywaits.waiting_times import Cell, Observation, Table, WaitingTimes, WaitingTimesError
 from surgerywaits.waiting_times import build as build_waiting_times
 from surgerywaits.waiting_times import read_rows as read_waiting_rows
 
@@ -124,6 +126,36 @@ def test_licence_is_on_the_allow_list(tmp_path: Path) -> None:
     path.write_text(json.dumps(data), encoding="utf-8")
     with pytest.raises(ManifestError):
         load(path)
+
+
+def test_no_ranking_uses_suppressed_or_stale_rows() -> None:
+    def obs(code: str, period: str, median: int | None) -> Observation:
+        cell = Cell("median_wait_days", Role.MEDIAN_WAIT, median, None if median else "NP")
+        return Observation(code, code, "name", period, "Urgent", None, (cell,))
+
+    now, before = "2024\u201325", "2023\u201324"
+    table = suppress(
+        WaitingTimes(
+            Table.URGENCY,
+            (
+                obs("OK", now, 50),
+                obs("HIDDEN", now, None),
+                obs("SHUT", now, 1),
+                obs("STALE", before, 2),
+                obs("OK", before, 3),
+            ),
+            (),
+        )
+    )
+    derived, _ = derive_table(Table.URGENCY, table, frozenset({"SHUT"}))
+    status = {(o.code, o.period): (o.figures[0].status, o.figures[0].rank) for o in derived}
+    assert status == {
+        ("OK", now): (RankStatus.RANKED, 1),
+        ("HIDDEN", now): (RankStatus.NOT_PUBLISHED, None),
+        ("SHUT", now): (RankStatus.CLOSED, None),
+        ("STALE", before): (RankStatus.STALE, None),
+        ("OK", before): (RankStatus.EARLIER_PERIOD, None),
+    }
 
 
 @pytest.mark.skip(reason="planned: building the pipeline twice gives byte-identical dist")

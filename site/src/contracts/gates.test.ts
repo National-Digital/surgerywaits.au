@@ -23,7 +23,9 @@ describe('Reference period and release date', () => {
 });
 
 describe('Ranking', () => {
-  it.todo('a hospital with suppressed or stale figures is never ranked');
+  it.todo(
+    'a hospital with suppressed, closed or stale figures (latest period older than the newest in the table) is never ranked',
+  );
 });
 
 describe('Private hospitals', () => {
