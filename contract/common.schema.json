@@ -314,6 +314,67 @@
           "minItems": 4
         }
       ]
+    },
+    "benchmark_scope": {
+      "description": "NAT for the whole country, or a state or territory in the publisher's short form. Other Territories has no benchmark.",
+      "enum": ["NAT", "NSW", "Vic", "Qld", "WA", "SA", "Tas", "ACT", "NT"]
+    },
+    "benchmark_state": {
+      "description": "A state or territory that has a benchmark.",
+      "enum": ["NSW", "Vic", "Qld", "WA", "SA", "Tas", "ACT", "NT"]
+    },
+    "benchmark_measures": {
+      "description": "A state or national figure for each measure the category reports. A benchmark is never ranked, so it has no rank.",
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "median_wait": {
+          "$ref": "#/$defs/figure"
+        },
+        "volume": {
+          "$ref": "#/$defs/figure"
+        },
+        "long_wait": {
+          "$ref": "#/$defs/figure"
+        },
+        "on_time": {
+          "$ref": "#/$defs/figure"
+        }
+      }
+    },
+    "benchmark_series": {
+      "description": "One measure's history for one scope, oldest first, in the compact trend style.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scope", "role", "release", "periods", "points"],
+      "properties": {
+        "scope": {
+          "$ref": "#/$defs/benchmark_scope"
+        },
+        "role": {
+          "$ref": "#/$defs/role"
+        },
+        "release": {
+          "$ref": "#/$defs/date"
+        },
+        "periods": {
+          "description": "The reference period of each point, oldest first.",
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/period"
+          }
+        },
+        "points": {
+          "description": "One point for each period, in the same order.",
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/trend_point"
+          }
+        }
+      }
     }
   }
 }

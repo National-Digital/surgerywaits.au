@@ -15,28 +15,51 @@
     "units",
     "scope",
     "hospitals",
+    "benchmarks",
     "sources"
   ],
   "properties": {
-    "kind": { "$ref": "common.schema.json#/$defs/kind" },
-    "slug": { "$ref": "common.schema.json#/$defs/slug" },
-    "name": { "$ref": "common.schema.json#/$defs/text" },
-    "code": { "$ref": "common.schema.json#/$defs/text" },
-    "period": { "$ref": "common.schema.json#/$defs/period" },
-    "release": { "$ref": "common.schema.json#/$defs/date" },
+    "kind": {
+      "$ref": "common.schema.json#/$defs/kind"
+    },
+    "slug": {
+      "$ref": "common.schema.json#/$defs/slug"
+    },
+    "name": {
+      "$ref": "common.schema.json#/$defs/text"
+    },
+    "code": {
+      "$ref": "common.schema.json#/$defs/text"
+    },
+    "period": {
+      "$ref": "common.schema.json#/$defs/period"
+    },
+    "release": {
+      "$ref": "common.schema.json#/$defs/date"
+    },
     "units": {
       "description": "The unit and ranking direction of each measure this category reports.",
       "type": "object",
       "additionalProperties": false,
       "minProperties": 1,
       "properties": {
-        "median_wait": { "$ref": "#/$defs/units" },
-        "volume": { "$ref": "#/$defs/units" },
-        "long_wait": { "$ref": "#/$defs/units" },
-        "on_time": { "$ref": "#/$defs/units" }
+        "median_wait": {
+          "$ref": "#/$defs/units"
+        },
+        "volume": {
+          "$ref": "#/$defs/units"
+        },
+        "long_wait": {
+          "$ref": "#/$defs/units"
+        },
+        "on_time": {
+          "$ref": "#/$defs/units"
+        }
       }
     },
-    "scope": { "$ref": "common.schema.json#/$defs/scope" },
+    "scope": {
+      "$ref": "common.schema.json#/$defs/scope"
+    },
     "hospitals": {
       "description": "Ranked hospitals first by median wait, then the rest by name. A figure with no number is never ranked.",
       "type": "array",
@@ -45,16 +68,70 @@
         "additionalProperties": false,
         "required": ["code", "slug", "name", "state", "closed", "measures"],
         "properties": {
-          "code": { "$ref": "common.schema.json#/$defs/code" },
-          "slug": { "$ref": "common.schema.json#/$defs/slug" },
-          "name": { "$ref": "common.schema.json#/$defs/text" },
-          "state": { "$ref": "common.schema.json#/$defs/state" },
-          "closed": { "type": "boolean" },
-          "measures": { "$ref": "common.schema.json#/$defs/measures" }
+          "code": {
+            "$ref": "common.schema.json#/$defs/code"
+          },
+          "slug": {
+            "$ref": "common.schema.json#/$defs/slug"
+          },
+          "name": {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          "state": {
+            "$ref": "common.schema.json#/$defs/state"
+          },
+          "closed": {
+            "type": "boolean"
+          },
+          "measures": {
+            "$ref": "common.schema.json#/$defs/measures"
+          }
         }
       }
     },
-    "sources": { "$ref": "common.schema.json#/$defs/sources" }
+    "sources": {
+      "$ref": "common.schema.json#/$defs/sources"
+    },
+    "benchmarks": {
+      "description": "The national and state figures for this category in the table's newest period, and each one's history. The urgency table publishes none. A benchmark is never ranked.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["national", "states", "trends"],
+      "properties": {
+        "national": {
+          "oneOf": [
+            {
+              "$ref": "common.schema.json#/$defs/benchmark_measures"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "states": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["state", "measures"],
+            "properties": {
+              "state": {
+                "$ref": "common.schema.json#/$defs/benchmark_state"
+              },
+              "measures": {
+                "$ref": "common.schema.json#/$defs/benchmark_measures"
+              }
+            }
+          }
+        },
+        "trends": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/benchmark_series"
+          }
+        }
+      }
+    }
   },
   "$defs": {
     "units": {
@@ -62,8 +139,12 @@
       "additionalProperties": false,
       "required": ["unit", "direction"],
       "properties": {
-        "unit": { "enum": ["days", "surgeries", "percent"] },
-        "direction": { "enum": ["lower_is_better", "higher_is_better", "not_ranked"] }
+        "unit": {
+          "enum": ["days", "surgeries", "percent"]
+        },
+        "direction": {
+          "enum": ["lower_is_better", "higher_is_better", "not_ranked"]
+        }
       }
     }
   }

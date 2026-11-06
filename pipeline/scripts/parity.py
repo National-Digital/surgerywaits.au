@@ -18,6 +18,7 @@ from typing import Any
 
 Doc = dict[str, Any]
 Key = tuple[str, str, str, str]  # hospital code, category code, period, role
+BenchKey = tuple[str, str, str, str]  # category code, scope, role, period
 
 PERCENT_ROLES = {"long_wait": 1, "on_time": 0}  # role -> decimal places the old site published
 ROLES = ("median_wait", "volume", "long_wait", "on_time")
@@ -26,7 +27,6 @@ OLD_REASONS = {  # old suppression code -> the new dist's reason
     "X39": "no_patients_reported",
     "X40": "not_published_by_aihw",
 }
-BENCHMARK_SCOPES = ("national", "states")
 EXAMPLES_IN_SUMMARY = 5
 REPORT_EXAMPLES = 20
 EPSILON = 1e-6
@@ -58,8 +58,10 @@ class Side:
     meshes: dict[tuple[str, str], Mesh] = field(default_factory=dict)
     suburbs: dict[str, tuple[str, str, float, float]] = field(default_factory=dict)
     releases: set[str] = field(default_factory=set)
-    # (category, scope, role) -> figure; scope is national or a state code.
-    benchmarks: dict[tuple[str, str, str], Fig] = field(default_factory=dict)
+    # (category, scope, role, period) -> figure; scope is NAT or an upper-case state code.
+    benchmarks: dict[BenchKey, Fig] = field(default_factory=dict)
+    # The keys the older site showed as its page's current benchmarks, and the newest ones now.
+    benchmarks_current: set[BenchKey] = field(default_factory=set)
 
 
 def read(path: Path) -> Doc:
@@ -164,20 +166,38 @@ def load_old_ranks(base: Path, cat_of: Mapping[str, str], side: Side) -> None:
         add_old_ranks(category["hospitals"], "urgency:" + category["id"], side)
 
 
+def add_old_benchmark(row: object, cat: str, scope: str, period: str | None, side: Side) -> None:
+    if not isinstance(row, dict):
+        return
+    for role in ROLES:
+        raw = row.get(role)
+        fig = old_fig(raw) if isinstance(raw, dict) else None
+        if fig is None or raw is None:
+            continue
+        when = period_of(str(raw["reference_period"])) if period is None else period
+        key = (cat, scope, role, when)
+        side.benchmarks[key] = fig
+        side.releases.add(str(raw["release_date"]))
+        if period is None:
+            side.benchmarks_current.add(key)
+
+
 def load_old_benchmarks(base: Path, cat_of: Mapping[str, str], side: Side) -> None:
     for proc_id, cat in sorted(cat_of.items()):
         if proc_id.startswith("urgency:"):
             continue
-        bench = read(base / "procedures" / f"{proc_id}.json").get("benchmarks") or {}
-        scopes = [("national", bench.get("national"))]
-        scopes += [(str(row.get("reporting_unit_code")), row) for row in bench.get("states", [])]
-        for scope, row in scopes:
-            for role in ROLES:
-                raw = row.get(role) if isinstance(row, dict) else None
-                fig = old_fig(raw) if isinstance(raw, dict) else None
-                if fig is not None and raw is not None:
-                    side.benchmarks[cat, scope, role] = fig
-                    side.releases.add(str(raw["release_date"]))
+        page = read(base / "procedures" / f"{proc_id}.json")
+        bench = page.get("benchmarks") or {}
+        add_old_benchmark(bench.get("national"), cat, "NAT", None, side)
+        for row in bench.get("states", []):
+            add_old_benchmark(row, cat, str(row["reporting_unit_code"]).upper(), None, side)
+        trend = page.get("trend") or {}
+        for group in ("national", "states"):
+            for series in trend.get(group, []):
+                scope = str(series["reporting_unit_code"]).upper()
+                for entry in series["periods"]:
+                    when = period_of(str(entry["reference_period"]))
+                    add_old_benchmark(entry, cat, scope, when, side)
 
 
 def load_old_suburbs(base: Path, side: Side) -> None:
@@ -266,6 +286,7 @@ def load_new_ranks(base: Path, side: Side) -> None:
         for path in sorted((base / "surgeries" / kind).glob("*.json")):
             page = read(path)
             cat = category_key(page["kind"], page["code"], page["slug"])
+            load_new_benchmarks(page, cat, side)
             for hospital in page["hospitals"]:
                 for role, measure in hospital["measures"].items():
                     rank = measure["rank"]
@@ -277,6 +298,25 @@ def load_new_ranks(base: Path, side: Side) -> None:
                             int(rank["position"]),
                             to_percent(role, float(fig["value"])),
                         )
+
+
+def load_new_benchmarks(page: Doc, cat: str, side: Side) -> None:
+    bench = page["benchmarks"]
+    scopes = [("NAT", bench["national"])] + [
+        (e["state"].upper(), e["measures"]) for e in bench["states"]
+    ]
+    for scope, measures in scopes:
+        for role, raw in (measures or {}).items():
+            key = (cat, scope, role, raw["period"])
+            side.benchmarks[key] = new_fig(raw, role)
+            side.benchmarks_current.add(key)
+            side.releases.add(str(raw["release"]))
+    for series in bench["trends"]:
+        scope, role = series["scope"].upper(), series["role"]
+        for period, point in zip(series["periods"], series["points"], strict=True):
+            fig = trend_fig(role, point)
+            if fig is not None:
+                side.benchmarks.setdefault((cat, scope, role, period), fig)
 
 
 def load_new_suburbs(base: Path, side: Side) -> None:
@@ -493,19 +533,70 @@ def mesh_class(old: Mesh, new: Mesh) -> str:
     return "consistent_with_procedure_filter"
 
 
-def compare_benchmarks(old: Side, new: Side) -> Doc:
-    states = Counter(f.state for f in old.benchmarks.values())
-    roles = Counter(k[2] for k in old.benchmarks)
+def compare_benchmark_keys(old: Side, new: Side, keys: Iterable[BenchKey]) -> Doc:
+    newest: dict[str, str] = {}
+    for cat, _, _, period in old.benchmarks_current:
+        newest[cat] = max(newest.get(cat, ""), period)
+    classes: Counter[str] = Counter()
+    explained: Counter[str] = Counter()
+    examples: dict[str, list[Doc]] = {}
+    for key in sorted(keys):
+        a, b = old.benchmarks.get(key), new.benchmarks.get(key)
+        cls = "only_old" if b is None else compare_fig(key[2], a, b) if a else "only_new"
+        classes[cls] += 1
+        if cls == "equal":
+            continue
+        ok, why = explain(cls, ("", key[0], key[3], key[2]), newest)
+        explained["explained" if ok else "unexplained"] += 1
+        bucket = examples.setdefault(f"{cls} ({'explained' if ok else 'unexplained'}): {why}", [])
+        if len(bucket) < REPORT_EXAMPLES:
+            bucket.append(
+                {
+                    "category": key[0],
+                    "scope": key[1],
+                    "role": key[2],
+                    "period": key[3],
+                    "old": None if a is None else {"state": a.state, "value": a.value},
+                    "new": None if b is None else {"state": b.state, "value": b.value},
+                }
+            )
     return {
-        "old_figures": len(old.benchmarks),
-        "old_categories": len({k[0] for k in old.benchmarks}),
-        "old_national_figures": sum(1 for k in old.benchmarks if k[1] == "national"),
-        "old_state_figures": sum(1 for k in old.benchmarks if k[1] != "national"),
-        "old_published": states["published"],
-        "old_suppressed": states["suppressed"],
-        "old_by_role": dict(sorted(roles.items())),
-        "new_figures": len(new.benchmarks),
-        "status": "the new dist has no benchmark counterpart yet",
+        "compared": sum(classes.values()),
+        "by_class": {c: classes[c] for c in sorted(classes)},
+        "explained": {c: explained[c] for c in sorted(explained)},
+        "examples": dict(sorted(examples.items())),
+    }
+
+
+def count_benchmarks(side: Side, keys: Iterable[BenchKey]) -> Doc:
+    found = list(keys)
+    states = Counter(side.benchmarks[k].state for k in found)
+    return {
+        "figures": len(found),
+        "national": sum(1 for k in found if k[1] == "NAT"),
+        "state": sum(1 for k in found if k[1] != "NAT"),
+        "published": states["published"],
+        "suppressed": states["suppressed"],
+        "by_role": dict(sorted(Counter(k[2] for k in found).items())),
+        "categories": len({k[0] for k in found}),
+    }
+
+
+def compare_benchmarks(old: Side, new: Side) -> Doc:
+    shared = {k[0] for k in old.benchmarks_current} & {k[0] for k in new.benchmarks}
+    new_current_shared = {k for k in new.benchmarks_current if k[0] in shared}
+    old_history = {k for k in old.benchmarks if k not in old.benchmarks_current}
+    return {
+        "old_current": count_benchmarks(old, old.benchmarks_current),
+        "new_current": count_benchmarks(new, new.benchmarks_current),
+        "new_current_in_shared_categories": count_benchmarks(new, new_current_shared),
+        "old_history_figures": len(old.benchmarks),
+        "new_history_figures": len(new.benchmarks),
+        "current": compare_benchmark_keys(old, new, old.benchmarks_current),
+        "history": compare_benchmark_keys(old, new, old_history | old.benchmarks_current),
+        "new_only_categories": sorted(
+            {k[0] for k in new.benchmarks_current} - {k[0] for k in old.benchmarks}
+        ),
     }
 
 
@@ -657,10 +748,14 @@ def summary_text(report: Doc) -> str:
     ranks = report["ranks"]
     lines.append(f"Ranks in {ranks['period']}: {ranks['by_class']}")
     bench = report["benchmarks"]
+    old_now, new_now = bench["old_current"], bench["new_current_in_shared_categories"]
     lines.append(
-        f"Benchmarks: {bench['old_figures']} old figures, {bench['new_figures']} new "
-        f"({bench['status']})"
+        f"Benchmarks, newest period: {old_now['national']} national and {old_now['state']} state "
+        f"old figures, {new_now['national']} and {new_now['state']} new in the same categories"
     )
+    for label in ("current", "history"):
+        part = bench[label]
+        lines.append(f"  {label}: {part['by_class']}, explained/unexplained: {part['explained']}")
     lines.append(f"Nearby: {report['nearby']['by_class']}")
     sub = report["suburbs"]
     lines.append(f"Suburbs: {sub['old_count']} old, {sub['new_count']} new")
