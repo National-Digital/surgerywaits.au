@@ -1,0 +1,66 @@
+---
+// Base comes first so its global sheet, and with it the layer order, precedes every component sheet.
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+import DataPassport from './DataPassport.astro';
+import IndexList from './IndexList.astro';
+import SafetyBlock from './SafetyBlock.astro';
+import { getSite, getStateTemplate } from '../lib/content';
+import { formatCount } from '../lib/format';
+import { fill } from '../lib/slots';
+import {
+  STATES_PATH,
+  hospitalsIn,
+  stateFiles,
+  stateName,
+  statePath,
+  statesStamp,
+  surgeryCount,
+} from '../lib/state-page';
+
+const t = getStateTemplate();
+const site = getSite().name;
+const files = stateFiles();
+const items = files.map((file) => {
+  const hospitals = hospitalsIn(file.state).length;
+  const surgeries = surgeryCount(file);
+  return {
+    name: stateName(file.state),
+    href: statePath(file.state),
+    notes: [
+      hospitals === 1
+        ? t.index_hospitals_one
+        : fill(t.index_hospitals_many, { count: formatCount(hospitals) }),
+      surgeries === 1
+        ? t.index_surgeries_one
+        : fill(t.index_surgeries_many, { count: formatCount(surgeries) }),
+    ],
+  };
+});
+const sources = [...new Set(files.flatMap((f) => f.sources))].sort();
+---
+
+<Base
+  title={fill(t.index_title, { site })}
+  description={t.index_description}
+  canonicalPath={STATES_PATH}
+>
+  <div class="o-columns">
+    <Breadcrumbs items={[{ label: t.crumb_home, href: '/' }, { label: t.crumb_states }]} />
+    <h1>{t.index_heading}</h1>
+    <p>{t.index_lede}</p>
+    <p>{fill(t.index_stamp, statesStamp())}</p>
+
+    <section aria-label={t.index_list_label}>
+      <IndexList items={items} />
+    </section>
+
+    <section aria-labelledby="exclusion-heading">
+      <h2 id="exclusion-heading">{t.exclusion_heading}</h2>
+      <p>{t.exclusion}</p>
+    </section>
+
+    <SafetyBlock id="state-safety-heading" />
+    <DataPassport {sources} />
+  </div>
+</Base>

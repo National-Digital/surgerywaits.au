@@ -1,0 +1,20 @@
+---
+import UrgencyCategory from '../../../components/UrgencyCategory.astro';
+import { categoryStateRoutes } from '../../../lib/urgency-page';
+
+interface Props {
+  number: number;
+  state: string;
+}
+
+export function getStaticPaths(): {
+  params: { category: string; state: string };
+  props: Props;
+}[] {
+  return categoryStateRoutes();
+}
+
+const { number, state } = Astro.props;
+---
+
+<UrgencyCategory {number} {state} />

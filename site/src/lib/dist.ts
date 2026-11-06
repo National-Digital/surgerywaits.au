@@ -199,6 +199,25 @@ interface TrendSeries {
   points: TrendPoint[];
 }
 
+export interface StateSurgery {
+  kind: Kind;
+  slug: string;
+  name: string;
+  period: string;
+  release: string;
+  measures: Benchmark;
+  national: Benchmark | null;
+}
+
+export interface StateBenchmarks {
+  state: Exclude<State, 'OT'>;
+  slug: string;
+  name: string;
+  scope: { sector: 'public'; private_excluded: string[] };
+  surgeries: StateSurgery[];
+  sources: string[];
+}
+
 export interface Trend {
   series: TrendSeries[];
   sources: string[];
@@ -214,6 +233,18 @@ export interface QueenslandFacility {
     release: string;
     total: Record<QueenslandColumn, QueenslandFigure>;
   }[];
+}
+
+export interface QueenslandIndex {
+  facilities: {
+    facility_code: string;
+    facility_name: string;
+    hospital_code: string;
+    matched_by: 'name' | 'override';
+    slug: string | null;
+  }[];
+  quarters: { period: string; period_end: string }[];
+  sources: string[];
 }
 
 // The cast is safe because readDist has just proved the document against its schema.
@@ -233,8 +264,16 @@ export function readTrend(slug: string): Trend {
   return readDist(`trends/${slug}.json`) as Trend;
 }
 
+export function readQueenslandIndex(): QueenslandIndex {
+  return readDist('queensland.json') as QueenslandIndex;
+}
+
 export function readQueenslandFacility(code: string): QueenslandFacility {
   return readDist(`queensland/${code}.json`) as QueenslandFacility;
+}
+
+export function readState(slug: string): StateBenchmarks {
+  return readDist(`states/${slug}.json`) as StateBenchmarks;
 }
 
 export function readSurgery(kind: Kind, slug: string): Surgery {
@@ -262,7 +301,7 @@ export function listSurgeries(kind: Kind): string[] {
     .sort();
 }
 
-export function listDist(folder: 'hospitals' | 'queensland' | 'trends'): string[] {
+export function listDist(folder: 'hospitals' | 'queensland' | 'states' | 'trends'): string[] {
   return readdirSync(join(distDirectory(), folder))
     .filter((file) => file.endsWith('.json'))
     .map((file) => file.slice(0, -'.json'.length))

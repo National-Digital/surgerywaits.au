@@ -239,7 +239,9 @@ describe('Surgery state pages', () => {
 describe('Surgery index', () => {
   it('lists every surgery once, under its own heading', async () => {
     const html = await render(SurgeryIndex, {});
-    const found = [...html.matchAll(/<li><a href="(\/[a-z-]+\/[a-z0-9-]+\/)">/g)].map((m) => m[1]);
+    const found = [...html.matchAll(/<li><a href="(\/(?:surgery|specialty)\/[a-z0-9-]+\/)">/g)].map(
+      (m) => m[1],
+    );
     expect(found.sort()).toEqual(surgeryRefs().map(surgeryPath).sort());
     expect(html).toContain(`<title>${escaped(fill(t.index_title, { site: site.name }))}</title>`);
     expect(html).toContain(`<link rel="canonical" href="${site.url}surgery/">`);

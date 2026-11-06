@@ -7,16 +7,18 @@ import type { z } from 'astro/zod';
 
 import {
   areasSchema,
-  hospitalsIndexSchema,
   hospitalTemplateSchema,
+  hospitalsIndexSchema,
   labelsSchema,
   navigationSchema,
   pageSchema,
-  siteSchema,
-  surgeryNamesSchema,
   pairTemplateSchema,
+  siteSchema,
+  stateTemplateSchema,
+  surgeryNamesSchema,
   surgeryTemplateSchema,
   termsSchema,
+  urgencyTemplateSchema,
 } from '../lib/content-schema';
 import {
   contentSlug,
@@ -455,6 +457,8 @@ describe('Copy', () => {
       'areas.yaml': areasSchema,
       'surgery-names.yaml': surgeryNamesSchema,
       'templates/hospitals.yaml': hospitalsIndexSchema,
+      'templates/state.yaml': stateTemplateSchema,
+      'templates/urgency.yaml': urgencyTemplateSchema,
       'terms.yaml': termsSchema,
     };
     const files = readContent();

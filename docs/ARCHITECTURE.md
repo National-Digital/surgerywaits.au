@@ -94,6 +94,17 @@ Cloudflare Worker    serves the static assets (planned)
   Both pages state the private hospital exclusion and ship no script. `/hospitals/` comes from
   `site/content/templates/hospitals.yaml`, and the `/surgery/` additions come from `surgery.yaml`. The hospital page adds its
   "Hospitals" crumb once `/hospitals/` is built.
+  `/state/` lists each state or territory with a state file, and `/state/<code>/` holds the state's median wait for its three
+  busiest procedures beside the national one, a table of its open public hospitals by the median wait for each urgency
+  category with the dist's national ranks, a table of its procedures and one of its specialties beside the national
+  figures, links to each surgery's page for the state, to its urgency pages and to every hospital, the exclusion statement,
+  the safety block and the data passport. The Queensland page adds a separate table of the Queensland Health quarter for
+  the hospitals that joined a national one, in name order and never ranked. `/urgency/` explains the three categories from
+  `site/content/templates/urgency.yaml`, and `/urgency/category-<n>/` and `/urgency/category-<n>/<code>/` rank the open
+  public hospitals by the share treated within the recommended time, highest first, on current published figures only.
+  The urgency table publishes no national or state figure, so a category page says so, and shows the figures and the trend
+  only when the dist carries them. These are the addresses the earlier site used. Copy is in `templates/state.yaml` and
+  `templates/urgency.yaml`, and `/surgery/` links each urgency category to its page.
   `npm run build:preview` adds a development page for the figure, the stat tile, the data table, the chart, the wait bars, the safety block, the breadcrumbs and the data passport at
   `/dev/primitives/` and writes to a `dist-preview` folder in `site/`, so the published build never holds it. The
   page is marked noindex and the `Accessibility` job audits it. The base layout holds the header with the site navigation inline, the footer and, on narrow screens, a "Compare near you" bar. A link in the header, the footer or the bar comes from `site/content/navigation.yaml` and is left out until its page is built.

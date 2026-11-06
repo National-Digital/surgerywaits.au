@@ -9,8 +9,10 @@ import {
   pairTemplateSchema,
   pageSchema,
   siteSchema,
+  stateTemplateSchema,
   surgeryNamesSchema,
   surgeryTemplateSchema,
+  urgencyTemplateSchema,
 } from './content-schema';
 import type { LabelKey } from './content-schema';
 import { formatRank } from './format';
@@ -49,6 +51,11 @@ const pairTemplate = await single('pair', 'pair', pairTemplateSchema);
 const areas = await single('areas', 'areas', areasSchema);
 const surgeryNames = await single('surgery-names', 'surgery-names', surgeryNamesSchema);
 
+const stateTemplate = await single('state', 'state', stateTemplateSchema);
+const urgencyTemplate = await single('urgency', 'urgency', urgencyTemplateSchema);
+
+export const getStateTemplate = (): typeof stateTemplate => stateTemplate;
+export const getUrgencyTemplate = (): typeof urgencyTemplate => urgencyTemplate;
 export const getSurgeryTemplate = (): typeof surgeryTemplate => surgeryTemplate;
 export const getPairTemplate = (): typeof pairTemplate => pairTemplate;
 export const getAreas = (): typeof areas => areas;

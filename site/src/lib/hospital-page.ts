@@ -154,8 +154,8 @@ export function surgeryTable(
 }
 
 // With no current row, the table states the range of the earlier periods it holds.
-export function sortedWithSpan(rows: TableRow[]): SurgeryTableModel {
-  const sorted = sortRows(rows, 0, 'median_wait');
+export function sortedWithSpan(rows: TableRow[], role: Role = 'median_wait'): SurgeryTableModel {
+  const sorted = sortRows(rows, 0, role);
   if (rows.some((row) => row.stale !== true)) {
     return { rows: sorted };
   }

@@ -1,0 +1,289 @@
+---
+// Base comes first so its global sheet, and with it the layer order, precedes every component sheet.
+import Base from '../layouts/Base.astro';
+import BlockLink from './BlockLink.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+import DataPassport from './DataPassport.astro';
+import DataTable from './DataTable.astro';
+import LinkList from './LinkList.astro';
+import SafetyBlock from './SafetyBlock.astro';
+import StatTile from './StatTile.astro';
+import StatTiles from './StatTiles.astro';
+import TrendChart from './TrendChart.astro';
+import { getHospitalTemplate, getSite, getUrgencyTemplate, label } from '../lib/content';
+import { formatHospitals } from '../lib/format';
+import { busiestStates, listable, roleLabels } from '../lib/surgery-page';
+import { fill } from '../lib/slots';
+import { statePath, stateName } from '../lib/state-page';
+import {
+  NATIONAL_SCOPE,
+  URGENCY_PATH,
+  URGENCY_ROLES,
+  benchmarkCharts,
+  benchmarkRows,
+  benchmarkTiles,
+  categories,
+  categoryByNumber,
+  categoryRows,
+  categoryStatePath,
+  categoryStates,
+  publishedShares,
+  readCategory,
+} from '../lib/urgency-page';
+
+interface Props {
+  number: number;
+  state?: string;
+}
+
+const { number, state } = Astro.props;
+const t = getUrgencyTemplate();
+const site = getSite().name;
+const states = getHospitalTemplate().states;
+const roles = roleLabels(label);
+const category = categoryByNumber(number);
+const surgery = readCategory(category);
+const here = state === undefined ? undefined : stateName(state);
+const rows = listable(surgery).filter((r) => state === undefined || r.state === state);
+const table = categoryRows(surgery, rows);
+const hospitals = formatHospitals(publishedShares(surgery, rows));
+const linked = new Set(categoryStates(surgery));
+const columns = URGENCY_ROLES.map((role) => ({ heading: roles[role], role }));
+const own =
+  state === undefined
+    ? null
+    : (surgery.benchmarks.states.find((s) => s.state === state)?.measures ?? null);
+const tiles = benchmarkTiles(state === undefined ? surgery.benchmarks.national : own);
+const nationalByRole = new Map(
+  benchmarkTiles(surgery.benchmarks.national).map((tile) => [tile.role, tile.figure]),
+);
+const stateRows = benchmarkRows(
+  surgery,
+  (s) => states[s as keyof typeof states],
+  linked,
+  (s) => categoryStatePath(category, s),
+);
+const charts = benchmarkCharts(
+  surgery,
+  state === undefined ? [NATIONAL_SCOPE, ...busiestStates(surgery)] : [NATIONAL_SCOPE, state],
+  { [NATIONAL_SCOPE]: t.series_national, ...states },
+);
+const stateLinks = [...linked].map((s) => ({
+  label: fill(t.state_link, { category: category.label, state: states[s as keyof typeof states] }),
+  href: categoryStatePath(category, s),
+}));
+const others = categories()
+  .filter((c) => c.number !== number)
+  .map((c) => ({
+    label: fill(t.other_link, { category: c.label }),
+    href: state === undefined ? c.path : categoryStatePath(c, state),
+  }));
+const path = state === undefined ? category.path : categoryStatePath(category, state);
+const slots = { category: category.label, within: category.within, period: surgery.period };
+---
+
+<Base
+  title={
+    here === undefined
+      ? fill(t.title, { category: category.label, site })
+      : fill(t.state_title, { category: category.label, state: here, site })
+  }
+  description={
+    here === undefined
+      ? fill(t.description, slots)
+      : fill(t.state_description, { ...slots, state: here })
+  }
+  canonicalPath={path}
+>
+  <div class="o-columns">
+    <Breadcrumbs
+      items={[
+        { label: t.crumb_home, href: '/' },
+        { label: t.crumb_urgency, href: URGENCY_PATH },
+        ...(here === undefined
+          ? [{ label: category.label }]
+          : [{ label: category.label, href: category.path }, { label: here }]),
+      ]}
+    />
+    <h1>
+      {here === undefined
+        ? category.label
+        : fill(t.state_link, { category: category.label, state: here })}
+    </h1>
+    <p>
+      {here === undefined
+        ? fill(t.lede, {
+            number: String(category.number),
+            short: category.short,
+            within: category.within,
+            meaning: category.meaning,
+          })
+        : fill(t.state_lede, {
+            number: String(category.number),
+            short: category.short,
+            within: category.within,
+            period: surgery.period,
+            state: here,
+            hospitals,
+          })}
+    </p>
+    {here === undefined && <p>{fill(t.lede_count, { period: surgery.period, hospitals })}</p>}
+    <p>{t.specialist_note}</p>
+
+    {here === undefined && (
+      <section aria-labelledby="national-heading">
+        <h2 id="national-heading">{t.national_heading}</h2>
+        {tiles.length > 0 ? (
+          <>
+            <p>{t.national_intro}</p>
+            <StatTiles>
+              {tiles.map((tile) => (
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+                <StatTile
+                  heading={fill(t.tile_national, { measure: roles[tile.role] })}
+                  role={tile.role}
+                  figure={tile.figure}
+                />
+              ))}
+            </StatTiles>
+          </>
+        ) : (
+          <p>{t.national_none}</p>
+        )}
+      </section>
+    )}
+
+    {here !== undefined && tiles.length > 0 && (
+      <section aria-labelledby="figures-heading">
+        <h2 id="figures-heading">{fill(t.state_figures_heading, { state: here })}</h2>
+        <p>{t.state_figures_intro}</p>
+        <StatTiles>
+          {tiles.map((tile) => {
+            const national = nationalByRole.get(tile.role);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+            return (
+              <>
+                <StatTile
+                  heading={fill(t.tile_state, { measure: roles[tile.role], state: here })}
+                  role={tile.role}
+                  figure={tile.figure}
+                />
+                {national !== undefined && (
+                  <StatTile
+                    heading={fill(t.tile_national, { measure: roles[tile.role] })}
+                    role={tile.role}
+                    figure={national}
+                  />
+                )}
+              </>
+            );
+          })}
+        </StatTiles>
+      </section>
+    )}
+  </div>
+
+  {here === undefined && stateRows.length > 0 && (
+    <section aria-labelledby="states-table-heading">
+      <div class="o-columns">
+        <h2 id="states-table-heading">{t.states_heading}</h2>
+        <p>{t.states_table_intro}</p>
+      </div>
+      <DataTable
+        id="states"
+        caption={fill(t.states_table_caption, { category: category.label })}
+        rowHeading={t.states_row_heading}
+        {columns}
+        rows={stateRows}
+      />
+    </section>
+  )}
+
+  <section aria-labelledby="hospitals-heading">
+    <div class="o-columns">
+      <h2 id="hospitals-heading">
+        {here === undefined
+          ? t.hospitals_heading
+          : fill(t.state_hospitals_heading, { state: here })}
+      </h2>
+      <p>{t.hospitals_intro}</p>
+      <p>{t.ranking}</p>
+    </div>
+    {table !== null ? (
+      <DataTable
+        id="hospitals"
+        caption={
+          here === undefined
+            ? fill(t.hospitals_caption, { category: category.label })
+            : fill(t.state_hospitals_caption, { category: category.label, state: here })
+        }
+        rowHeading={t.hospitals_row_heading}
+        {columns}
+        rows={table.rows}
+        {...(table.span ? { span: table.span } : {})}
+      />
+    ) : (
+      <div class="o-columns">
+        <p>{fill(t.hospitals_none, { category: category.label, period: surgery.period })}</p>
+      </div>
+    )}
+  </section>
+
+  <div class="o-columns">
+    {here === undefined && (
+      <section aria-labelledby="trends-heading">
+        <h2 id="trends-heading">{t.trends_heading}</h2>
+        {charts.length > 0 ? (
+          <>
+            <p>{t.trends_intro}</p>
+            {charts.map((chart) => (
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+              <TrendChart
+                id={chart.id}
+                name={fill(t.chart_name, { category: category.label, measure: roles[chart.role] })}
+                caption={fill(t.chart_caption, {
+                  category: category.label,
+                  measure: roles[chart.role],
+                })}
+                role={chart.role}
+                series={chart.series}
+              />
+            ))}
+          </>
+        ) : (
+          <p>{t.trends_none}</p>
+        )}
+      </section>
+    )}
+
+    {here === undefined && stateRows.length === 0 && stateLinks.length > 0 && (
+      <section aria-labelledby="state-links-heading">
+        <h2 id="state-links-heading">{t.states_heading}</h2>
+        <LinkList links={stateLinks} />
+      </section>
+    )}
+
+    {here !== undefined && state !== undefined && (
+      <>
+        <BlockLink href={category.path}>
+          {fill(t.back_to_category, { category: category.label })}
+        </BlockLink>
+        <BlockLink href={statePath(state)}>{fill(t.back_to_state, { state: here })}</BlockLink>
+      </>
+    )}
+
+    <section aria-labelledby="other-heading">
+      <h2 id="other-heading">{t.other_heading}</h2>
+      <p>{t.other_intro}</p>
+      <LinkList links={others} />
+    </section>
+
+    <section aria-labelledby="exclusion-heading">
+      <h2 id="exclusion-heading">{t.exclusion_heading}</h2>
+      <p>{t.exclusion}</p>
+    </section>
+
+    <SafetyBlock id="urgency-safety-heading" />
+    <DataPassport sources={surgery.sources} />
+  </div>
+</Base>

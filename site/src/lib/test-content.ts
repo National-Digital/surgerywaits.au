@@ -22,6 +22,12 @@ function entries(collection: string): { id: string; data: unknown }[] {
     if (collection === 'pair' && path === 'templates/pair.yaml') {
       return [{ id: 'pair', data }];
     }
+    if (
+      (collection === 'state' && path === 'templates/state.yaml') ||
+      (collection === 'urgency' && path === 'templates/urgency.yaml')
+    ) {
+      return [{ id: collection, data }];
+    }
     if (collection === 'pages' && path.startsWith('pages/')) {
       return [{ id: path.slice('pages/'.length).replace(/\.yaml$/, ''), data }];
     }

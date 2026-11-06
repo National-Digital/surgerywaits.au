@@ -1,0 +1,90 @@
+---
+import type { QueenslandRow } from '../lib/state-page';
+
+interface Props {
+  id: string;
+  caption: string;
+  // The one period and release every figure in the table shares, in words.
+  stamp: string;
+  rowHeading: string;
+  headings: { treated: string; timely: string };
+  rows: QueenslandRow[];
+}
+
+const { id, caption, stamp, rowHeading, headings, rows } = Astro.props;
+---
+
+<div class="o-table-scroll" role="region" aria-labelledby={`${id}-caption`} tabindex="0">
+  <table class="c-qld-table">
+    <caption class="c-qld-table__caption" id={`${id}-caption`}>
+      {caption}
+      <small class="c-qld-table__stamp">{stamp}</small>
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">{rowHeading}</th>
+        <th scope="col">{headings.treated}</th>
+        <th scope="col">{headings.timely}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {rows.map((row) => (
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+        <tr>
+          <th scope="row">
+            {row.href === undefined ? row.name : <a href={row.href}>{row.name}</a>}
+          </th>
+          <td class:list={{ 'is-not-published': row.treated.withheld }}>{row.treated.text}</td>
+          <td class:list={{ 'is-not-published': row.timely.withheld }}>{row.timely.text}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+<style>
+  @layer components {
+    .c-qld-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-variant-numeric: tabular-nums;
+      font-size: var(--fs-small);
+    }
+
+    .c-qld-table__caption {
+      padding: var(--space-3) var(--space-4) 0;
+      text-align: start;
+      color: var(--ink-2);
+    }
+
+    .c-qld-table__stamp {
+      display: block;
+      margin-block-start: var(--space-1);
+      font-size: var(--fs-small);
+      color: var(--muted);
+    }
+
+    .c-qld-table th,
+    .c-qld-table td {
+      padding: var(--space-3) var(--space-4);
+      border-block-end: 1px solid var(--hairline);
+      text-align: end;
+      vertical-align: top;
+    }
+
+    .c-qld-table th:first-child {
+      text-align: start;
+    }
+
+    .c-qld-table tbody th a {
+      display: inline-block;
+      min-height: var(--target);
+      line-height: var(--target);
+    }
+
+    .c-qld-table .is-not-published {
+      font-style: italic;
+      color: var(--ink-2);
+    }
+  }
+</style>

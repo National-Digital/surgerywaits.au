@@ -1,0 +1,75 @@
+categories:
+  - short: urgent
+    within: 30 days
+    meaning: It is for a condition that could get worse quickly enough to become an emergency.
+  - short: semi-urgent
+    within: 90 days
+    meaning: It is for a condition that causes some pain, dysfunction or disability. The condition is unlikely to get worse quickly or become an emergency.
+  - short: non-urgent
+    within: 365 days
+    meaning: It is for a condition that causes little or no pain, dysfunction or disability. The condition is unlikely to get worse quickly and is not expected to become an emergency.
+crumb_home: Home
+crumb_urgency: Urgency categories
+category_label: 'Category {number}, {short}'
+index_title: 'Urgency categories for planned surgery: {site}'
+index_description: This page explains what urgency categories 1, 2 and 3 mean for planned surgery in an Australian public hospital. It gives the recommended time for each category and how often each public hospital meets it.
+index_heading: Urgency categories explained
+index_lede: This page explains what categories 1, 2 and 3 mean. It also says who decides your category and how often each public hospital treats people within the recommended time.
+index_stamp: 'The figures are for {period}. The data was released on {release}.'
+index_intro: When you join a public hospital waiting list for planned surgery, your treating specialist gives you an urgency category. The specialist assigns it after assessing you. It is a clinical judgement about how soon your surgery should happen. You do not choose it, and this site cannot work it out for you.
+categories_heading: The three categories
+categories_intro: The recommended time is a target. Each hospital reports how many people it treated within that time. This site shows that share hospital by hospital, with the highest share first.
+category_within: 'Surgery is recommended within {within}.'
+category_hospitals_one: 1 public hospital published a share treated on time.
+category_hospitals_many: '{count} public hospitals published a share treated on time.'
+states_heading: By state and territory
+states_intro: Each link opens the public hospitals of one state or territory for one category.
+state_link: '{state}: {category}'
+relation_heading: How categories relate to waiting times by surgery
+relation:
+  - The waiting time for a surgery, such as a hip replacement, covers everyone who had that surgery in all three categories together. A hospital page shows the surgery figures and the urgency figures separately, because the publisher does not report a figure for one surgery in one category.
+  - A hospital with a short median wait for your surgery may be slower or faster for your category. Take both numbers to your appointment.
+ask_heading: What to ask your specialist
+ask:
+  - What urgency category am I likely to be, and why?
+  - What is the recommended time for that category, and how often does this hospital meet it?
+  - Does my category change if my condition changes while I wait?
+title: '{category} surgery waiting times by hospital: {site}'
+description: 'This page covers planned surgery for {category}. The recommended time is {within}, and the page shows the share of patients each public hospital treated within it. The latest figures cover {period}.'
+lede: 'Surgery in category {number}, {short}, is recommended within {within} of joining the waiting list. {meaning}'
+lede_count: '{hospitals} published a share treated on time in {period}.'
+specialist_note: Your treating specialist assigns the category after assessing you. The recommended time is a target.
+national_heading: National figures
+national_intro: These figures cover every public hospital in Australia that reported this category. A national figure is never ranked.
+national_none: The source publishes no national figure for this category. It publishes one figure for each hospital.
+tile_national: '{measure}, Australia'
+tile_state: '{measure}, {state}'
+states_table_caption: '{category}: state and territory figures'
+states_table_intro: The highest share treated on time comes first. A state with no published share follows, in name order.
+states_row_heading: State or territory
+hospitals_heading: Hospitals by share treated on time
+hospitals_intro: 'The highest share treated within the recommended time comes first. A hospital with no published share follows, in name order, and has no rank.'
+hospitals_caption: '{category}: public hospitals'
+hospitals_row_heading: Hospital
+hospitals_none: 'No public hospital published a figure for {category} in {period}.'
+ranking: A rank compares a hospital with every public hospital in Australia that published the same figure for the same period. The page shows a rank only on a current published figure. It never ranks a withheld or unreported figure. It also never ranks a figure from an earlier period.
+trends_heading: How the figures have changed
+trends_intro: Each chart shows one figure for each year the source published it. A year with no published figure is a gap in the line, and the table under the chart gives the reason.
+trends_none: The source publishes no national or state history for this category. Each hospital page shows that hospital's own history.
+chart_caption: '{category}: {measure} by financial year'
+chart_name: 'Line chart of the {measure} by financial year for {category}'
+series_national: Australia
+state_title: '{category} surgery waiting times in {state}: {site}'
+state_description: 'This page covers planned surgery in {state} for {category}. The recommended time is {within}, and the page shows the share of patients each public hospital treated within it. The latest figures cover {period}.'
+state_lede: 'Surgery in category {number}, {short}, is recommended within {within} of joining the waiting list. In {state}, {hospitals} published a share treated on time in {period}.'
+state_figures_heading: 'Figures for {state}'
+state_figures_intro: Each tile shows one figure for the state. A state figure is never ranked.
+state_hospitals_heading: 'Hospitals in {state}'
+state_hospitals_caption: '{category}: public hospitals in {state}'
+back_to_category: 'All of Australia: {category}'
+back_to_state: '{state}: planned surgery waiting times'
+other_heading: Other urgency categories
+other_intro: Each link opens the same figures for one of the other two categories.
+other_link: '{category}'
+exclusion_heading: What this page leaves out
+exclusion: Private hospitals are excluded. This page covers public hospitals only, so it shows no private hospital.

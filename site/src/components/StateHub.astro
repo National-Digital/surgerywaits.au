@@ -1,0 +1,237 @@
+---
+// Base comes first so its global sheet, and with it the layer order, precedes every component sheet.
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+import DataPassport from './DataPassport.astro';
+import DataTable from './DataTable.astro';
+import IndexList from './IndexList.astro';
+import LinkList from './LinkList.astro';
+import QueenslandTable from './QueenslandTable.astro';
+import SafetyBlock from './SafetyBlock.astro';
+import StatTile from './StatTile.astro';
+import StatTiles from './StatTiles.astro';
+import { getSite, getStateTemplate, label } from '../lib/content';
+import { hospitalPath } from '../lib/hospital-page';
+import { formatCount, formatHospitals } from '../lib/format';
+import { fill } from '../lib/slots';
+import {
+  STATES_PATH,
+  headlineTiles,
+  hospitalTable,
+  hospitalsIn,
+  loadState,
+  newestPeriod,
+  publishedUrgencyCount,
+  overlayFor,
+  sourcesOf,
+  stateFiles,
+  stateName,
+  statePath,
+  specialtyTable,
+  surgeryColumns,
+  hospitalColumns,
+  procedureTable,
+  urgencyLinks,
+} from '../lib/state-page';
+import { categoryStatePath } from '../lib/urgency-page';
+
+interface Props {
+  state: string;
+}
+
+const { state } = Astro.props;
+const t = getStateTemplate();
+const site = getSite().name;
+const name = stateName(state);
+const file = loadState(state);
+const period = newestPeriod(file);
+const tiles = headlineTiles(file);
+const procedures = procedureTable(file);
+const specialties = specialtyTable(file);
+const hospitals = hospitalTable(state);
+const queensland = overlayFor(state);
+const urgency = urgencyLinks(state).map((category) => ({
+  label: fill(t.urgency_link, { category: category.label, state: name }),
+  href: categoryStatePath(category, state),
+}));
+const listed = hospitalsIn(state).map((h) => ({
+  name: h.name,
+  href: hospitalPath(h.slug),
+  tag: h.closed ? t.closed_tag : undefined,
+}));
+const others = stateFiles()
+  .filter((f) => f.state !== state)
+  .map((f) => ({
+    label: fill(t.other_link, { state: stateName(f.state) }),
+    href: statePath(f.state),
+  }));
+const columns = surgeryColumns([
+  fill(t.column_state_median, { state: name }),
+  t.column_national_median,
+  fill(t.column_state_long_wait, { state: name }),
+  fill(t.column_state_volume, { state: name }),
+]);
+const hospitalCols = hospitalColumns(hospitals?.categories ?? [], (category) =>
+  fill(t.hospitals_column, { category: category.label }),
+);
+const sources = sourcesOf(file, state);
+---
+
+<Base
+  title={fill(t.title, { state: name, site })}
+  description={fill(t.description, { state: name, period })}
+  canonicalPath={statePath(state)}
+>
+  <div class="o-columns">
+    <Breadcrumbs
+      items={[
+        { label: t.crumb_home, href: '/' },
+        { label: t.crumb_states, href: STATES_PATH },
+        { label: name },
+      ]}
+    />
+    <h1>{name}</h1>
+    <p>
+      {fill(t.lede, {
+        state: name,
+        period,
+        hospitals: formatHospitals(publishedUrgencyCount(state)),
+      })}
+    </p>
+
+    {tiles.length > 0 && (
+      <section aria-labelledby="figures-heading">
+        <h2 id="figures-heading">{fill(t.figures_heading, { state: name })}</h2>
+        <p>{fill(t.figures_intro, { state: name })}</p>
+        <StatTiles>
+          {tiles.map((tile) => (
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+            <>
+              <StatTile
+                heading={fill(t.tile_state, { surgery: tile.surgery, state: name })}
+                role="median_wait"
+                figure={tile.state}
+              />
+              <StatTile
+                heading={fill(t.tile_national, { surgery: tile.surgery })}
+                role="median_wait"
+                figure={tile.national}
+              />
+            </>
+          ))}
+        </StatTiles>
+      </section>
+    )}
+  </div>
+
+  {hospitals !== null && (
+    <section aria-labelledby="hospitals-heading">
+      <div class="o-columns">
+        <h2 id="hospitals-heading">{fill(t.hospitals_heading, { state: name })}</h2>
+        <p>{fill(t.hospitals_intro, { state: name })}</p>
+        <p>{t.ranking}</p>
+      </div>
+      <DataTable
+        id="hospitals"
+        caption={fill(t.hospitals_caption, { state: name })}
+        rowHeading={t.hospitals_row_heading}
+        columns={hospitalCols}
+        rows={hospitals.rows}
+        {...(hospitals.span ? { span: hospitals.span } : {})}
+      />
+    </section>
+  )}
+  {hospitals === null && (
+    <div class="o-columns">
+      <h2 id="hospitals-heading">{fill(t.hospitals_heading, { state: name })}</h2>
+      <p>{fill(t.hospitals_none, { state: name, period })}</p>
+    </div>
+  )}
+
+  {procedures !== null && (
+    <section aria-labelledby="procedures-heading">
+      <div class="o-columns">
+        <h2 id="procedures-heading">{fill(t.procedures_heading, { state: name })}</h2>
+        <p>{fill(t.surgeries_intro, { state: name })}</p>
+      </div>
+      <DataTable
+        id="procedures"
+        caption={fill(t.procedures_caption, { state: name })}
+        rowHeading={t.surgeries_row_heading}
+        {columns}
+        rows={procedures.rows}
+      />
+    </section>
+  )}
+
+  {specialties !== null && (
+    <section aria-labelledby="specialties-heading">
+      <div class="o-columns">
+        <h2 id="specialties-heading">{fill(t.specialties_heading, { state: name })}</h2>
+        <p>{fill(t.surgeries_intro, { state: name })}</p>
+      </div>
+      <DataTable
+        id="specialties"
+        caption={fill(t.specialties_caption, { state: name })}
+        rowHeading={t.surgeries_row_heading}
+        {columns}
+        rows={specialties.rows}
+      />
+    </section>
+  )}
+
+  <div class="o-columns">
+    {urgency.length > 0 && (
+      <section aria-labelledby="urgency-heading">
+        <h2 id="urgency-heading">{fill(t.urgency_heading, { state: name })}</h2>
+        <p>{fill(t.urgency_intro, { state: name })}</p>
+        <LinkList links={urgency} />
+      </section>
+    )}
+
+    <section aria-labelledby="hospital-list-heading">
+      <h2 id="hospital-list-heading">{fill(t.hospitals_list_heading, { state: name })}</h2>
+      <p>{fill(t.hospitals_list_intro, { state: name })}</p>
+      <IndexList items={listed} />
+    </section>
+  </div>
+
+  {queensland !== null && (
+    <section aria-labelledby="qld-heading">
+      <div class="o-columns">
+        <h2 id="qld-heading">{t.qld_heading}</h2>
+        <p>{t.qld_intro}</p>
+        <p>{fill(t.qld_count, { count: formatCount(queensland.rows.length) })}</p>
+      </div>
+      <QueenslandTable
+        id="qld"
+        caption={fill(t.qld_caption, { quarter: queensland.quarter })}
+        stamp={queensland.stamp}
+        rowHeading={t.qld_row_heading}
+        headings={{
+          treated: label('qld_treated'),
+          timely: label('qld_percent_treated_in_time'),
+        }}
+        rows={queensland.rows}
+      />
+    </section>
+  )}
+
+  <div class="o-columns">
+    {others.length > 0 && (
+      <section aria-labelledby="other-states-heading">
+        <h2 id="other-states-heading">{t.other_heading}</h2>
+        <p>{t.other_intro}</p>
+        <LinkList links={others} />
+      </section>
+    )}
+
+    <section aria-labelledby="exclusion-heading">
+      <h2 id="exclusion-heading">{t.exclusion_heading}</h2>
+      <p>{t.exclusion}</p>
+    </section>
+
+    <SafetyBlock id="state-safety-heading" />
+    <DataPassport {sources} />
+  </div>
+</Base>

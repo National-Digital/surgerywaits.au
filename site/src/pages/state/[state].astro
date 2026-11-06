@@ -1,0 +1,16 @@
+---
+import StateHub from '../../components/StateHub.astro';
+import { stateRoutes } from '../../lib/state-page';
+
+interface Props {
+  state: string;
+}
+
+export function getStaticPaths(): { params: { state: string }; props: Props }[] {
+  return stateRoutes();
+}
+
+const { state } = Astro.props;
+---
+
+<StateHub {state} />
