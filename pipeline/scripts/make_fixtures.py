@@ -62,7 +62,16 @@ SHARED_ALIAS_PAIR = [
     "Western District Health Service [Penshurst]",
 ]
 NATIONAL = "NAT"
-QLD_FACILITIES = ["Ayr", "Cooktown", "Mater Adult", "Cairns", "Thursday Island"]
+# Noosa has no public hospital in the register, and the state total is not a facility.
+QLD_FACILITIES = [
+    "Ayr",
+    "Cooktown",
+    "Mater Adult",
+    "Cairns",
+    "Thursday Island",
+    "Noosa",
+    "Queensland Reporting Hospitals",
+]
 STATE_NAMES = {
     "ACT": "Australian Capital Territory",
     "NSW": "New South Wales",
