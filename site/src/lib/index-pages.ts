@@ -116,13 +116,14 @@ export function reportingCounts(groups: readonly StateGroup[]): { reporting: num
 // Categories follow the order of the content's names, which is 1, 2, 3, and not the source's order.
 export function urgencyEntries(
   names: Readonly<Record<string, string>>,
-): { label: string; hospitals: number; period: string }[] {
+  pathOf: (slug: string) => string,
+): { label: string; href: string; hospitals: number; period: string }[] {
   const rows = readSurgeryIndex().filter((row) => row.kind === 'urgency');
   return Object.entries(names).map(([slug, label]) => {
     const row = rows.find((r) => r.slug === slug);
     if (row === undefined) {
       throw new RangeError(`no urgency category ${slug} in the surgery index`);
     }
-    return { label, hospitals: row.hospitals, period: row.newest_period };
+    return { label, href: pathOf(slug), hospitals: row.hospitals, period: row.newest_period };
   });
 }

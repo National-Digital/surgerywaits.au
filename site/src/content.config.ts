@@ -10,9 +10,11 @@ import {
   navigationSchema,
   pageSchema,
   siteSchema,
+  stateTemplateSchema,
   surgeryNamesSchema,
   surgeryTemplateSchema,
   termsSchema,
+  urgencyTemplateSchema,
 } from './lib/content-schema';
 
 const file = (name: string): ReturnType<typeof glob> => glob({ pattern: name, base: './content' });
@@ -38,6 +40,14 @@ export const collections = {
   pair: defineCollection({
     loader: glob({ pattern: 'pair.yaml', base: './content/templates' }),
     schema: pairTemplateSchema,
+  }),
+  state: defineCollection({
+    loader: glob({ pattern: 'state.yaml', base: './content/templates' }),
+    schema: stateTemplateSchema,
+  }),
+  urgency: defineCollection({
+    loader: glob({ pattern: 'urgency.yaml', base: './content/templates' }),
+    schema: urgencyTemplateSchema,
   }),
   pages: defineCollection({
     loader: glob({ pattern: '*.yaml', base: './content/pages' }),

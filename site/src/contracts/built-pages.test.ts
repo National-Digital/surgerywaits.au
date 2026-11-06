@@ -14,11 +14,15 @@ import {
 import {
   hospitalTemplateSchema,
   pairTemplateSchema,
+  stateTemplateSchema,
   surgeryTemplateSchema,
   termsSchema,
+  urgencyTemplateSchema,
 } from '../lib/content-schema';
 import { readHospitalIndex } from '../lib/dist';
 import { indexablePairPaths, pairRoutes, thinPairPaths } from '../lib/pair-page';
+import { stateFiles } from '../lib/state-page';
+import { categories } from '../lib/urgency-page';
 import {
   hubRoutes,
   nearRoutes,
@@ -535,6 +539,111 @@ describe('Built index pages', () => {
         path,
         true,
       ]);
+    }
+  });
+});
+
+describe('Built state and urgency pages', () => {
+  const state = stateTemplateSchema.parse(
+    readContent().find(({ path }) => path === 'templates/state.yaml')?.data,
+  );
+  const urgency = urgencyTemplateSchema.parse(
+    readContent().find(({ path }) => path === 'templates/urgency.yaml')?.data,
+  );
+  const mine = pages.filter(({ path }) => path.startsWith('state/') || path.startsWith('urgency/'));
+  const address = (path: string): string => `/${path.replace(/index\.html$/, '')}`;
+  const codes = ['act', 'nsw', 'nt', 'qld', 'sa', 'tas', 'vic', 'wa'];
+  // The addresses the earlier site published, from its sitemap.
+  const earlier = [
+    '/state/',
+    ...codes.map((c) => `/state/${c}/`),
+    '/urgency/',
+    ...[1, 2, 3].flatMap((n) => [
+      `/urgency/category-${String(n)}/`,
+      ...codes.map((c) => `/urgency/category-${String(n)}/${c}/`),
+    ]),
+  ];
+
+  it('hold only addresses the earlier site used, and every one it used for a state with figures', () => {
+    const built = mine.map(({ path }) => address(path)).sort();
+    expect(built.length).toBeGreaterThan(0);
+    for (const path of built) {
+      expect([path, earlier.includes(path)]).toEqual([path, true]);
+    }
+    const present = new Set(stateFiles().map((f) => f.state.toLowerCase()));
+    expect(
+      earlier.filter((path) => {
+        const code = /\/([a-z]+)\/$/.exec(path)?.[1] ?? '';
+        return !codes.includes(code) || present.has(code);
+      }),
+    ).toEqual(
+      built
+        .filter((path) => earlier.includes(path))
+        .sort((a, b) => earlier.indexOf(a) - earlier.indexOf(b)),
+    );
+    expect(categories().map((c) => c.path)).toEqual(
+      [1, 2, 3].map((n) => `/urgency/category-${String(n)}/`),
+    );
+  });
+
+  it('state the private hospital exclusion, the safety block and the data passport on every page', () => {
+    for (const { path, html } of mine) {
+      const body = text(html.split('<main')[1] ?? '');
+      expect(body, path).toContain(path.startsWith('state/') ? state.exclusion : urgency.exclusion);
+      expect(html.match(/id="[a-z]+-safety-heading"/g) ?? [], path).toHaveLength(1);
+      expect((html.match(/class="c-passport"/g) ?? []).length, path).toBe(1);
+    }
+  });
+
+  it('give every figure a stamp and every table a stated period', () => {
+    for (const { path, html } of mine) {
+      expect(textsOf(html, 'c-stamp'), path).toHaveLength(textsOf(html, 'c-figure').length);
+      expect(
+        textsOf(html, 'c-table__stamp').length + textsOf(html, 'c-qld-table__stamp').length,
+        path,
+      ).toBe(html.match(/<table[ >]/g)?.length ?? 0);
+    }
+  });
+
+  it('rank no stale or withheld figure, and no benchmark', () => {
+    let ranks = 0;
+    for (const { path, html } of mine) {
+      for (const cell of elementsOf(html, 'td')) {
+        expect([
+          path,
+          cell.text,
+          cell.classes.has('is-not-published') && cell.inside.has('c-table__rank'),
+        ]).toEqual([path, cell.text, false]);
+        ranks += cell.inside.has('c-table__rank') ? 1 : 0;
+      }
+      for (const row of elementsOf(html, 'tr')) {
+        expect([
+          path,
+          row.classes.has('c-table__row--earlier') && row.inside.has('c-table__rank'),
+        ]).toEqual([path, false]);
+      }
+      expect([path, html.includes('c-tiles__line')]).toEqual([path, false]);
+    }
+    expect(ranks).toBeGreaterThan(0);
+  });
+
+  it('keep the Queensland overlay on the Queensland page and rank nothing in it', () => {
+    for (const { path, html } of mine) {
+      expect([path, html.includes('c-qld-table')]).toEqual([path, path === 'state/qld/index.html']);
+    }
+    const html = mine.find(({ path }) => path === 'state/qld/index.html')?.html ?? '';
+    const overlay = html.split('id="qld-heading"')[1]?.split('</section>')[0] ?? '';
+    expect(overlay).toContain('c-qld-table');
+    expect(overlay).not.toMatch(/c-table__rank|nationally/);
+  });
+
+  it('link only to pages that are built', () => {
+    const built = new Set(pages.map(({ path }) => `/${path.replace(/index\.html$/, '')}`));
+    for (const { path, html } of mine) {
+      const main = elements(parse(html)).find((t) => t.tagName === 'main');
+      for (const href of (main ? anchors(main) : []).filter((h) => h.startsWith('/'))) {
+        expect([path, href, built.has(href)]).toEqual([path, href, true]);
+      }
     }
   });
 });

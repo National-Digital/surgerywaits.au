@@ -8,6 +8,8 @@ import type { z } from 'astro/zod';
 import {
   areasSchema,
   hospitalsIndexSchema,
+  stateTemplateSchema,
+  urgencyTemplateSchema,
   hospitalTemplateSchema,
   labelsSchema,
   navigationSchema,
@@ -455,6 +457,8 @@ describe('Copy', () => {
       'areas.yaml': areasSchema,
       'surgery-names.yaml': surgeryNamesSchema,
       'templates/hospitals.yaml': hospitalsIndexSchema,
+      'templates/state.yaml': stateTemplateSchema,
+      'templates/urgency.yaml': urgencyTemplateSchema,
       'terms.yaml': termsSchema,
     };
     const files = readContent();

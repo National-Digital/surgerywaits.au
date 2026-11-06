@@ -1,0 +1,108 @@
+---
+// Base comes first so its global sheet, and with it the layer order, precedes every component sheet.
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+import DataPassport from './DataPassport.astro';
+import IndexList from './IndexList.astro';
+import LinkList from './LinkList.astro';
+import SafetyBlock from './SafetyBlock.astro';
+import { getSite, getUrgencyTemplate } from '../lib/content';
+import { formatCount } from '../lib/format';
+import { fill } from '../lib/slots';
+import { stateName } from '../lib/state-page';
+import {
+  URGENCY_PATH,
+  categories,
+  categoryStatePath,
+  categoryStates,
+  publishedShares,
+  readCategory,
+  urgencySources,
+  urgencyStamp,
+} from '../lib/urgency-page';
+import { listable } from '../lib/surgery-page';
+
+const t = getUrgencyTemplate();
+const site = getSite().name;
+const cats = categories().map((category) => {
+  const surgery = readCategory(category);
+  const count = publishedShares(surgery, listable(surgery));
+  return {
+    category,
+    states: categoryStates(surgery),
+    item: {
+      name: category.label,
+      href: category.path,
+      notes: [
+        fill(t.category_within, { within: category.within }),
+        count === 1
+          ? t.category_hospitals_one
+          : fill(t.category_hospitals_many, { count: formatCount(count) }),
+      ],
+    },
+  };
+});
+---
+
+<Base
+  title={fill(t.index_title, { site })}
+  description={t.index_description}
+  canonicalPath={URGENCY_PATH}
+>
+  <div class="o-columns">
+    <Breadcrumbs items={[{ label: t.crumb_home, href: '/' }, { label: t.crumb_urgency }]} />
+    <h1>{t.index_heading}</h1>
+    <p>{t.index_lede}</p>
+    <p>{fill(t.index_stamp, urgencyStamp())}</p>
+    <p>{t.index_intro}</p>
+
+    <section aria-labelledby="categories-heading">
+      <h2 id="categories-heading">{t.categories_heading}</h2>
+      <p>{t.categories_intro}</p>
+      <IndexList items={cats.map((c) => c.item)} />
+    </section>
+
+    <section aria-labelledby="states-heading">
+      <h2 id="states-heading">{t.states_heading}</h2>
+      <p>{t.states_intro}</p>
+      {cats.map(({ category, states }) => (
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+        <>
+          <h3>{category.label}</h3>
+          <LinkList
+            links={states.map((state) => ({
+              label: fill(t.state_link, { category: category.label, state: stateName(state) }),
+              href: categoryStatePath(category, state),
+            }))}
+          />
+        </>
+      ))}
+    </section>
+
+    <section aria-labelledby="relation-heading">
+      <h2 id="relation-heading">{t.relation_heading}</h2>
+      {t.relation.map((paragraph) => (
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+        <p>{paragraph}</p>
+      ))}
+    </section>
+
+    <section aria-labelledby="ask-heading">
+      <h2 id="ask-heading">{t.ask_heading}</h2>
+      <ul>
+        {t.ask.map((question) => (
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+          <li>{question}</li>
+        ))}
+      </ul>
+    </section>
+
+    <section aria-labelledby="exclusion-heading">
+      <h2 id="exclusion-heading">{t.exclusion_heading}</h2>
+      <p>{t.exclusion}</p>
+    </section>
+
+    <SafetyBlock id="urgency-safety-heading" />
+    <DataPassport sources={urgencySources()} />
+  </div>
+</Base>

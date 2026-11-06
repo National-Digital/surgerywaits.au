@@ -1,0 +1,52 @@
+crumb_home: Home
+crumb_states: States
+index_title: 'Planned surgery waiting times by state and territory: {site}'
+index_description: Planned surgery waiting times at public hospitals in each Australian state and territory, beside the national figures.
+index_heading: Waiting times by state and territory
+index_lede: Pick a state or territory to see its waiting times for each surgery beside the national figures, and its public hospitals ranked by median wait.
+index_stamp: 'The figures are for {period}. The data was released on {release}.'
+index_list_label: States and territories
+index_hospitals_one: 1 public hospital
+index_hospitals_many: '{count} public hospitals'
+index_surgeries_one: 1 surgery with a state figure
+index_surgeries_many: '{count} surgeries with a state figure'
+title: '{state} planned surgery waiting times: {site}'
+description: '{state}: planned surgery waiting times at public hospitals, with the national figures beside them. The latest figures cover {period}.'
+lede: '{state}: planned surgery waiting times at public hospitals, with the national figures beside them. The latest figures cover {period}. Public hospitals in {state} with a published median wait for urgency category 1: {count}.'
+figures_heading: 'Headline figures for {state}'
+figures_intro: 'Each pair of tiles shows the median wait in {state} and in Australia for one of the procedures that treated the most patients in {state}. A state figure is never ranked.'
+tile_state: '{surgery}, {state}'
+tile_national: '{surgery}, Australia'
+procedures_heading: 'Waiting times by procedure in {state}'
+specialties_heading: 'Waiting times by specialty in {state}'
+surgeries_intro: 'The shortest median wait in {state} comes first. A surgery with no published median wait follows, in name order. Select a surgery to see the hospitals in {state} that report it.'
+procedures_caption: 'Planned surgery procedures in {state}, beside the national figures'
+specialties_caption: 'Planned surgery specialties in {state}, beside the national figures'
+surgeries_row_heading: Surgery
+column_state_median: 'Median wait, {state}'
+column_national_median: Median wait, Australia
+column_state_long_wait: 'Waiting more than 365 days, {state}'
+column_state_volume: 'Patients treated, {state}'
+hospitals_heading: 'Hospitals in {state} by median wait'
+hospitals_intro: 'Each row is a public hospital in {state}. The columns show the median wait for all planned surgery in one urgency category. The shortest median wait for category 1 comes first. A hospital with no published figure follows, in name order, and has no rank.'
+hospitals_caption: 'Public hospitals in {state}: median wait by urgency category'
+hospitals_row_heading: Hospital
+hospitals_column: 'Median wait, {category}'
+hospitals_none: 'No public hospital in {state} published a median wait in {period}.'
+ranking: A rank compares a hospital with every public hospital in Australia that published the same figure for the same period. The page shows a rank only on a current published figure. It never ranks a figure that is withheld, not reported or from an earlier period.
+urgency_heading: 'Urgency categories in {state}'
+urgency_intro: 'Your treating specialist gives you an urgency category. These pages rank the public hospitals in {state} by the share of patients treated within the recommended time for each category.'
+urgency_link: '{state}: {category}'
+hospitals_list_heading: 'Every public hospital in {state}'
+hospitals_list_intro: 'Every public hospital in {state} in the national register, in name order. A closed hospital is marked.'
+closed_tag: Closed
+qld_heading: Queensland Health quarterly figures
+qld_intro: 'Queensland Health publishes figures for its hospitals each quarter. They come from a different source from the national figures on this page, so this section keeps them apart. It does not rank them and does not compare them with the national figures or with other states.'
+qld_caption: 'Planned surgery at Queensland Health hospitals, {quarter}'
+qld_row_heading: Hospital
+qld_count: '{count} Queensland Health hospitals match a national hospital and are listed in name order.'
+other_heading: Other states and territories
+other_intro: The same pages for each other state or territory.
+other_link: '{state}: planned surgery waiting times'
+exclusion_heading: What this page leaves out
+exclusion: Private hospitals are excluded. This page covers public hospitals only, so it shows no private hospital.

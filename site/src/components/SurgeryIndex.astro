@@ -11,6 +11,7 @@ import { formatCount } from '../lib/format';
 import { URGENCY_ID, surgeryStamp, urgencyEntries } from '../lib/index-pages';
 import { readSurgeryIndexSources } from '../lib/dist';
 import { fill } from '../lib/slots';
+import { categoryPathOf } from '../lib/urgency-page';
 import { SPECIALTY_PATH, SURGERY_PATH, indexGroups, surgeryPath } from '../lib/surgery-page';
 
 const t = getSurgeryTemplate();
@@ -20,7 +21,7 @@ const headings = {
   specialty: { heading: t.index_specialties_heading, intro: t.index_specialties_intro },
 };
 const groups = indexGroups().map((group) => ({ ...group, ...headings[group.kind] }));
-const urgency = urgencyEntries(getHospitalTemplate().urgency);
+const urgency = urgencyEntries(getHospitalTemplate().urgency, categoryPathOf);
 const stamp = surgeryStamp();
 const jump = [
   { label: t.index_urgency_heading, href: `#${URGENCY_ID}` },
@@ -53,7 +54,7 @@ const sources = readSurgeryIndexSources();
         {urgency.map((entry) => (
           // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
           <li>
-            {entry.label}
+            <a href={entry.href}>{entry.label}</a>
             <p>
               {count(entry.hospitals)}
               {'. '}
