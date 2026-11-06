@@ -182,7 +182,7 @@ the updates:
   packages and npm. Each major update gets its own pull request. It leaves `engines` alone.
 
 Gitleaks, zizmor, actionlint and shellcheck are raised by hand, each with its SHA-256, as
-`docs/TOOLCHAIN.md` describes.
+`CONTRIBUTING.md` describes.
 
 Why: pinned versions make builds reproducible ([D2][d2]). A monthly window and grouped pull requests
 keep the review load small, and the vulnerability setting means a security fix does not wait for the
@@ -339,7 +339,7 @@ folder for each job makes it plain where a change belongs.
 
 Each library, framework and platform choice follows the official documentation current when the pull
 request is written. The pull request names the version and the documentation page used, in a "Docs"
-line of the pull request template. The "Docs" line is planned.
+line of the pull request template. The template carries the "Docs" line.
 
 Why: tooling changes quickly, and a cited page lets a reviewer check the pattern against its source.
 
@@ -354,12 +354,14 @@ Why: tooling changes quickly, and a cited page lets a reviewer check the pattern
 - `docs/` holds three things: `ARCHITECTURE.md`, `adr/` and `refs/` (planned), where
   machine-readable policies such as the HTML checker's filter file live. Each rule in
   `ARCHITECTURE.md` is one line naming the test or check that enforces it, and the docs-drift test
-  fails when a named test does not exist. This is planned.
+  fails when a named pytest function, vitest title or CI job does not exist. The rule is in place.
+  A rule may name a pending test until the test lands.
+- The toolchain guide now lives in `CONTRIBUTING.md`, and `README.md` and `AGENTS.md` follow this
+  split.
 - The corrections policy and its log, and the accessibility statement, are planned to move into the
   site's own content. They are served at `/corrections/` and `/accessibility/` and each has a
-  Markdown twin. The data-problem issue template links the corrections page. `docs/TOOLCHAIN.md`,
-  `docs/CORRECTIONS.md` and `docs/ACCESSIBILITY.md` are planned to move into `CONTRIBUTING.md` and
-  the site content.
+  Markdown twin. The data-problem issue template links the corrections page. Until the site has
+  pages, `docs/CORRECTIONS.md` and `docs/ACCESSIBILITY.md` stay in `docs/` and move then.
 
 Why: readers find governance files where GitHub shows them, and each policy is written once. A
 corrections log kept in the repository and again on the site would drift apart.

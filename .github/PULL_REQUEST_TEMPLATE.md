@@ -9,6 +9,11 @@
 
 <!-- What you ran and what you saw. Say what you could not check. -->
 
+## Docs
+
+<!-- The library or platform, its version, and the official documentation page you followed.
+     Write "none" when the change uses no library. -->
+
 ## Checklist
 
 - [ ] Every commit is signed off (`git commit -s`), which certifies the

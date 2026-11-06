@@ -1,25 +1,32 @@
 # Agents
 
-Before opening or updating a change, read [`README.md`](README.md) and every document it links to,
-including [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`SECURITY.md`](SECURITY.md). They hold the
-project's rules, which apply to agents as to everyone. This file adds only what is particular to
-agents.
+Read this file first. It points to where each rule lives and does not restate the architecture rules.
 
-- The house rules are in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#rules-that-decide-the-code).
-  Follow them in every change.
-- Never commit secrets, credentials, internal hostnames or personal file paths. This repository is
-  public and its history is permanent.
-- An agent cannot certify the
-  [Developer Certificate of Origin](CONTRIBUTING.md#commits-and-pull-requests). The person running
-  the agent reviews the change and signs off each commit.
-- Never add an agent as an author or co-author of a commit.
-- Add no attribution to an AI tool in a commit message, a pull request, an issue or a file.
-- Report findings and results to the person running the agent.
-- Never open an issue on your own. Open one only when the person running you names it.
-- Check that every function, option and configuration key you call exists in the version the
-  project pins, by reading the installed package or its source.
-- Before calling a change done, run the checks the project documents and say which ran and which
+| What must hold                                             | Where to look                                                                                                |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| The house rules for data, copy and markup                  | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#rules-that-decide-the-code), one test or planned test per rule |
+| Why a rule exists                                          | [`docs/adr/`](docs/adr/README.md)                                                                            |
+| Setting up, the checks to run, hooks, CI and pinned tools  | [`CONTRIBUTING.md`](CONTRIBUTING.md#setting-up)                                                              |
+| Commit and pull request form                               | [`CONTRIBUTING.md`](CONTRIBUTING.md#commits-and-pull-requests)                                               |
+| The library version and documentation page behind a change | The "Docs" line of the [pull request template](.github/PULL_REQUEST_TEMPLATE.md)                             |
+| Accessibility and corrections                              | [`docs/ACCESSIBILITY.md`](docs/ACCESSIBILITY.md), [`docs/CORRECTIONS.md`](docs/CORRECTIONS.md)               |
+| Security reports                                           | [`SECURITY.md`](SECURITY.md)                                                                                 |
+| Licences for code and data                                 | [`LICENSE`](LICENSE), [`LICENSE-DATA.md`](LICENSE-DATA.md)                                                   |
+| What a pipeline file or a dist file contains               | The JSON Schema in `contract/`, once it lands. Read the schema and never copy it into a document.            |
+
+## What must hold in every change
+
+- This repository is public and its history is permanent. Commit no secret, credential, internal
+  hostname or personal file path.
+- Add no attribution to an AI tool, and no agent as an author or co-author, in a commit, a pull
+  request, an issue or a file.
+- Open an issue only when the person running you names it.
+- Check that each function, option and configuration key you call exists in the pinned version, by
+  reading the installed package or its source.
+- Run the checks in CONTRIBUTING.md before calling a change done, and report which ran and which
   were skipped.
+- Add a rule to `docs/ARCHITECTURE.md` only with the test, planned test or check that enforces it.
+- Report findings and results to the person running you.
 - When reviewing, read the change as code that can look right and still be wrong: a call to a
   function that does not exist, a helper that repeats one already in the repository, or code left
   over from an earlier attempt. Question a new document nobody asked for.

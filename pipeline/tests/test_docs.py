@@ -1,6 +1,8 @@
+import ast
 import json
 import re
 import subprocess
+import textwrap
 from collections.abc import Callable, Mapping
 from pathlib import Path, PurePosixPath
 from urllib.parse import unquote
@@ -181,6 +183,160 @@ def undefined_checks(contributing: str, workflows: Mapping[str, str]) -> list[st
         for c in table_checks(contributing)
         if c not in defined
     ]
+
+
+SEP = "\u203a"
+RULES_HEADING = "## Rules that decide the code"
+ENFORCED = " — enforced by "
+CITATION = re.compile(
+    r"`(?P<py>[^`\s:]+\.py)::(?P<fn>test_\w+)`(?P<pp>\ \(planned\))?"
+    rf'|`(?P<ts>[^`\s]+\.test\.ts)` {SEP} "(?P<title>[^"]+)"(?P<tp>\ \(planned\))?'
+    r"|CI job `(?P<job>[^`]+)`"
+)
+TS_CALL = re.compile(r"(?:^|[;{}])\s*(?:it|test)(?P<mod>\.todo|\.skip)?\(\s*")
+
+Read = Callable[[str], str | None]
+
+
+def rule_blocks(architecture: str) -> list[str]:
+    """Each rule is its bullet plus the indented lines that continue it."""
+    _, _, rest = architecture.partition(RULES_HEADING)
+    section = re.split(r"^## ", rest, maxsplit=1, flags=re.MULTILINE)[0]
+    blocks: list[str] = []
+    open_rule = False
+    for line in section.splitlines():
+        if re.match(r"(?:[-*]|\d+\.) ", line):
+            blocks.append(line)
+            open_rule = True
+        elif open_rule and line[:1] in {" ", "\t"} and line.strip():
+            blocks[-1] += " " + line.strip()
+        else:
+            open_rule = False
+    return blocks
+
+
+def _is_planned_skip(decorator: ast.expr) -> bool:
+    return (
+        isinstance(decorator, ast.Call)
+        and isinstance(decorator.func, ast.Attribute)
+        and decorator.func.attr == "skip"
+        and any(
+            k.arg == "reason"
+            and isinstance(k.value, ast.Constant)
+            and str(k.value.value).startswith("planned")
+            for k in decorator.keywords
+        )
+    )
+
+
+def python_tests(source: str) -> dict[str, bool]:
+    """Test functions at module or class level, each mapped to whether it is a planned skip."""
+    found: dict[str, bool] = {}
+
+    def visit(body: list[ast.stmt]) -> None:
+        for node in body:
+            if isinstance(node, ast.ClassDef):
+                visit(node.body)
+            elif isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef) and node.name.startswith(
+                "test_"
+            ):
+                found[node.name] = any(_is_planned_skip(d) for d in node.decorator_list)
+
+    try:
+        visit(ast.parse(source).body)
+    except SyntaxError:
+        return {}
+    return found
+
+
+def _mask_ts(source: str) -> tuple[str, dict[int, int]]:
+    """Blank comments and string contents, and record where each string starts and ends."""
+    masked = list(source)
+    strings: dict[int, int] = {}
+    i, n = 0, len(source)
+    while i < n:
+        if source.startswith(("//", "/*"), i):
+            end = source.find("\n" if source[i + 1] == "/" else "*/", i + 2)
+            j = n if end < 0 else end + (0 if source[i + 1] == "/" else 2)
+            masked[i:j] = [" "] * (j - i)
+            i = j
+        elif source[i] in "\"'`":
+            j = i + 1
+            while j < n and source[j] != source[i]:
+                j += 2 if source[j] == "\\" else 1
+            strings[i] = j
+            masked[i + 1 : j] = [" "] * (min(j, n) - i - 1)
+            i = j + 1
+        else:
+            i += 1
+    return "".join(masked), strings
+
+
+def vitest_titles(source: str) -> dict[str, bool]:
+    """Titles of it, it.todo, test and test.todo calls that open a statement, mapped to todo."""
+    masked, strings = _mask_ts(source)
+    found: dict[str, bool] = {}
+    for m in TS_CALL.finditer(masked):
+        if m.end() not in strings:
+            continue
+        title = re.sub(r"\\(.)", r"\1", source[m.end() + 1 : strings[m.end()]])
+        found[title] = found.get(title, True) and m["mod"] in {".todo", ".skip"}
+    return found
+
+
+def _problem(name: str, ref: str, *, state: bool | None, marked: bool) -> str:
+    """`state` is None when the target is missing, else whether it is a pending test."""
+    if state is None:
+        return f"rule {name} names {ref}, which does not exist"
+    if state and not marked:
+        return f"rule {name} cites {ref}, a pending test, without (planned)"
+    if marked and not state:
+        return f"rule {name} marks {ref} as planned but it is a real test"
+    return ""
+
+
+def unproven_rules(architecture: str, read: Read, jobs: set[str]) -> list[str]:
+    """Every reference on a rule must be well formed, exist, and be marked planned iff pending."""
+    bad: list[str] = []
+    for block in rule_blocks(architecture):
+        parts = block.split("**")
+        name = parts[1].rstrip(".") if len(parts) > MIN_PARTS else block[:30]
+        _, found, tail = block.partition(ENFORCED)
+        if not found:
+            bad.append(f"rule {name} names no test or check")
+            continue
+        pos = 0
+        while True:
+            m = CITATION.match(tail, pos)
+            if not m:
+                bad.append(f"rule {name} has a malformed reference at: {tail[pos : pos + 40]}")
+                break
+            source = read(m["py"] or m["ts"]) if (m["py"] or m["ts"]) else None
+            if m["py"]:
+                tests = python_tests(source) if source is not None else {}
+                ref = f"{m['py']}::{m['fn']}"
+                issue = _problem(name, ref, state=tests.get(m["fn"]), marked=bool(m["pp"]))
+            elif m["ts"]:
+                titles = vitest_titles(source) if source is not None else {}
+                ref = f'{m["ts"]} {SEP} "{m["title"]}"'
+                issue = _problem(name, ref, state=titles.get(m["title"]), marked=bool(m["tp"]))
+            else:
+                ref = f"CI job {m['job']}"
+                issue = (
+                    ""
+                    if m["job"] in jobs
+                    else f"rule {name} names {ref}, which no workflow defines"
+                )
+            if issue:
+                bad.append(issue)
+            pos = m.end()
+            if tail[pos:] == ".":
+                break
+            if tail[pos : pos + 2] != "; ":
+                bad.append(f"rule {name} has a malformed reference at: {tail[pos : pos + 40]}")
+                break
+            pos += 2
+    return bad
 
 
 def _tracked() -> list[str]:
@@ -375,6 +531,159 @@ def test_block_list_matrices_expand_and_include_fails_loudly() -> None:
         check_names({"w.yml": include})
 
 
+PY_FIXTURE = textwrap.dedent(
+    """\
+    def test_real() -> None:
+        pass
+
+    @pytest.mark.skip(reason="planned: later")
+    def test_pending() -> None:
+        raise NotImplementedError
+
+    def helper() -> None:
+        def test_nested() -> None:
+            pass
+
+    class TestGroup:
+        def test_method(self) -> None:
+            pass
+
+    \"\"\"
+    def test_in_docstring() -> None:
+    \"\"\"
+    """
+)
+TS_FIXTURE = textwrap.dedent(
+    """\
+    describe('x', () => {
+      it.todo("a pending title");
+      it('a real title', () => {});
+      // it.todo('in a comment');
+      /* it('in a block comment', () => {}); */
+      const s = "; it.todo('in a string');";
+      regex.test('on a regex');
+      it.skip('a skipped title', () => {});
+      it.todo(
+        'quoted \\'inner\\' title',
+      );
+    });
+    """
+)
+RULE_FILES = {"t.py": PY_FIXTURE, "g.test.ts": TS_FIXTURE}
+PASSING = [
+    "- **One.** Text — enforced by `t.py::test_real`; `t.py::test_pending` (planned).",
+    f'- **Two.** Text — enforced by `g.test.ts` {SEP} "a real title"; CI job `Site checks`.',
+    f'* **Three.** Text — enforced by `g.test.ts` {SEP} "a pending title" (planned);',
+    f"""  `g.test.ts` {SEP} "quoted 'inner' title" (planned); `t.py::test_method`.""",
+]
+
+
+def _read(path: str) -> str | None:
+    return RULE_FILES.get(path)
+
+
+def _rules(*lines: str) -> str:
+    return "# A\n\n" + RULES_HEADING + "\n\nIntro.\n\n" + "\n".join(lines) + "\n\n## Next\n- x\n"
+
+
+def _unproven(*lines: str) -> list[str]:
+    return unproven_rules(_rules(*lines), _read, {"Site checks"})
+
+
+def test_rules_citing_real_and_planned_tests_titles_and_jobs_pass() -> None:
+    assert _unproven(*PASSING) == []
+
+
+def test_a_rule_citing_a_missing_test_function_is_caught() -> None:
+    assert _unproven("- **One.** T — enforced by `t.py::test_gone`; `nofile.py::test_real`.") == [
+        "rule One names t.py::test_gone, which does not exist",
+        "rule One names nofile.py::test_real, which does not exist",
+    ]
+
+
+def test_a_helper_a_nested_def_and_a_docstring_def_are_not_tests() -> None:
+    line = "- **One.** T — enforced by `t.py::test_nested`; `t.py::test_in_docstring`."
+    assert _unproven(line) == [
+        "rule One names t.py::test_nested, which does not exist",
+        "rule One names t.py::test_in_docstring, which does not exist",
+    ]
+    assert _unproven("- **One.** T — enforced by `t.py::helper`.") == [
+        "rule One has a malformed reference at: `t.py::helper`."
+    ]
+
+
+def test_a_title_in_a_comment_a_string_or_a_regex_call_is_not_a_test() -> None:
+    for title in ("in a comment", "in a block comment", "in a string", "on a regex"):
+        line = f'- **One.** T — enforced by `g.test.ts` {SEP} "{title}" (planned).'
+        assert _unproven(line) == [
+            f'rule One names g.test.ts {SEP} "{title}", which does not exist'
+        ]
+
+
+def test_a_missing_todo_title_and_a_missing_ci_job_are_caught() -> None:
+    line = f'- **One.** T — enforced by `g.test.ts` {SEP} "a gone title"; CI job `Gone job`.'
+    assert _unproven(line) == [
+        f'rule One names g.test.ts {SEP} "a gone title", which does not exist',
+        "rule One names CI job Gone job, which no workflow defines",
+    ]
+
+
+def test_a_reference_on_a_continuation_line_is_checked() -> None:
+    assert _unproven("- **One.** Text", "  — enforced by `t.py::test_gone`.") == [
+        "rule One names t.py::test_gone, which does not exist"
+    ]
+    assert _unproven(
+        "* **One.** Text — enforced by `t.py::test_real`;", "  `t.py::test_gone`."
+    ) == ["rule One names t.py::test_gone, which does not exist"]
+
+
+def test_a_numbered_rule_is_checked() -> None:
+    assert _unproven("1. **One.** T — enforced by `t.py::test_gone`.") == [
+        "rule One names t.py::test_gone, which does not exist"
+    ]
+
+
+def test_a_skipped_vitest_test_is_pending() -> None:
+    assert _unproven(f'- **One.** T — enforced by `g.test.ts` {SEP} "a skipped title".') == [
+        f'rule One cites g.test.ts {SEP} "a skipped title", a pending test, without (planned)'
+    ]
+    assert (
+        _unproven(f'- **One.** T — enforced by `g.test.ts` {SEP} "a skipped title" (planned).')
+        == []
+    )
+
+
+def test_a_malformed_reference_beside_a_valid_one_is_caught() -> None:
+    for tail in (
+        "`t.py::test_real`; `t.py`.",
+        "`t.py::test_real`; CI job Site checks.",
+        "`t.py::test_real` and `t.py::test_pending` (planned).",
+        f"`t.py::test_real`; `g.test.ts` {SEP} a real title.",
+    ):
+        issues = _unproven(f"- **One.** T — enforced by {tail}")
+        assert len(issues) == 1
+        assert issues[0].startswith("rule One has a malformed reference at: ")
+
+
+def test_a_rule_naming_no_test_is_caught_and_other_sections_are_ignored() -> None:
+    assert _unproven("- **One.** Text with no reference.") == ["rule One names no test or check"]
+
+
+def test_planned_is_required_exactly_when_the_target_is_pending() -> None:
+    assert _unproven("- **One.** T — enforced by `t.py::test_pending`.") == [
+        "rule One cites t.py::test_pending, a pending test, without (planned)"
+    ]
+    assert _unproven("- **One.** T — enforced by `t.py::test_real` (planned).") == [
+        "rule One marks t.py::test_real as planned but it is a real test"
+    ]
+    assert _unproven(f'- **One.** T — enforced by `g.test.ts` {SEP} "a pending title".') == [
+        f'rule One cites g.test.ts {SEP} "a pending title", a pending test, without (planned)'
+    ]
+    assert _unproven(f'- **One.** T — enforced by `g.test.ts` {SEP} "a real title" (planned).') == [
+        f'rule One marks g.test.ts {SEP} "a real title" as planned but it is a real test'
+    ]
+
+
 # The rules, applied to the repository.
 
 
@@ -395,3 +704,14 @@ def test_every_check_in_the_contributing_table_is_defined_by_a_workflow() -> Non
     contributing = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
     assert table_checks(contributing) != []
     assert undefined_checks(contributing, _workflows()) == []
+
+
+def test_every_rule_in_the_architecture_names_a_test_that_exists() -> None:
+    architecture = (ROOT / "docs" / "ARCHITECTURE.md").read_text(encoding="utf-8")
+    assert rule_blocks(architecture) != []
+
+    def read(path: str) -> str | None:
+        file = ROOT / path
+        return file.read_text(encoding="utf-8") if file.is_file() else None
+
+    assert unproven_rules(architecture, read, check_names(_workflows())) == []

@@ -16,7 +16,7 @@ npm run --silent knip || status=1
 npm run --silent test || status=1
 
 if ! command -v uv >/dev/null 2>&1; then
-  echo "pre-push: uv not found (see docs/TOOLCHAIN.md)"
+  echo "pre-push: uv not found (see CONTRIBUTING.md)"
   exit 1
 fi
 (cd pipeline && uv run --frozen pyright) || status=1
