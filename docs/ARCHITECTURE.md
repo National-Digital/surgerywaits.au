@@ -39,6 +39,9 @@ Cloudflare Worker    serves the static assets (planned)
 
 ## Rules that decide the code
 
+[ADR 0001](adr/0001-architecture-decision-register.md) records the decisions behind the shape and
+the rules, and why each was made.
+
 Checks will enforce each rule as the build lands, and until then reviewers apply them. Each check
 is listed in [CONTRIBUTING.md](../CONTRIBUTING.md#checks-on-each-pull-request) when it starts to
 run.
