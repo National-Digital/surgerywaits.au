@@ -93,7 +93,7 @@ first command. To read the real dist instead, run `uv run python -m surgerywaits
 CI does not build the site from the real dist yet, because no page reads figures and the build
 takes the pinned downloads. The `Data checks` job should do it once a page does.
 
-The `/dev/primitives/` page renders each state of the figure and the stat tile from the fixture
+The `/dev/primitives/` page renders each state of the figure, the stat tile and the data table from the fixture
 dist. `npm run build:preview` adds it through an Astro integration and writes the result to its own
 folder, so the published build holds no `dev/` route, and `built-pages.test.ts` checks that. The
 page is marked noindex. Component tests render through Astro's container API

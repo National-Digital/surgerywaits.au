@@ -1,11 +1,18 @@
 ---
+import DataTable from '../components/DataTable.astro';
 import Figure from '../components/Figure.astro';
 import StatTile from '../components/StatTile.astro';
 import StatTiles from '../components/StatTiles.astro';
 import Base from '../layouts/Base.astro';
 import { label } from '../lib/content';
 import type { QueenslandColumn } from '../lib/format';
-import { sampleFigures, sampleQueensland, sampleTiles, withheldFigures } from './preview';
+import {
+  sampleFigures,
+  sampleQueensland,
+  sampleTable,
+  sampleTiles,
+  withheldFigures,
+} from './preview';
 
 const roleLabel = {
   median_wait: label('role_median_wait'),
@@ -22,6 +29,7 @@ const queenslandLabel: Partial<Record<QueenslandColumn, string>> = {
 const figures = sampleFigures();
 const tiles = sampleTiles();
 const queensland = sampleQueensland();
+const table = sampleTable();
 const [first] = figures;
 const withheld = first
   ? withheldFigures({ period: first.figure.period, release: first.figure.release })
@@ -87,4 +95,13 @@ const withheld = first
       </>
     ))}
   </dl>
+
+  <h2>{label('preview_table')}</h2>
+  <DataTable
+    id="preview-table"
+    caption={label('preview_table_caption')}
+    rowHeading={label('preview_table_row_heading')}
+    columns={table.roles.map((role) => ({ heading: roleLabel[role], role }))}
+    rows={table.rows}
+  />
 </Base>
