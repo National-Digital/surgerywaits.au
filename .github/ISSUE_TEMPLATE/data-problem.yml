@@ -1,0 +1,42 @@
+name: Data problem
+description: A figure on the site differs from the source
+labels: ["data"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The site shows the figures that publicdata.au republishes from the source. An error at the
+        publisher is theirs to fix, and the next publicdata.au version carries the fix. This form
+        is for a figure here that differs from the source. [docs/CORRECTIONS.md](https://github.com/National-Digital/surgerywaits.au/blob/main/docs/CORRECTIONS.md)
+        explains how reports are handled.
+  - type: input
+    id: url
+    attributes:
+      label: Page URL
+      placeholder: "https://surgerywaits.au/..."
+    validations:
+      required: true
+  - type: input
+    id: hospital
+    attributes:
+      label: Hospital
+    validations:
+      required: true
+  - type: input
+    id: figure
+    attributes:
+      label: The figure shown on the page
+      description: The measure, the number and its reference period.
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: The source's own value
+      description: The value in the source's own data, and a link to where you found it.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
