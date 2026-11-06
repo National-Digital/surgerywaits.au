@@ -52,7 +52,8 @@ git hooks, and where each pinned version lives.
 | Analyze (actions)               | Runs CodeQL static analysis on the workflows.                                                                 |
 | Analyze (javascript-typescript) | Runs CodeQL static analysis on the TypeScript and JavaScript.                                                 |
 | Analyze (python)                | Runs CodeQL static analysis on the Python.                                                                    |
-| Site checks                     | Runs ESLint, Prettier, the TypeScript compiler, knip and vitest.                                              |
+| Site checks                     | Runs ESLint, Prettier, `astro check` and the TypeScript compiler, knip and vitest.                            |
+| Worker build                    | Builds the site, checks the generated Worker types are current and runs `wrangler deploy --dry-run`.          |
 | Pipeline checks                 | Runs ruff, pyright and pytest on the pipeline.                                                                |
 | Repository tests                | Checks every workflow against the repository's rules, such as pinned actions and least-privilege permissions. |
 

@@ -21,10 +21,18 @@ From the repository root:
 ```
 npm run lint            # ESLint, no warnings, every disable needs a reason
 npm run format:check    # Prettier
-npm run typecheck       # tsc
+npm run typecheck       # astro check on the site, tsc on the Worker
 npm run knip            # unused files, exports and dependencies
 npm test                # vitest
+npm run build           # astro build
+npm run worker:types:check   # fails when worker/worker-configuration.d.ts is stale
+npm run worker:dry-run -- /tmp/worker-out   # wrangler deploy --dry-run, no credentials
 ```
+
+After you change `worker/wrangler.jsonc`, run `npm run worker:types` and commit the regenerated
+`worker/worker-configuration.d.ts`. The runtime types come from `@cloudflare/workers-types`, so the
+generated file holds only the bindings. Run `npm run build` before the dry run, because the Worker's
+assets come from the Astro build.
 
 From `pipeline/`:
 
@@ -44,10 +52,13 @@ file.
 
 ## CI
 
-`.github/workflows/ci.yml` runs on every pull request and on pushes to `main` with three jobs
+`.github/workflows/ci.yml` runs on every pull request and on pushes to `main` with four jobs
 whose names are stable enough to require as status checks.
 
 - `Site checks` runs `npm ci`, then lint, format check, typecheck, knip and vitest.
+- `Worker build` runs `npm ci`, `astro build`, the `wrangler types --check` freshness check and
+  `wrangler deploy --dry-run` into a temporary directory. It uses no Cloudflare credential or
+  account identifier, and nothing is deployed.
 - `Pipeline checks` installs the `uv` version in `pipeline/uv.toml`, runs `uv sync --locked`, then
   ruff, pyright and pytest. It leaves out `tests/test_repo.py` and `tests/test_docs.py`, because
   the next job runs them.

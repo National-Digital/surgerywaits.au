@@ -88,8 +88,8 @@ either half disagrees with it. The schemas and the OpenAPI description are plann
 ### D6: The site is Astro with strict TypeScript
 
 `site/` is an Astro project with static output and TypeScript in strict mode. The compare tool is
-one vanilla TypeScript module that Astro loads as a script. It uses no framework. The site is
-planned.
+one vanilla TypeScript module that Astro loads as a script. It uses no framework. The empty site
+exists, and the compare tool is planned.
 
 Why: Astro renders each page to HTML at build time, so a static page needs no JavaScript to read. A
 single dependency-free module keeps the one interactive part small enough to audit for privacy
@@ -102,10 +102,11 @@ redirects, content negotiation and the MCP route ([D9][d9]).
 
 There are no per-pull-request preview deployments. Checks run in CI. Production deploys only from
 `main`, through a protected environment. The deploy workflow, the environment's token and the
-account identifier are added when the site is ready to ship, and are planned. Until then CI will
-build the Worker and run `wrangler deploy --dry-run`, which needs no Cloudflare credentials. This is
-planned. If previews are wanted after that, they use a hostname on the site's own domain with
-`noindex`, and never a `workers.dev` hostname.
+account identifier are added when the site is ready to ship, and are planned. Until then CI builds
+the Worker and runs `wrangler deploy --dry-run`, which needs no Cloudflare credentials. If previews
+are wanted after that, they use a hostname on the site's own domain with `noindex`, and never a
+`workers.dev` hostname. The Worker's configuration turns `workers_dev` and `preview_urls` off, and a
+repository test fails when either is missing or on.
 
 Why: a Worker serves static assets and runs code in one deployment. Headers, redirects, content
 negotiation and the MCP route then live in one deployment as code that tests can run. Without
@@ -286,18 +287,17 @@ not run scripts.
 
 The site uses TypeScript `strict` with `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,
 `noImplicitOverride`, `noPropertyAccessFromIndexSignature`, `verbatimModuleSyntax` and
-`isolatedModules`. Today `tsc --noEmit` is the type check, and `astro check` will replace it once
-the site lands. ESLint uses `typescript-eslint` with `strictTypeChecked` and
-`stylisticTypeChecked`, `eslint-plugin-astro`, no `any`, no non-null assertions, and knip for unused
-exports. Zod schemas use `.strict()` and never `z.any()`. A lint rule is never disabled inline
+`isolatedModules`. `astro check` is the type check for the site, and `tsc --noEmit` checks the
+Worker. ESLint uses `typescript-eslint` with `strictTypeChecked` and `stylisticTypeChecked`,
+`eslint-plugin-astro`, no `any`, no non-null assertions, and knip for unused exports. Zod schemas use `.strict()` and never `z.any()`. A lint rule is never disabled inline
 without a one-line reason, and the `eslint-comments` plugin's `require-description` rule enforces
-this. ESLint loads `eslint.config.ts` through `jiti`. The Astro, Zod and Worker parts are planned.
+this. ESLint loads `eslint.config.ts` through `jiti`. The Zod part is planned.
 
 Every script is TypeScript, so no `.js` or `.mjs` file is written. The Worker's bindings are typed
 by `wrangler types`, and CI fails when the generated file is out of date. Shellcheck runs over
 workflow scripts through actionlint, and over `.githooks/*` and every `*.sh` file in the
 `Workflow lint` job and the pre-commit hook. The Python side keeps pyright in strict mode and ruff
-([D4][d4]). The Astro and Worker parts are planned.
+([D4][d4]).
 
 Why: strict flags left to each author vary from file to file. A fixed list makes the type check the
 same for every contributor and catches a missing array element or an unchecked optional before it
@@ -305,7 +305,7 @@ reaches a page.
 
 ### D21: Previews and deploys wait until the site is ready to ship
 
-No preview and no deploy workflow exists before go-live. CI will build the Worker and check it with
+No preview and no deploy workflow exists before go-live. CI builds the Worker and checks it with
 `wrangler deploy --dry-run`. The deploy workflow, the production environment's token and the
 account identifier are added when the site is ready to ship. Details are in [D7][d7].
 
