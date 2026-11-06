@@ -136,16 +136,16 @@ Worker's assets binding and keeps the tool names that clients already use. The r
 Why: one deploy carries the site and the MCP server, so the two cannot show different data. Reading
 built files means the route runs no query engine and has nothing to keep in step with the pipeline.
 
-### D10: Every word a person wrote lives in YAML under `content/`
+### D10: Every word a person wrote lives in YAML under `site/content/`
 
-Copy lives in YAML files under `content/`, validated by Zod collections with `.strict()`. Figures,
+Copy lives in YAML files under `site/content/`, validated by Zod collections with `.strict()`. Figures,
 names and dates come from the output files ([D5][d5]) and never from YAML.
 
 - Each static page (guides, methodology, legal, FAQ, about and the 404 page) is one YAML file.
 - Each generated page template (hospital, surgery, pair, state and the rest) has one YAML file for
   its headings, explanations and the sentences around each figure. A sentence names its slots, such
   as `{hospital}` or `{median_days}`, and a test fails when a slot is missing or unknown.
-- Button text, labels, `alt`, `aria-label` and `title` values come from `content/labels.yaml`.
+- Button text, labels, `alt`, `aria-label` and `title` values come from `site/content/labels.yaml`.
 - A lint rule fails on literal user-visible text in components, layouts and the compare tool's
   module. The tool reads its strings from a JSON file built from the same YAML.
 - The Markdown twins and the JSON-LD descriptions use the same strings, so each sentence is written
@@ -155,14 +155,12 @@ Why: copy kept apart from components can be reviewed and checked for terminology
 without reading code. The same text reaches the HTML page, its Markdown twin and the structured data
 without copies drifting.
 
-The content collections are planned.
-
 ### D11: One entity file names the publisher
 
 A single site entity file holds the publisher's details. The footer and the legal pages read the
 line "Built and operated by National Digital, Burleigh Heads, Queensland", with links to
 nationaldigital.com.au and its contact page. The site prints no ACN, no ABN and no "Pty Ltd". The
-terms and privacy pages follow the structure of publicdata.au's. The entity file, the footer and the
+terms and privacy pages follow the structure of publicdata.au's. The entity file and the footer are built and the
 legal pages are planned.
 
 Why: one file means the publisher is named the same way on every page. The line states who runs the
@@ -324,7 +322,7 @@ part is written:
 
 - `src/` holds `pages/`, `layouts/`, `components/`, `lib/` and `styles/`. `styles/` has one folder
   for each ITCSS layer ([D18][d18]).
-- `content/` holds every YAML file ([D10][d10]), read by Astro's `glob` loader.
+- `site/content/` holds every YAML file ([D10][d10]), read by Astro's `glob` loader.
 - `public/` holds static files served as they are, such as the font and `security.txt`.
 - `worker/` holds the one Worker: assets, headers, redirects, content negotiation and the MCP route
   ([D7][d7], [D9][d9]).
@@ -377,12 +375,12 @@ The Australian Government Style Manual is the style reference for every YAML str
 declarative sentences in the active voice, sentence-case headings, and no superlative without a
 number beside it.
 
-The terminology rule in `docs/ARCHITECTURE.md` becomes a terms file in `content/` that lists each
+The terminology rule in `docs/ARCHITECTURE.md` becomes a terms file in `site/content/` that lists each
 preferred term and the terms it replaces, and a test fails on a replaced term in any copy.
 Readability is measured on every prose field, with slots filled by sample values. Guides and
 template copy must score Flesch-Kincaid grade 8 or lower. Methodology and legal pages must score
 grade 12 or lower. An exception is listed in a policy file with its reason. The readability library
-is pinned exactly. The terms file and the readability test are planned.
+is pinned exactly. The terms file is built and the readability test is planned.
 
 Why: many readers are older patients reading about their own surgery. A measured floor keeps the
 copy plain whoever writes it.
@@ -464,7 +462,7 @@ See `docs/ARCHITECTURE.md` ("The planned shape", "Rules that decide the code"), 
 [d8]: #d8-analytics-count-page-views-and-nothing-else
 [d9]: #d9-mcp-is-a-route-in-the-same-worker
 [d4]: #d4-the-data-build-is-python-313-checked-strictly
-[d10]: #d10-every-word-a-person-wrote-lives-in-yaml-under-content
+[d10]: #d10-every-word-a-person-wrote-lives-in-yaml-under-sitecontent
 [d14]: #d14-each-required-check-is-named-in-the-ruleset
 [d16]: #d16-lighthouse-runs-on-demand-and-never-gates-a-pull-request
 [d17]: #d17-the-whole-build-is-checked-by-the-w3c-nu-html-checker

@@ -1,0 +1,34 @@
+---
+const text = 'Read from content';
+const greeting = 'Hello there';
+import Prose from './Prose.astro';
+import Foo from './Foo.astro';
+---
+
+<h1>Hello there</h1>
+<p>
+  {text}
+  {greeting}
+</p>
+<img src="/a.png" alt="A hospital" />
+<a href="/" aria-label="Home">
+  {'Go home'}
+</a>
+<p>{`Template ${text}`}</p>
+<p>{text ? 'Yes please' : text}</p>
+<p>{text && 'Shown when set'}</p>
+<p>{text + ' and more'}</p>
+<p set:html={text} />
+<p set:text={text} />
+<p data-label="x" tooltip="Hover words">
+  {text}
+</p>
+<meta name="description" content="A description" />
+<a href="/" id={'Some text'}>
+  {text}
+</a>
+<p title={text ? 'Maybe' : 'Never'}>{text}</p>
+<Prose paragraphs={['Hello prop']} />
+<Foo {...{ title: 'Spread text' }} />
+<p>{['Mapped text'].map((x) => x)}</p>
+<p>{String('Call text')}</p>

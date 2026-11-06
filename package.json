@@ -11,7 +11,7 @@
     "site"
   ],
   "scripts": {
-    "lint": "eslint --max-warnings 0 .",
+    "lint": "npm run --silent sync -w site && eslint --max-warnings 0 .",
     "format:check": "prettier --check .",
     "format": "prettier --write .",
     "typecheck": "npm run --silent check -w site && tsc --noEmit -p worker && tsc --noEmit -p scripts && tsc --noEmit -p eslint",

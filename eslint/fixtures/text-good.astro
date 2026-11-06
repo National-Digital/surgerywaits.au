@@ -1,0 +1,32 @@
+---
+import { label } from '../lib/content';
+
+const text = label('skip_link');
+const href = '/';
+type Kind = 'a' | 'b';
+const kind = text as Kind;
+const margin = { top: 1 };
+---
+
+<p class="c-note" lang="en-AU" data-id="x1">
+  {text}
+</p>
+<img src="/a.png" alt={text} />
+<a {href} rel="noopener" target="_blank" aria-hidden="true">
+  {text}
+</a>
+<meta name="viewport" content="width=device-width" />
+<p>{text === 'a' ? text : text}</p>
+<p>&mdash;</p>
+<p>
+  {kind}
+  {margin.top}
+</p>
+
+<style>
+  @layer components {
+    .c-note {
+      color: var(--ink);
+    }
+  }
+</style>

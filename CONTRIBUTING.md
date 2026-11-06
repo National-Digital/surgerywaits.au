@@ -131,6 +131,24 @@ Keep the report out of the repository.
 
 Skip a hook once with `--no-verify`. CI runs the same checks on every pull request.
 
+## Writing copy
+
+Every word a reader sees lives in YAML under `site/content/` ([ADR 0001](docs/adr/0001-architecture-decision-register.md), D10).
+`site/src/lib/content-schema.ts` holds one strict Zod schema for each file, and `site/src/content.config.ts`
+loads them as Astro content collections. Components read them through `site/src/lib/content.ts`, and
+`label('key')` accepts only a key that `labels.yaml` defines.
+
+- Write to the Australian Government Style Manual: plain, active, sentence-case headings.
+- `terms.yaml` lists each preferred term and the terms it replaces. A test fails on a replaced term in
+  any content file or built page. A methodology page that quotes a source verbatim lists the page,
+  the term and the reason under `quotes`.
+- The `no-literal-text` rule in the site ESLint plugin fails on text in `.astro` templates and
+  frontmatter. That covers JSX text, string literals in expressions, every attribute outside a short
+  non-copy list (class, href, id, lang and similar, in the rule), and `set:html` and `set:text`. Frontmatter
+  strings pass only as imports, object keys and the key argument of `label` or `getPage`.
+  `eslint/fixtures/text-*.astro` prove the rule.
+- `quotes` in `terms.yaml` name a page slug, such as `methodology`, which is also the built page's path.
+
 ## Making a change
 
 1. Branch from `main`.

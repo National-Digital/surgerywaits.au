@@ -1,0 +1,11 @@
+# A source quote that must keep a replaced term is listed in quotes, with the page slug and the reason.
+terms:
+  - preferred: planned surgery
+    replaces:
+      - elective surgery
+      - elective
+  - preferred: not published
+    replaces:
+      - suppressed
+      - n/a
+quotes: []

@@ -1,0 +1,23 @@
+---
+interface Props {
+  href: string;
+}
+
+const { href } = Astro.props;
+---
+
+<p>
+  <a class="c-block-link" {href}>
+    <slot />
+  </a>
+</p>
+
+<style>
+  @layer components {
+    .c-block-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: var(--target);
+    }
+  }
+</style>
