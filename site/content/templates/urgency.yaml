@@ -12,7 +12,7 @@ crumb_home: Home
 crumb_urgency: Urgency categories
 category_label: 'Category {number}, {short}'
 index_title: 'Urgency categories for planned surgery: {site}'
-index_description: What urgency categories 1, 2 and 3 mean for planned surgery in an Australian public hospital, the recommended time for each, and how often each public hospital meets it.
+index_description: This page explains what urgency categories 1, 2 and 3 mean for planned surgery in an Australian public hospital. It gives the recommended time for each category and how often each public hospital meets it.
 index_heading: Urgency categories explained
 index_lede: This page explains what categories 1, 2 and 3 mean. It also says who decides your category and how often each public hospital treats people within the recommended time.
 index_stamp: 'The figures are for {period}. The data was released on {release}.'
@@ -35,7 +35,7 @@ ask:
   - What is the recommended time for that category, and how often does this hospital meet it?
   - Does my category change if my condition changes while I wait?
 title: '{category} surgery waiting times by hospital: {site}'
-description: '{category} planned surgery: the recommended time of {within} and the share of patients each public hospital treated within it. The latest figures cover {period}.'
+description: 'This page covers planned surgery for {category}. The recommended time is {within}, and the page shows the share of patients each public hospital treated within it. The latest figures cover {period}.'
 lede: 'Surgery in category {number}, {short}, is recommended within {within} of joining the waiting list. {meaning}'
 lede_count: '{hospitals} published a share treated on time in {period}.'
 specialist_note: Your treating specialist assigns the category after assessing you. The recommended time is a target.
@@ -52,7 +52,7 @@ hospitals_intro: 'The highest share treated within the recommended time comes fi
 hospitals_caption: '{category}: public hospitals'
 hospitals_row_heading: Hospital
 hospitals_none: 'No public hospital published a figure for {category} in {period}.'
-ranking: A rank compares a hospital with every public hospital in Australia that published the same figure for the same period. The page shows a rank only on a current published figure. It never ranks a figure that is withheld, not reported or from an earlier period.
+ranking: A rank compares a hospital with every public hospital in Australia that published the same figure for the same period. The page shows a rank only on a current published figure. It never ranks a withheld or unreported figure. It also never ranks a figure from an earlier period.
 trends_heading: How the figures have changed
 trends_intro: Each chart shows one figure for each year the source published it. A year with no published figure is a gap in the line, and the table under the chart gives the reason.
 trends_none: The source publishes no national or state history for this category. Each hospital page shows that hospital's own history.
@@ -60,7 +60,7 @@ chart_caption: '{category}: {measure} by financial year'
 chart_name: 'Line chart of the {measure} by financial year for {category}'
 series_national: Australia
 state_title: '{category} surgery waiting times in {state}: {site}'
-state_description: '{category} planned surgery in {state}: the recommended time of {within} and the share of patients each public hospital treated within it. The latest figures cover {period}.'
+state_description: 'This page covers planned surgery in {state} for {category}. The recommended time is {within}, and the page shows the share of patients each public hospital treated within it. The latest figures cover {period}.'
 state_lede: 'Surgery in category {number}, {short}, is recommended within {within} of joining the waiting list. In {state}, {hospitals} published a share treated on time in {period}.'
 state_figures_heading: 'Figures for {state}'
 state_figures_intro: Each tile shows one figure for the state. A state figure is never ranked.

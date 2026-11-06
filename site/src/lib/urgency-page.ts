@@ -31,8 +31,8 @@ const categoryPath = (number: number): string => `${URGENCY_PATH}category-${Stri
 export const categoryStatePath = (category: Pick<Category, 'path'>, state: string): string =>
   `${category.path}${state.toLowerCase()}/`;
 
-// The hospital content names the dist's categories in order 1, 2, 3, and this content describes them in that order.
 const dataKey = (short: string): string => `${short}-elective-surgery`;
+// The hospital content names the dist's categories in order 1, 2, 3, and this content describes them in that order.
 export function categories(): Category[] {
   const t = getUrgencyTemplate();
   const slugs = Object.keys(getHospitalTemplate().urgency);

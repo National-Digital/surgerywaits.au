@@ -33,7 +33,7 @@ hospitals_caption: 'Public hospitals in {state}: median wait by urgency category
 hospitals_row_heading: Hospital
 hospitals_column: 'Median wait, {category}'
 hospitals_none: 'No public hospital in {state} published a median wait in {period}.'
-ranking: A rank compares a hospital with every public hospital in Australia that published the same figure for the same period. The page shows a rank only on a current published figure. It never ranks a figure that is withheld, not reported or from an earlier period.
+ranking: A rank compares a hospital with every public hospital in Australia that published the same figure for the same period. The page shows a rank only on a current published figure. It never ranks a withheld or unreported figure. It also never ranks a figure from an earlier period.
 urgency_heading: 'Urgency categories in {state}'
 urgency_intro: 'Your treating specialist gives you an urgency category. These pages rank the public hospitals in {state} by the share of patients treated within the recommended time for each category.'
 urgency_link: '{state}: {category}'

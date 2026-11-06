@@ -60,4 +60,4 @@ nearby_distance: '{distance} away'
 nearby_none: 'The source gives no location for {hospital}, so this page cannot list hospitals near it.'
 exclusion_heading: What this page leaves out
 exclusion: Private hospitals are excluded. This page covers public hospitals only, so it shows no private hospital.
-ranking: A rank compares this hospital with the other public hospitals that published the same figure for the same period. The page shows a rank only on a current published figure. It never ranks a figure that is withheld, not reported or from an earlier period.
+ranking: A rank compares this hospital with the other public hospitals that published the same figure for the same period. The page shows a rank only on a current published figure. It never ranks a withheld or unreported figure. It also never ranks a figure from an earlier period.

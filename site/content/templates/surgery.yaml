@@ -43,7 +43,7 @@ hospitals_intro: The shortest median wait comes first. A hospital with no publis
 hospitals_caption: '{surgery}: public hospitals'
 hospitals_row_heading: Hospital
 hospitals_none: '{surgery}: no public hospital published a figure in {period}.'
-ranking: A rank compares a hospital with every public hospital in Australia that published the same figure for the same period. The page shows a rank only on a current published figure. It never ranks a figure that is withheld, not reported or from an earlier period.
+ranking: A rank compares a hospital with every public hospital in Australia that published the same figure for the same period. The page shows a rank only on a current published figure. It never ranks a withheld or unreported figure. It also never ranks a figure from an earlier period.
 trends_heading: How waits have changed
 trends_intro: Each chart shows one figure for each year the source published it. A year with no published figure is a gap in the line, and the table under the chart gives the reason.
 trends_note_hub: 'The charts show Australia and the three states that treated the most patients in {period}.'
