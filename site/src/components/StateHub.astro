@@ -12,7 +12,7 @@ import StatTile from './StatTile.astro';
 import StatTiles from './StatTiles.astro';
 import { getSite, getStateTemplate, label } from '../lib/content';
 import { hospitalPath } from '../lib/hospital-page';
-import { formatCount } from '../lib/format';
+import { formatCount, formatHospitals } from '../lib/format';
 import { fill } from '../lib/slots';
 import {
   STATES_PATH,
@@ -91,7 +91,13 @@ const sources = sourcesOf(file, state);
       ]}
     />
     <h1>{name}</h1>
-    <p>{fill(t.lede, { state: name, period, count: formatCount(publishedUrgencyCount(state)) })}</p>
+    <p>
+      {fill(t.lede, {
+        state: name,
+        period,
+        hospitals: formatHospitals(publishedUrgencyCount(state)),
+      })}
+    </p>
 
     {tiles.length > 0 && (
       <section aria-labelledby="figures-heading">

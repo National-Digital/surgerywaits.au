@@ -11,7 +11,7 @@ import StatTile from './StatTile.astro';
 import StatTiles from './StatTiles.astro';
 import TrendChart from './TrendChart.astro';
 import { getHospitalTemplate, getSite, getUrgencyTemplate, label } from '../lib/content';
-import { formatCount } from '../lib/format';
+import { formatHospitals } from '../lib/format';
 import { busiestStates, listable, roleLabels } from '../lib/surgery-page';
 import { fill } from '../lib/slots';
 import { statePath, stateName } from '../lib/state-page';
@@ -46,7 +46,7 @@ const surgery = readCategory(category);
 const here = state === undefined ? undefined : stateName(state);
 const rows = listable(surgery).filter((r) => state === undefined || r.state === state);
 const table = categoryRows(surgery, rows);
-const count = formatCount(publishedShares(surgery, rows));
+const hospitals = formatHospitals(publishedShares(surgery, rows));
 const linked = new Set(categoryStates(surgery));
 const columns = URGENCY_ROLES.map((role) => ({ heading: roles[role], role }));
 const own =
@@ -124,10 +124,10 @@ const slots = { category: category.label, within: category.within, period: surge
             within: category.within,
             period: surgery.period,
             state: here,
-            count,
+            hospitals,
           })}
     </p>
-    {here === undefined && <p>{fill(t.lede_count, { period: surgery.period, count })}</p>}
+    {here === undefined && <p>{fill(t.lede_count, { period: surgery.period, hospitals })}</p>}
     <p>{t.specialist_note}</p>
 
     {here === undefined && (

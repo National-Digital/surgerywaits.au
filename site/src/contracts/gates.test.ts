@@ -7,18 +7,18 @@ import type { z } from 'astro/zod';
 
 import {
   areasSchema,
-  hospitalsIndexSchema,
-  stateTemplateSchema,
-  urgencyTemplateSchema,
   hospitalTemplateSchema,
+  hospitalsIndexSchema,
   labelsSchema,
   navigationSchema,
   pageSchema,
-  siteSchema,
-  surgeryNamesSchema,
   pairTemplateSchema,
+  siteSchema,
+  stateTemplateSchema,
+  surgeryNamesSchema,
   surgeryTemplateSchema,
   termsSchema,
+  urgencyTemplateSchema,
 } from '../lib/content-schema';
 import {
   contentSlug,

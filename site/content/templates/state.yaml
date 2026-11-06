@@ -1,9 +1,9 @@
 crumb_home: Home
 crumb_states: States
 index_title: 'Planned surgery waiting times by state and territory: {site}'
-index_description: Planned surgery waiting times at public hospitals in each Australian state and territory, beside the national figures.
+index_description: This page links to the planned surgery waiting times at public hospitals in each Australian state and territory. The national figures sit beside them.
 index_heading: Waiting times by state and territory
-index_lede: Pick a state or territory to see its waiting times for each surgery beside the national figures, and its public hospitals ranked by median wait.
+index_lede: Each state and territory page shows its waiting times for each surgery beside the national figures. It also ranks the public hospitals of that state or territory by median wait.
 index_stamp: 'The figures are for {period}. The data was released on {release}.'
 index_list_label: States and territories
 index_hospitals_one: 1 public hospital
@@ -11,8 +11,8 @@ index_hospitals_many: '{count} public hospitals'
 index_surgeries_one: 1 surgery with a state figure
 index_surgeries_many: '{count} surgeries with a state figure'
 title: '{state} planned surgery waiting times: {site}'
-description: '{state}: planned surgery waiting times at public hospitals, with the national figures beside them. The latest figures cover {period}.'
-lede: '{state}: planned surgery waiting times at public hospitals, with the national figures beside them. The latest figures cover {period}. Public hospitals in {state} with a published median wait for urgency category 1: {count}.'
+description: 'This page shows planned surgery waiting times at public hospitals in {state}, with the national figures beside them. The latest figures cover {period}.'
+lede: 'This page shows planned surgery waiting times at public hospitals in {state}, with the national figures beside them. The latest figures cover {period}. In {state}, {hospitals} published a median wait for urgency category 1.'
 figures_heading: 'Headline figures for {state}'
 figures_intro: 'Each pair of tiles shows the median wait in {state} and in Australia for one of the procedures that treated the most patients in {state}. A state figure is never ranked.'
 tile_state: '{surgery}, {state}'
@@ -38,7 +38,7 @@ urgency_heading: 'Urgency categories in {state}'
 urgency_intro: 'Your treating specialist gives you an urgency category. These pages rank the public hospitals in {state} by the share of patients treated within the recommended time for each category.'
 urgency_link: '{state}: {category}'
 hospitals_list_heading: 'Every public hospital in {state}'
-hospitals_list_intro: 'Every public hospital in {state} in the national register, in name order. A closed hospital is marked.'
+hospitals_list_intro: 'This list holds every public hospital in {state} in the national register, in name order. A closed hospital is marked.'
 closed_tag: Closed
 qld_heading: Queensland Health quarterly figures
 qld_intro: 'Queensland Health publishes figures for its hospitals each quarter. They come from a different source from the national figures on this page, so this section keeps them apart. It does not rank them and does not compare them with the national figures or with other states.'
@@ -46,7 +46,7 @@ qld_caption: 'Planned surgery at Queensland Health hospitals, {quarter}'
 qld_row_heading: Hospital
 qld_count: '{count} Queensland Health hospitals match a national hospital and are listed in name order.'
 other_heading: Other states and territories
-other_intro: The same pages for each other state or territory.
+other_intro: Each link opens the same page for one of the other states or territories.
 other_link: '{state}: planned surgery waiting times'
 exclusion_heading: What this page leaves out
 exclusion: Private hospitals are excluded. This page covers public hospitals only, so it shows no private hospital.

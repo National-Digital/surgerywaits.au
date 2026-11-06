@@ -32,6 +32,7 @@ export const categoryStatePath = (category: Pick<Category, 'path'>, state: strin
   `${category.path}${state.toLowerCase()}/`;
 
 // The hospital content names the dist's categories in order 1, 2, 3, and this content describes them in that order.
+const dataKey = (short: string): string => `${short}-elective-surgery`;
 export function categories(): Category[] {
   const t = getUrgencyTemplate();
   const slugs = Object.keys(getHospitalTemplate().urgency);
@@ -41,6 +42,13 @@ export function categories(): Category[] {
   ) {
     throw new RangeError('the urgency content and the urgency files do not match');
   }
+  t.categories.forEach((c, i) => {
+    if (slugs[i] !== dataKey(c.short)) {
+      throw new RangeError(
+        `urgency category ${String(i + 1)} does not match the data key ${dataKey(c.short)}`,
+      );
+    }
+  });
   return t.categories.map((c, i) => {
     const number = i + 1;
     return {

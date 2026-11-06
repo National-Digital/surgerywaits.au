@@ -154,9 +154,7 @@ describe('Earlier addresses', () => {
       const got = categoryStateRoutes()
         .filter((r) => r.props.number === category.number)
         .map((r) => r.params.state);
-      for (const state of got) {
-        expect(wanted).toContain(state);
-      }
+      expect([...new Set(got)].sort()).toEqual([...new Set(wanted)].sort());
       expect(got.length).toBeGreaterThan(0);
     }
   });
