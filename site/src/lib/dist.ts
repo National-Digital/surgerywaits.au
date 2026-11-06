@@ -241,6 +241,11 @@ export function readSurgery(kind: Kind, slug: string): Surgery {
   return readDist(`surgeries/${kind}/${slug}.json`) as Surgery;
 }
 
+export function readSuburbs(): [string, string, State, number, number][] {
+  return (readDist('suburbs.json') as { suburbs: [string, string, State, number, number][] })
+    .suburbs;
+}
+
 export function readSurgeryIndex(): SurgeryIndexRow[] {
   return (readDist('surgeries.json') as { surgeries: SurgeryIndexRow[] }).surgeries;
 }

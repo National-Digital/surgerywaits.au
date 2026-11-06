@@ -1,7 +1,8 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { parse } from 'parse5';
 import type { DefaultTreeAdapterTypes } from 'parse5';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
   distSlug,
@@ -10,8 +11,14 @@ import {
   readContent,
   replacedTerms,
 } from '../lib/content-files';
-import { hospitalTemplateSchema, surgeryTemplateSchema, termsSchema } from '../lib/content-schema';
+import {
+  hospitalTemplateSchema,
+  pairTemplateSchema,
+  surgeryTemplateSchema,
+  termsSchema,
+} from '../lib/content-schema';
 import { readHospitalIndex } from '../lib/dist';
+import { indexablePairPaths, pairRoutes, thinPairPaths } from '../lib/pair-page';
 import {
   hubRoutes,
   nearRoutes,
@@ -23,129 +30,248 @@ import {
   refOf,
 } from '../lib/surgery-page';
 import { fill } from '../lib/slots';
-import { elementsOf, text, textsOf } from '../lib/test-render';
+import { elementsOf, plain, textsOf } from '../lib/test-render';
+import type { Found } from '../lib/test-render';
 
 const dist = new URL('../../dist/', import.meta.url);
 if (!existsSync(dist)) {
   throw new Error('site/dist is missing: run `npm run build` before BUILT_PAGES=1 npm test');
 }
-const pages = readdirSync(dist, { recursive: true, encoding: 'utf8' })
+const isPair = (path: string): boolean => /^hospital\/[^/]+\/[^/]+\/index\.html$/.test(path);
+const paths = readdirSync(dist, { recursive: true, encoding: 'utf8' })
   .filter((f) => f.endsWith('.html'))
-  .sort()
-  .map((path) => ({ path, html: readFileSync(new URL(path, dist), 'utf8') }));
+  .sort();
+const read = (path: string): string => readFileSync(new URL(path, dist), 'utf8');
+const address = (path: string): string => `/${path.replace(/index\.html$/, '')}`;
+
+// The real dist holds thousands of pairs, so its per-page checks cover one pair in every STEP.
+const onRealDist = pairRoutes().length > 1000;
+const STEP = onRealDist ? 25 : 1;
+
+const SKIPPED = '<meta name="robots" content="noindex,follow">';
+const terms = termsSchema.parse(readContent().find(({ path }) => path === 'terms.yaml')?.data);
+const OPERATOR = 'Built and operated by National Digital, Burleigh Heads, Queensland';
+
+// Everything the checks need from one page, taken from a single parse so no test parses again.
+interface Basic {
+  path: string;
+  bytes: number;
+  skipped: boolean;
+  anyNoindex: boolean;
+}
+interface Page extends Basic {
+  hospitalTable: boolean;
+  entity: boolean;
+  replaced: string[];
+  passports: number;
+  operator: boolean;
+  header: number;
+  main: number;
+  footer: number;
+  navLabels: (string | undefined)[];
+  scripts: number;
+  handlers: number;
+  javascriptHref: boolean;
+  footerText: string | undefined;
+  footerHrefs: string[];
+  breadcrumbHrefs: string[];
+  mainHrefs: string[];
+  compareBar: boolean;
+  canonical: boolean;
+  description: boolean;
+  h1: number;
+  mainText: string;
+  stamps: number;
+  figures: number;
+  tableStamps: number;
+  tables: number;
+  tiles: Found[];
+  rows: Found[];
+  cells: Found[];
+}
+
+let pages: Basic[] = [];
+let full: Page[] = [];
+const pageAt = (path: string): Page => {
+  const found = full.find((p) => p.path === path);
+  if (found === undefined) {
+    throw new Error(`no built page at ${path}`);
+  }
+  return found;
+};
+const analysed = (): Page[] => full;
+
+function analyse(path: string, html: string, bytes: number, skipped: boolean): Page {
+  const root = parse(html);
+  const tags = elements(root);
+  const count = (name: string): number => tags.filter((t) => t.tagName === name).length;
+  const footer = tags.find((t) => t.tagName === 'footer');
+  const main = tags.find((t) => t.tagName === 'main');
+  const breadcrumb = tags.find(
+    (t) => t.tagName === 'nav' && t.attrs.some((a) => a.value === 'Breadcrumb'),
+  );
+  const own = pageStrings(root, true);
+  return {
+    path,
+    bytes,
+    skipped,
+    anyNoindex: html.includes('noindex'),
+    hospitalTable: html.includes('id="hospitals-caption"'),
+    entity: pageStrings(root).some((t) => entityPattern.test(t)),
+    replaced: replacedTerms(distSlug(path), own, terms),
+    passports: (html.match(/class="c-passport"/g) ?? []).length,
+    operator: pageStrings(root).join('').includes(OPERATOR),
+    header: count('header'),
+    main: count('main'),
+    footer: count('footer'),
+    navLabels: tags
+      .filter((t) => t.tagName === 'nav')
+      .map((t) => t.attrs.find((a) => a.name === 'aria-label')?.value),
+    scripts: count('script'),
+    handlers: tags.flatMap((t) => t.attrs).filter((a) => /^on/i.test(a.name)).length,
+    javascriptHref: /href="javascript:/i.test(html),
+    footerText: footer && textOf(footer),
+    footerHrefs: footer ? anchors(footer) : [],
+    breadcrumbHrefs: breadcrumb ? anchors(breadcrumb) : [],
+    mainHrefs: main && /^(?:hospitals|surgery)\/index\.html$/.test(path) ? anchors(main) : [],
+    compareBar: html.includes('c-compare-bar'),
+    canonical: html.includes(
+      `<link rel="canonical" href="https://surgerywaits.au${address(path)}">`,
+    ),
+    description: html.includes('<meta name="description" content="'),
+    h1: html.match(/<h1[ >]/g)?.length ?? 0,
+    mainText: main ? plain(main).replace(/\s+/g, ' ').trim() : '',
+    stamps: textsOf(root, 'c-stamp').length,
+    figures: textsOf(root, 'c-figure').length,
+    tableStamps: textsOf(root, 'c-table__stamp').length,
+    tables: html.match(/<table[ >]/g)?.length ?? 0,
+    tiles: elementsOf(root, 'c-tiles__tile'),
+    rows: elementsOf(root, 'tr'),
+    cells: elementsOf(root, 'td'),
+  };
+}
+
+// One pass over the dist: every page is read once, and a pair outside the sample is only counted.
+beforeAll(() => {
+  const seen = { thin: 0, indexable: 0 };
+  pages = [];
+  full = [];
+  for (const path of paths) {
+    const html = read(path);
+    const skipped = html.includes(SKIPPED);
+    const bytes = Buffer.byteLength(html);
+    pages.push({ path, bytes, skipped, anyNoindex: html.includes('noindex') });
+    let sampled = true;
+    if (isPair(path)) {
+      const group = skipped ? 'thin' : 'indexable';
+      sampled = seen[group] % STEP === 0;
+      seen[group] += 1;
+    }
+    if (sampled) {
+      full.push(analyse(path, html, bytes, skipped));
+    }
+  }
+}, 900_000);
 
 // Needs `npm run build` first, so only the build job runs it, with BUILT_PAGES=1.
 describe('Built pages', () => {
   it('print no ACN, ABN or company suffix', () => {
-    expect(pages.length).toBeGreaterThan(0);
+    expect(paths.length).toBeGreaterThan(0);
     expect(
-      pages
-        .filter(({ html }) => pageStrings(html).some((t) => entityPattern.test(t)))
-        .map(({ path }) => path),
+      analysed()
+        .filter((p) => p.entity)
+        .map((p) => p.path),
     ).toEqual([]);
   });
 
-  // The passport quotes dataset titles as the publisher gives them, so only it is left out.
-  const scan = (path: string, html: string): string[] =>
-    replacedTerms(distSlug(path), pageStrings(html, true), terms);
-  const terms = termsSchema.parse(readContent().find(({ path }) => path === 'terms.yaml')?.data);
-
   it('use no term the terms file replaces', () => {
-    expect(pages.flatMap(({ path, html }) => scan(path, html))).toEqual([]);
+    expect(analysed().flatMap((p) => p.replaced)).toEqual([]);
   });
 
   it('catch hand-written "elective" on a hospital page, and excuse only the passport', () => {
-    const page = pages.find(({ path }) => path.startsWith('hospital/'));
-    expect(page).toBeDefined();
-    const { path = '', html = '' } = page ?? {};
-    expect(scan(path, html.replace('</main>', '<p>elective</p></main>'))).not.toEqual([]);
+    const path = paths.find((p) => /^hospital\/[^/]+\/index\.html$/.test(p));
+    expect(path).toBeDefined();
+    const html = read(path ?? '');
+    const scan = (page: string): string[] =>
+      replacedTerms(distSlug(path ?? ''), pageStrings(parse(page), true), terms);
+    expect(scan(html.replace('</main>', '<p>elective</p></main>'))).not.toEqual([]);
     expect(html).toContain('c-passport');
     expect(pageStrings(html).some((t) => /elective/i.test(t))).toBe(true);
     expect(pageStrings(html, true).some((t) => /elective/i.test(t))).toBe(false);
     const fake = html.replace('</main>', '<p class="c-passport">elective</p></main>');
-    expect(scan(path, fake)).not.toEqual([]);
+    expect(scan(fake)).not.toEqual([]);
     const sections = html.replace(
       '</main>',
       '<section class="c-passport">elective</section></main>',
     );
-    expect(scan(path, sections)).not.toEqual([]);
+    expect(scan(sections)).not.toEqual([]);
   });
 
   it('carry the data passport at most once', () => {
-    for (const { path, html } of pages) {
-      expect([path, (html.match(/class="c-passport"/g) ?? []).length <= 1]).toEqual([path, true]);
-    }
+    expect(
+      analysed()
+        .filter((p) => p.passports > 1)
+        .map((p) => p.path),
+    ).toEqual([]);
   });
 
   it('keep every page under 300 KB of raw HTML', () => {
-    for (const { path, html } of pages) {
-      expect([path, Buffer.byteLength(html) <= 300_000]).toEqual([path, true]);
-    }
+    expect(pages.filter((p) => p.bytes > 300_000).map((p) => p.path)).toEqual([]);
   });
 
   it('hold no development preview route', () => {
-    expect(pages.filter(({ path }) => path.startsWith('dev/')).map(({ path }) => path)).toEqual([]);
-    expect(pages.filter(({ html }) => html.includes('noindex')).map(({ path }) => path)).toEqual(
-      [],
-    );
+    expect(paths.filter((path) => path.startsWith('dev/'))).toEqual([]);
+    expect(pages.filter((p) => p.anyNoindex && !isPair(p.path)).map((p) => p.path)).toEqual([]);
   });
 
   it('carry the operator line in the footer', () => {
-    for (const { html } of pages) {
-      expect(pageStrings(html).join('')).toContain(
-        'Built and operated by National Digital, Burleigh Heads, Queensland',
-      );
-    }
+    expect(
+      analysed()
+        .filter((p) => !p.operator)
+        .map((p) => p.path),
+    ).toEqual([]);
   });
 
   it('hold a banner, a labelled site navigation, one main landmark and a footer', () => {
-    for (const { path, html } of pages) {
-      const tags = elements(html);
-      const count = (name: string): number => tags.filter((t) => t.tagName === name).length;
-      expect([path, count('header'), count('main'), count('footer')]).toEqual([path, 1, 1, 1]);
-      const labels = tags
-        .filter((t) => t.tagName === 'nav')
-        .map((t) => t.attrs.find((a) => a.name === 'aria-label')?.value);
-      expect(labels).toContain('Site');
-      expect(labels.every((l) => l !== undefined && l !== '')).toBe(true);
-      expect(new Set(labels).size).toBe(labels.length);
+    for (const p of analysed()) {
+      expect([p.path, p.header, p.main, p.footer]).toEqual([p.path, 1, 1, 1]);
+      expect(p.navLabels).toContain('Site');
+      expect(p.navLabels.every((l) => l !== undefined && l !== '')).toBe(true);
+      expect(new Set(p.navLabels).size).toBe(p.navLabels.length);
     }
   });
 
   it('print no ACN, ABN or company suffix in the footer', () => {
-    for (const { html } of pages) {
-      const footer = elements(html).find((t) => t.tagName === 'footer');
-      expect(footer && textOf(footer)).toMatch(/Built and operated by\s+National Digital/);
-      expect(entityPattern.test(footer ? textOf(footer) : '')).toBe(false);
+    for (const p of analysed()) {
+      expect(p.footerText).toMatch(/Built and operated by\s+National Digital/);
+      expect(entityPattern.test(p.footerText ?? '')).toBe(false);
     }
   });
 
   it('link every footer entry to a page that is built', () => {
-    const built = new Set(pages.map(({ path }) => path));
-    for (const { path, html } of pages) {
-      const footer = elements(html).find((t) => t.tagName === 'footer');
-      const hrefs = footer ? anchors(footer) : [];
-      expect(hrefs.length).toBeGreaterThan(0);
-      for (const href of hrefs.filter((h) => h.startsWith('/'))) {
-        expect([path, href, built.has(`${href.slice(1)}index.html`)]).toEqual([path, href, true]);
+    const built = new Set(paths);
+    for (const p of analysed()) {
+      expect(p.footerHrefs.length).toBeGreaterThan(0);
+      for (const href of p.footerHrefs.filter((h) => h.startsWith('/'))) {
+        expect([p.path, href, built.has(`${href.slice(1)}index.html`)]).toEqual([
+          p.path,
+          href,
+          true,
+        ]);
       }
     }
   });
 
   it('show the compare bar only when its page is built', () => {
-    const target = pages.some(({ path }) => path === 'compare/index.html');
-    for (const { html } of pages) {
-      expect(html.includes('c-compare-bar')).toBe(target);
+    const target = paths.includes('compare/index.html');
+    for (const p of analysed()) {
+      expect([p.path, p.compareBar]).toEqual([p.path, target]);
     }
   });
 
   it('ship zero JavaScript on every static page', () => {
-    for (const { path, html } of pages) {
-      const tags = elements(html);
-      expect([path, tags.filter((t) => t.tagName === 'script').length]).toEqual([path, 0]);
-      const handlers = tags.flatMap((t) => t.attrs).filter((a) => /^on/i.test(a.name));
-      expect([path, handlers.length]).toEqual([path, 0]);
-      expect(html).not.toMatch(/href="javascript:/i);
+    for (const p of analysed()) {
+      expect([p.path, p.scripts, p.handlers, p.javascriptHref]).toEqual([p.path, 0, 0, false]);
     }
   });
 });
@@ -155,74 +281,76 @@ describe('Built hospital pages', () => {
   const template = hospitalTemplateSchema.parse(
     readContent().find(({ path }) => path === 'templates/hospital.yaml')?.data,
   );
-  const hospitalPages = pages.filter(({ path }) => path.startsWith('hospital/'));
+  const hospitalPages = (): Page[] =>
+    full.filter(({ path }) => /^hospital\/[^/]+\/index\.html$/.test(path));
 
   it('hold one page at /hospital/<slug>/ for every hospital in the index', () => {
     expect(index.length).toBeGreaterThan(0);
-    expect(hospitalPages.map(({ path }) => path).sort()).toEqual(
-      index.map(({ slug }) => `hospital/${slug}/index.html`).sort(),
-    );
+    expect(
+      hospitalPages()
+        .map(({ path }) => path)
+        .sort(),
+    ).toEqual(index.map(({ slug }) => `hospital/${slug}/index.html`).sort());
   });
 
   it('carry a canonical address, a description and one h1', () => {
-    for (const { path, html } of hospitalPages) {
-      const slug = path.split('/')[1] ?? '';
-      expect(html, path).toContain(
-        `<link rel="canonical" href="https://surgerywaits.au/hospital/${slug}/">`,
-      );
-      expect(html, path).toContain('<meta name="description" content="');
-      expect(html.match(/<h1[ >]/g), path).toHaveLength(1);
+    for (const p of hospitalPages()) {
+      expect([p.path, p.canonical, p.description, p.h1]).toEqual([p.path, true, true, 1]);
     }
   });
 
   it('state the private hospital exclusion in the page and say a closed hospital has closed', () => {
     for (const row of index) {
-      const html =
-        hospitalPages.find(({ path }) => path === `hospital/${row.slug}/index.html`)?.html ?? '';
-      const main = text(html.split('<main')[1] ?? '');
-      expect(main, row.slug).toContain(template.exclusion);
-      expect(main.includes(fill(template.closed_notice, { hospital: row.name })), row.slug).toBe(
-        row.closed,
-      );
+      const page = pageAt(`hospital/${row.slug}/index.html`);
+      expect(page.mainText, row.slug).toContain(template.exclusion);
+      expect(
+        page.mainText.includes(fill(template.closed_notice, { hospital: row.name })),
+        row.slug,
+      ).toBe(row.closed);
     }
     expect(index.some(({ closed }) => closed)).toBe(true);
   });
 
   it('give every figure a stamp and every table a stated period', () => {
-    for (const { path, html } of hospitalPages) {
-      expect(textsOf(html, 'c-stamp'), path).toHaveLength(textsOf(html, 'c-figure').length);
-      expect(textsOf(html, 'c-table__stamp'), path).toHaveLength(
-        html.match(/<table[ >]/g)?.length ?? 0,
-      );
+    for (const p of hospitalPages()) {
+      expect([p.path, p.stamps, p.tableStamps]).toEqual([p.path, p.figures, p.tables]);
     }
   });
 
   it('rank no stale, withheld or closed figure', () => {
     let ranks = 0;
-    for (const { path, html } of hospitalPages) {
+    for (const page of hospitalPages()) {
       const closed = index.some(
-        ({ slug, closed: c }) => c && path === `hospital/${slug}/index.html`,
+        ({ slug, closed: c }) => c && page.path === `hospital/${slug}/index.html`,
       );
       const found = [
-        ...elementsOf(html, 'c-tiles__tile').map((tile) => ({
+        ...page.tiles.map((tile) => ({
           withheld: tile.classes.has('c-tiles__earlier') || tile.inside.has('is-not-published'),
           ranked: tile.inside.has('c-tiles__line'),
           text: tile.text,
         })),
-        ...elementsOf(html, 'tr').map((row) => ({
+        ...page.rows.map((row) => ({
           withheld: row.classes.has('c-table__row--earlier'),
           ranked: row.inside.has('c-table__rank'),
           text: row.text,
         })),
-        ...elementsOf(html, 'td').map((cell) => ({
+        ...page.cells.map((cell) => ({
           withheld: cell.classes.has('is-not-published'),
           ranked: cell.inside.has('c-table__rank'),
           text: cell.text,
         })),
       ];
       for (const item of found) {
-        expect([path, item.text, item.withheld && item.ranked]).toEqual([path, item.text, false]);
-        expect([path, item.text, closed && item.ranked]).toEqual([path, item.text, false]);
+        expect([page.path, item.text, item.withheld && item.ranked]).toEqual([
+          page.path,
+          item.text,
+          false,
+        ]);
+        expect([page.path, item.text, closed && item.ranked]).toEqual([
+          page.path,
+          item.text,
+          false,
+        ]);
         ranks += item.ranked ? 1 : 0;
       }
     }
@@ -234,9 +362,8 @@ describe('Built surgery pages', () => {
   const template = surgeryTemplateSchema.parse(
     readContent().find(({ path }) => path === 'templates/surgery.yaml')?.data,
   );
-  const surgeryPages = pages.filter(
-    ({ path }) => path.startsWith('surgery/') || path.startsWith('specialty/'),
-  );
+  const surgeryPages = (): Page[] =>
+    full.filter(({ path }) => path.startsWith('surgery/') || path.startsWith('specialty/'));
   const expected = [
     '/surgery/',
     '/specialty/',
@@ -249,95 +376,143 @@ describe('Built surgery pages', () => {
 
   it('hold one page at every address the earlier site used, and the specialty addresses', () => {
     expect(surgeryRefs().length).toBeGreaterThan(0);
-    expect(surgeryPages.map(({ path }) => `/${path.replace(/index\.html$/, '')}`).sort()).toEqual(
-      expected.sort(),
-    );
-    for (const address of [
-      '/surgery/',
-      '/surgery/hip-replacement/',
-      '/surgery/hip-replacement/nsw/',
-    ]) {
-      expect(expected).toContain(address);
+    expect(
+      surgeryPages()
+        .map(({ path }) => address(path))
+        .sort(),
+    ).toEqual(expected.sort());
+    for (const a of ['/surgery/', '/surgery/hip-replacement/', '/surgery/hip-replacement/nsw/']) {
+      expect(expected).toContain(a);
     }
   });
 
   it('carry a canonical address, a description and one h1', () => {
-    for (const { path, html } of surgeryPages) {
-      expect(html, path).toContain(
-        `<link rel="canonical" href="https://surgerywaits.au/${path.replace(/index\.html$/, '')}">`,
-      );
-      expect(html, path).toContain('<meta name="description" content="');
-      expect(html.match(/<h1[ >]/g), path).toHaveLength(1);
+    for (const p of surgeryPages()) {
+      expect([p.path, p.canonical, p.description, p.h1]).toEqual([p.path, true, true, 1]);
     }
   });
 
   it('state the private hospital exclusion on every page', () => {
-    for (const { path, html } of surgeryPages) {
-      expect(text(html.split('<main')[1] ?? ''), path).toContain(template.exclusion);
+    for (const p of surgeryPages()) {
+      expect(p.mainText, p.path).toContain(template.exclusion);
     }
   });
 
   it('give every figure a stamp and every table a stated period', () => {
-    for (const { path, html } of surgeryPages) {
-      expect(textsOf(html, 'c-stamp'), path).toHaveLength(textsOf(html, 'c-figure').length);
-      expect(textsOf(html, 'c-table__stamp'), path).toHaveLength(
-        html.match(/<table[ >]/g)?.length ?? 0,
-      );
+    for (const p of surgeryPages()) {
+      expect([p.path, p.stamps, p.tableStamps]).toEqual([p.path, p.figures, p.tables]);
     }
   });
 
   it('rank a figure only when it is current and published, and never a benchmark', () => {
     let ranks = 0;
-    for (const { path, html } of surgeryPages) {
-      for (const cell of elementsOf(html, 'td')) {
+    for (const p of surgeryPages()) {
+      for (const cell of p.cells) {
         expect([
-          path,
+          p.path,
           cell.text,
           cell.classes.has('is-not-published') && cell.inside.has('c-table__rank'),
-        ]).toEqual([path, cell.text, false]);
+        ]).toEqual([p.path, cell.text, false]);
         ranks += cell.inside.has('c-table__rank') ? 1 : 0;
       }
-      for (const row of elementsOf(html, 'tr')) {
+      for (const row of p.rows) {
         expect([
-          path,
+          p.path,
           row.classes.has('c-table__row--earlier') && row.inside.has('c-table__rank'),
-        ]).toEqual([path, false]);
+        ]).toEqual([p.path, false]);
       }
-      expect([path, html.includes('c-tiles__line')]).toEqual([path, false]);
+      expect([p.path, p.tiles.some((t) => t.inside.has('c-tiles__line'))]).toEqual([p.path, false]);
     }
     expect(ranks).toBeGreaterThan(0);
   });
 
   it('say the ranking basis once on every page that has a hospital table', () => {
-    for (const { path, html } of surgeryPages.filter(({ html: h }) =>
-      h.includes('id="hospitals-caption"'),
-    )) {
-      expect(text(html.split('<main')[1] ?? ''), path).toContain(template.ranking);
+    for (const p of surgeryPages().filter((q) => q.hospitalTable)) {
+      expect(p.mainText, p.path).toContain(template.ranking);
+    }
+  });
+});
+
+describe('Built pair pages', () => {
+  const template = pairTemplateSchema.parse(
+    readContent().find(({ path }) => path === 'templates/pair.yaml')?.data,
+  );
+  const pairPages = (): Basic[] => pages.filter(({ path }) => isPair(path));
+
+  it('hold one page at every pair address, and no other under a hospital', () => {
+    expect(
+      pairPages()
+        .map(({ path }) => address(path))
+        .sort(),
+    ).toEqual(
+      pairRoutes()
+        .map(({ params }) => `/hospital/${params.slug}/${params.surgery}/`)
+        .sort(),
+    );
+  });
+
+  // Counted from the dist's own rows, with no use of the build's rule, so a drift in either shows.
+  it('mark as noindex exactly the pairs the rule makes thin, and list the rest as indexable', () => {
+    const thin = pairPages()
+      .filter((p) => p.skipped)
+      .map((p) => address(p.path));
+    expect(thin.sort()).toEqual(thinPairPaths().sort());
+    expect(thin).toHaveLength(expectedThinCount());
+    const indexable = pairPages()
+      .filter((p) => !p.skipped)
+      .map((p) => address(p.path));
+    expect(indexable.sort()).toEqual(indexablePairPaths().sort());
+    expect(indexable.length + thin.length).toBe(pairPages().length);
+    if (onRealDist) {
+      // The counts for the pinned source versions, so a change to the rule or the data shows here.
+      expect(thin).toHaveLength(6662);
+      expect(indexable).toHaveLength(6264);
+    }
+  });
+
+  it('carry a canonical address, a description, one h1 and the exclusion', () => {
+    for (const p of analysed().filter((q) => isPair(q.path))) {
+      expect([p.path, p.canonical, p.description, p.h1]).toEqual([p.path, true, true, 1]);
+      expect(p.mainText, p.path).toContain(template.exclusion);
+    }
+  });
+
+  it('sample the pairs of both kinds on the real dist', () => {
+    const sampled = analysed().filter((p) => isPair(p.path));
+    expect(sampled.some((p) => p.skipped)).toBe(true);
+    expect(sampled.some((p) => !p.skipped)).toBe(true);
+  });
+
+  it('give every figure a stamp and rank no withheld figure', () => {
+    for (const p of analysed().filter((q) => isPair(q.path))) {
+      expect([p.path, p.stamps]).toEqual([p.path, p.figures]);
+      for (const tile of p.tiles) {
+        expect([
+          p.path,
+          tile.inside.has('is-not-published') && tile.inside.has('c-tiles__line'),
+        ]).toEqual([p.path, false]);
+      }
     }
   });
 });
 
 describe('Built index pages', () => {
   const index = readHospitalIndex();
-  const page = (path: string): string => pages.find((p) => p.path === path)?.html ?? '';
-  const mainLinks = (html: string): string[] => {
-    const main = elements(html).find((t) => t.tagName === 'main');
-    return main ? anchors(main) : [];
-  };
+  const mainLinks = (path: string): string[] => pageAt(path).mainHrefs;
 
   it('list every hospital once on /hospitals/ and link only to built hospital pages', () => {
-    const links = mainLinks(page('hospitals/index.html')).filter((h) => h.startsWith('/hospital/'));
+    const links = mainLinks('hospitals/index.html').filter((h) => h.startsWith('/hospital/'));
     expect(links.sort()).toEqual(index.map(({ slug }) => `/hospital/${slug}/`).sort());
-    const built = new Set(pages.map(({ path }) => path));
+    const built = new Set(paths);
     for (const href of links) {
       expect(built.has(`${href.slice(1)}index.html`), href).toBe(true);
     }
   });
 
   it('link /surgery/ to a built page at each surgery address, and to nothing else', () => {
-    const built = new Set(pages.map(({ path }) => path));
+    const built = new Set(paths);
     const expected = surgeryRefs().map((ref) => surgeryPath(ref));
-    const links = mainLinks(page('surgery/index.html')).filter((h) =>
+    const links = mainLinks('surgery/index.html').filter((h) =>
       /^\/(surgery|specialty)\/.+/.test(h),
     );
     expect(links.sort()).toEqual(expected.sort());
@@ -347,27 +522,24 @@ describe('Built index pages', () => {
   });
 
   it('add the Hospitals crumb to every hospital page', () => {
-    const hospitalPages = pages.filter(({ path }) => path.startsWith('hospital/'));
+    const hospitalPages = full.filter(({ path }) => /^hospital\/[^/]+\/index\.html$/.test(path));
     expect(hospitalPages.length).toBeGreaterThan(0);
-    for (const { path, html } of hospitalPages) {
-      const nav = elements(html).find(
-        (t) => t.tagName === 'nav' && t.attrs.some((a) => a.value === 'Breadcrumb'),
-      );
-      expect([path, nav ? anchors(nav) : []]).toEqual([path, ['/', '/hospitals/']]);
+    for (const p of hospitalPages) {
+      expect([p.path, p.breadcrumbHrefs]).toEqual([p.path, ['/', '/hospitals/']]);
     }
   });
 
   it('state the private hospital exclusion on both index pages', () => {
     for (const path of ['hospitals/index.html', 'surgery/index.html']) {
-      expect([
+      expect([path, pageAt(path).mainText.includes('Private hospitals are excluded')]).toEqual([
         path,
-        text(page(path).split('<main')[1] ?? '').includes('Private hospitals are excluded'),
-      ]).toEqual([path, true]);
+        true,
+      ]);
     }
   });
 });
 
-function elements(html: string): DefaultTreeAdapterTypes.Element[] {
+function elements(root: DefaultTreeAdapterTypes.Node): DefaultTreeAdapterTypes.Element[] {
   const out: DefaultTreeAdapterTypes.Element[] = [];
   const visit = (node: DefaultTreeAdapterTypes.Node): void => {
     if ('tagName' in node) {
@@ -377,7 +549,7 @@ function elements(html: string): DefaultTreeAdapterTypes.Element[] {
       node.childNodes.forEach(visit);
     }
   };
-  visit(parse(html));
+  visit(root);
   return out;
 }
 
@@ -400,4 +572,101 @@ function anchors(root: DefaultTreeAdapterTypes.Element): string[] {
   };
   visit(root);
   return out;
+}
+
+interface RawRow {
+  code: string;
+  slug: string;
+  closed: boolean;
+  measures: Record<string, { figure: { state: string; period: string; release: string } }>;
+}
+interface RawSurgery {
+  slug: string;
+  period: string;
+  release: string;
+  hospitals: RawRow[];
+  benchmarks: { national: { long_wait?: { state: string } } | null };
+}
+interface RawTrend {
+  series: { kind: string; slug: string; role: string; periods: string[]; points: unknown[][] }[];
+}
+interface Place {
+  lat: number;
+  lon: number;
+  state: string;
+}
+
+// The thin count worked out again from the raw files: pairs with no published median, or a
+// median with no earlier year, no published neighbour in the hospital's own mesh, no long-wait
+// share and no area.
+function expectedThinCount(): number {
+  const root = process.env['SURGERYWAITS_DIST'] ?? '';
+  const readJson = (path: string): unknown => JSON.parse(readFileSync(join(root, path), 'utf8'));
+  const located = new Map<string, Place>();
+  for (const h of (
+    readJson('hospitals.json') as {
+      hospitals: {
+        slug: string;
+        state: string;
+        latitude: number | null;
+        longitude: number | null;
+      }[];
+    }
+  ).hospitals) {
+    if (h.latitude !== null && h.longitude !== null) {
+      located.set(h.slug, { lat: h.latitude, lon: h.longitude, state: h.state });
+    }
+  }
+  const meshes = new Map<string, string[] | null>();
+  const meshOf = (slug: string): string[] | null => {
+    if (!meshes.has(slug)) {
+      const { nearby } = readJson(`hospitals/${slug}.json`) as {
+        nearby: { hospitals: { code: string }[] } | null;
+      };
+      meshes.set(slug, nearby === null ? null : nearby.hospitals.map((n) => n.code));
+    }
+    return meshes.get(slug) ?? null;
+  };
+  const states = new Set(
+    (readJson('suburbs.json') as { suburbs: string[][] }).suburbs.map((s) => s[2] ?? ''),
+  );
+  const trends = new Set(readdirSync(join(root, 'trends')).map((f) => f.replace(/\.json$/, '')));
+  let thin = 0;
+  for (const file of readdirSync(join(root, 'surgeries/procedure'))) {
+    const surgery = readJson(`surgeries/procedure/${file}`) as RawSurgery;
+    const current = surgery.hospitals.filter((row) =>
+      Object.values(row.measures).every(
+        (m) => m.figure.period === surgery.period && m.figure.release === surgery.release,
+      ),
+    );
+    const median = (row: RawRow): boolean =>
+      row.measures['median_wait']?.figure.state === 'published';
+    for (const row of current) {
+      if (!median(row)) {
+        thin += 1;
+        continue;
+      }
+      const series = trends.has(row.slug)
+        ? (readJson(`trends/${row.slug}.json`) as RawTrend).series.find(
+            (s) => s.kind === 'procedure' && s.slug === surgery.slug && s.role === 'median_wait',
+          )
+        : undefined;
+      const history =
+        series?.points.some((p, i) => p[1] !== null && series.periods[i] !== surgery.period) ??
+        false;
+      const at = located.get(row.slug);
+      const mesh = row.closed ? null : meshOf(row.slug);
+      const neighbour =
+        mesh !== null &&
+        current.some((o) => o.code !== row.code && !o.closed && median(o) && mesh.includes(o.code));
+      const longWait =
+        row.measures['long_wait']?.figure.state === 'published' &&
+        surgery.benchmarks.national?.long_wait?.state === 'published';
+      const area = at !== undefined && states.has(at.state);
+      if (!history && !neighbour && !longWait && !area) {
+        thin += 1;
+      }
+    }
+  }
+  return thin;
 }

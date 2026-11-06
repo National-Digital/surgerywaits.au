@@ -1,9 +1,12 @@
 ---
+import Figure from './Figure.astro';
+import type { Figure as FigureData } from '../lib/format';
+
 interface Props {
   id: string;
   heading: string;
   intro: string;
-  items: { name: string; href: string | undefined; distance: string }[];
+  items: { name: string; href: string | undefined; distance: string; figure?: FigureData }[];
 }
 
 const { id, heading, intro, items } = Astro.props;
@@ -24,6 +27,7 @@ const { id, heading, intro, items } = Astro.props;
           </a>
         )}
         <span class="c-nearby__distance">{item.distance}</span>
+        {item.figure && <Figure role="median_wait" figure={item.figure} />}
       </li>
     ))}
   </ol>

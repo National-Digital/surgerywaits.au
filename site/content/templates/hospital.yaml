@@ -55,7 +55,7 @@ qld_intro: 'Queensland Health also publishes figures for {hospital} each quarter
 qld_quarter: 'All planned surgery, {quarter}'
 nearby_heading: Hospitals nearby
 nearby_heading_closed: Open hospitals nearby
-nearby_intro: 'These are the open public hospitals nearest {hospital}, nearest first. Each distance is a straight line, not a travel time.'
+nearby_intro: 'These are the open public hospitals nearest {hospital}, nearest first. Each distance is measured in a straight line.'
 nearby_distance: '{distance} away'
 nearby_none: 'The source gives no location for {hospital}, so this page cannot list hospitals near it.'
 exclusion_heading: What this page leaves out

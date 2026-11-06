@@ -14,6 +14,7 @@ import {
   pageSchema,
   siteSchema,
   surgeryNamesSchema,
+  pairTemplateSchema,
   surgeryTemplateSchema,
   termsSchema,
 } from '../lib/content-schema';
@@ -34,7 +35,7 @@ import SurgeryHub from '../components/SurgeryHub.astro';
 import SurgeryIndex from '../components/SurgeryIndex.astro';
 import SurgeryNear from '../components/SurgeryNear.astro';
 import SurgeryState from '../components/SurgeryState.astro';
-import hospitalPage from '../pages/hospital/[slug].astro';
+import hospitalPage from '../pages/hospital/[slug]/index.astro';
 import home from '../pages/index.astro';
 import { sampleCharts, surgeryTables } from '../dev/preview';
 import { planChart } from '../lib/chart';
@@ -449,6 +450,7 @@ describe('Copy', () => {
       'labels.yaml': labelsSchema,
       'navigation.yaml': navigationSchema,
       'templates/hospital.yaml': hospitalTemplateSchema,
+      'templates/pair.yaml': pairTemplateSchema,
       'templates/surgery.yaml': surgeryTemplateSchema,
       'areas.yaml': areasSchema,
       'surgery-names.yaml': surgeryNamesSchema,

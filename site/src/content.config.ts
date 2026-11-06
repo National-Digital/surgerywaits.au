@@ -5,6 +5,7 @@ import {
   areasSchema,
   hospitalsIndexSchema,
   hospitalTemplateSchema,
+  pairTemplateSchema,
   labelsSchema,
   navigationSchema,
   pageSchema,
@@ -33,6 +34,10 @@ export const collections = {
   surgery: defineCollection({
     loader: glob({ pattern: 'surgery.yaml', base: './content/templates' }),
     schema: surgeryTemplateSchema,
+  }),
+  pair: defineCollection({
+    loader: glob({ pattern: 'pair.yaml', base: './content/templates' }),
+    schema: pairTemplateSchema,
   }),
   pages: defineCollection({
     loader: glob({ pattern: '*.yaml', base: './content/pages' }),

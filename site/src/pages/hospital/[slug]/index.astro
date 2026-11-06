@@ -1,19 +1,19 @@
 ---
 // Base comes first so its global sheet, and with it the layer order, precedes every component sheet.
-import Base from '../../layouts/Base.astro';
-import AboutCard from '../../components/AboutCard.astro';
-import Breadcrumbs from '../../components/Breadcrumbs.astro';
-import DataPassport from '../../components/DataPassport.astro';
-import DataTable from '../../components/DataTable.astro';
-import NearbyHospitals from '../../components/NearbyHospitals.astro';
-import Notice from '../../components/Notice.astro';
-import QueenslandTiles from '../../components/QueenslandTiles.astro';
-import SafetyBlock from '../../components/SafetyBlock.astro';
-import StatTile from '../../components/StatTile.astro';
-import StatTiles from '../../components/StatTiles.astro';
-import TrendChart from '../../components/TrendChart.astro';
-import { getHospitalTemplate, getSite, label } from '../../lib/content';
-import { formatKilometres, formatQuarter } from '../../lib/format';
+import Base from '../../../layouts/Base.astro';
+import AboutCard from '../../../components/AboutCard.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import DataPassport from '../../../components/DataPassport.astro';
+import DataTable from '../../../components/DataTable.astro';
+import NearbyHospitals from '../../../components/NearbyHospitals.astro';
+import Notice from '../../../components/Notice.astro';
+import QueenslandTiles from '../../../components/QueenslandTiles.astro';
+import SafetyBlock from '../../../components/SafetyBlock.astro';
+import StatTile from '../../../components/StatTile.astro';
+import StatTiles from '../../../components/StatTiles.astro';
+import TrendChart from '../../../components/TrendChart.astro';
+import { getHospitalTemplate, getSite, label } from '../../../lib/content';
+import { formatKilometres, formatQuarter } from '../../../lib/format';
 import {
   HOSPITALS_PATH,
   hasCurrentFigures,
@@ -29,10 +29,10 @@ import {
   TABLE_ROLES,
   trendCharts,
   urgencyTiles,
-} from '../../lib/hospital-page';
-import { isBuilt } from '../../lib/links';
-import { fill } from '../../lib/slots';
-import type { Role } from '../../lib/format';
+} from '../../../lib/hospital-page';
+import { isBuilt } from '../../../lib/links';
+import { fill } from '../../../lib/slots';
+import type { Role } from '../../../lib/format';
 
 interface Props {
   slug: string;

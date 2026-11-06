@@ -87,7 +87,10 @@ function isPassport(node: DefaultTreeAdapterTypes.Element): boolean {
 }
 
 // The data passport quotes source titles verbatim, so `skipPassport` drops that one section.
-export function pageStrings(html: string, skipPassport = false): string[] {
+export function pageStrings(
+  html: string | DefaultTreeAdapterTypes.Document,
+  skipPassport = false,
+): string[] {
   const out: string[] = [];
   const visit = (node: DefaultTreeAdapterTypes.Node): void => {
     if ('tagName' in node) {
@@ -108,6 +111,6 @@ export function pageStrings(html: string, skipPassport = false): string[] {
     const inner = 'content' in node ? node.content.childNodes : [];
     [...children, ...inner].forEach(visit);
   };
-  visit(parseHtml(html));
+  visit(typeof html === 'string' ? parseHtml(html) : html);
   return out.map((t) => t.replaceAll(/\s+/g, ' ')).filter((t) => t.trim() !== '');
 }

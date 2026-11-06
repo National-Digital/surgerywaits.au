@@ -147,7 +147,14 @@ export function formatDays(n: number): string {
 }
 
 export function formatKilometres(n: number): string {
+  if (finite(n) < 1) {
+    return 'less than 1 kilometre';
+  }
   return withUnit(n, 'kilometre', 'kilometres');
+}
+
+export function formatHospitals(n: number): string {
+  return withUnit(n, 'public hospital', 'public hospitals');
 }
 
 export function formatSurgeries(n: number): string {

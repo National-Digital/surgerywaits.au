@@ -6,12 +6,14 @@ import {
   hospitalTemplateSchema,
   labelsSchema,
   navigationSchema,
+  pairTemplateSchema,
   pageSchema,
   siteSchema,
   surgeryNamesSchema,
   surgeryTemplateSchema,
 } from './content-schema';
 import type { LabelKey } from './content-schema';
+import { formatRank } from './format';
 
 // Parsing here types the entries, because astro:content falls back to any when its types clash.
 const single = async <S extends z.ZodType>(
@@ -43,10 +45,12 @@ export function getHospitalsIndex(): typeof hospitalsIndex {
 }
 
 const surgeryTemplate = await single('surgery', 'surgery', surgeryTemplateSchema);
+const pairTemplate = await single('pair', 'pair', pairTemplateSchema);
 const areas = await single('areas', 'areas', areasSchema);
 const surgeryNames = await single('surgery-names', 'surgery-names', surgeryNamesSchema);
 
 export const getSurgeryTemplate = (): typeof surgeryTemplate => surgeryTemplate;
+export const getPairTemplate = (): typeof pairTemplate => pairTemplate;
 export const getAreas = (): typeof areas => areas;
 export const getSurgeryNames = (): typeof surgeryNames.names => surgeryNames.names;
 
@@ -74,3 +78,7 @@ export function getPage(id: 'home' | 'not-found'): z.output<typeof pageSchema> {
 export function label(key: LabelKey): string {
   return labels[key];
 }
+
+// Every rank on the site is among all public hospitals in Australia, so every rank says so here.
+export const nationalRank = (rank: { position: number; of: number }): string =>
+  `${formatRank(rank.position, rank.of)} ${labels.rank_national}`;

@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import page from '../pages/hospital/[slug].astro';
+import page from '../pages/hospital/[slug]/index.astro';
 import { getHospitalTemplate, getSite } from '../lib/content';
 import { hospitalTemplateSchema } from '../lib/content-schema';
 import { readContent } from '../lib/content-files';

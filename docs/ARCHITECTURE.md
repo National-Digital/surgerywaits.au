@@ -79,6 +79,13 @@ Cloudflare Worker    serves the static assets (planned)
   ordered by median wait, a median-wait chart for Australia and the three states that treated the most patients,
   the exclusion statement, the safety block and the data passport. Ranks are the dist's national ranks. A hospital row
   whose figures are from another period is marked and never ranked. All copy is in `site/content/templates/surgery.yaml`.
+  Each current row of each procedure has a pair page at `/hospital/<hospital>/<surgery>/`, with the surgery's
+  everyday-name slug, as the earlier site had. It holds the hospital's figures as tiles with national ranks, the state and
+  national rows beside them, the hospitals on its nearby list (up to eight) that published a shorter median, the hospital's own history for the surgery, a median-wait chart, links up to the hospital, the surgery and the state page, the exclusion
+  statement, the safety block and the data passport, under the compact footer, from `site/content/templates/pair.yaml`.
+  A pair is thin, and carries `noindex,follow`, when its median is not published, or when it has no earlier published year, no
+  open hospital in its own nearby mesh with a published median, no long-wait share beside a national one and no nearest area
+  in its state. `indexablePairPaths()` lists the rest for the sitemap. The Built pages test counts the thin pairs again from the dist.
   `/hospitals/` lists every public hospital in `hospitals.json` once, by state or territory and then A to Z. It marks a closed
   hospital with the word "Closed", gives each hospital's count of surgery types with a current figure and with only an earlier one,
   shows other names in small type, says how many hospitals are reporting and how many are not, and states the reference period
