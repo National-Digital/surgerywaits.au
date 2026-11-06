@@ -1,10 +1,10 @@
-import json
 from collections import Counter
 from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
+from realdata import pinned
 from surgerywaits.catalogue import Role
 from surgerywaits.hospitals import load_register
 from surgerywaits.suppression import (
@@ -22,7 +22,6 @@ from surgerywaits.waiting_times import Cell, Table, build, load, read_rows
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / "pipeline" / "tests" / "fixtures"
-CACHE = ROOT / "pipeline" / ".downloads"
 REGISTER_SLUGS = (
     "au-myhospitals-reporting-units",
     "au-myhospitals-reporting-unit-mappings",
@@ -145,29 +144,21 @@ KEYS = (
 )
 
 
-def _real(slug: str) -> Path:
-    manifest = json.loads((ROOT / "data" / "manifest.json").read_text("utf-8"))
-    return CACHE / next(d["sha256"] for d in manifest["datasets"] if d["slug"] == slug)
-
-
 def test_the_pinned_releases_pass_suppression_in_full() -> None:
-    if not all(_real(s).is_file() for s in (*REGISTER_SLUGS, *SLUGS.values())):
-        pytest.skip("the pinned files are not cached")
-    register = load_register(*(_real(s) for s in REGISTER_SLUGS))
+    register = load_register(*pinned(*REGISTER_SLUGS))
     expected = {
         Table.URGENCY: (49891, 269, 736, 1004, 1200),
         Table.PROCEDURE: (405665, 43562, 31, 162690, 22607),
         Table.SPECIALTY: (71381, 1362, 12, 7127, 29248),
     }
     for table, slug in SLUGS.items():
-        counts = dict(suppress(load(_real(slug), table, register)).counts)
+        counts = dict(suppress(load(pinned(slug)[0], table, register)).counts)
         assert tuple(counts[k] for k in KEYS) == expected[table], table
 
 
 def test_the_pinned_queensland_releases_map_in_full() -> None:
     slugs = ("qld-elective-surgery-by-category", "qld-elective-surgery-by-specialty")
-    if not all(_real(s).is_file() for s in slugs):
-        pytest.skip("the pinned files are not cached")
+    files = dict(zip(slugs, pinned(*slugs), strict=True))
     expected = (
         {"published": 1762, "not_given_by_queensland_health": 38},
         {"published": 2634, "not_given_by_queensland_health": 90, "not_reported_by_source": 3},
@@ -175,7 +166,7 @@ def test_the_pinned_queensland_releases_map_in_full() -> None:
     for slug, want in zip(slugs, expected, strict=True):
         counts = Counter(
             f.reason.value if f.reason else "published"
-            for r in read_rows(_real(slug))
+            for r in read_rows(files[slug])
             for f in qld_figures(r)
         )
         assert dict(counts) == want

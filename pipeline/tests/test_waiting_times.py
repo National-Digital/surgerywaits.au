@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from realdata import pinned
 from surgerywaits.catalogue import ALLOWED_ROLES, Role
 from surgerywaits.catalogue import load as load_catalogue
 from surgerywaits.hospitals import Hospital, Register, load_register
@@ -23,7 +24,6 @@ from surgerywaits.waiting_times import (
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / "pipeline" / "tests" / "fixtures"
-CACHE = ROOT / "pipeline" / ".downloads"
 REGISTER_SLUGS = (
     "au-myhospitals-reporting-units",
     "au-myhospitals-reporting-unit-mappings",
@@ -340,18 +340,11 @@ def test_a_renamed_fixture_hospital_fails_the_join() -> None:
         build(renamed, Table.URGENCY, register)
 
 
-def _real(slug: str) -> Path:
-    manifest = json.loads((ROOT / "data" / "manifest.json").read_text("utf-8"))
-    return CACHE / next(d["sha256"] for d in manifest["datasets"] if d["slug"] == slug)
-
-
 def test_the_pinned_releases_join_in_full() -> None:
-    needed = [*REGISTER_SLUGS, *SLUGS.values(), "au-myhospitals-reported-measures"]
-    if not all(_real(s).is_file() for s in needed):
-        pytest.skip("the pinned files are not cached")
-    register = load_register(*(_real(s) for s in REGISTER_SLUGS))
-    catalogue = load_catalogue(_real("au-myhospitals-reported-measures"))
-    results = {t: load(_real(s), t, register) for t, s in SLUGS.items()}
+    (catalogue_file,) = pinned("au-myhospitals-reported-measures")
+    register = load_register(*pinned(*REGISTER_SLUGS))
+    catalogue = load_catalogue(catalogue_file)
+    results = {t: load(pinned(s)[0], t, register) for t, s in SLUGS.items()}
     expected = {
         Table.URGENCY: (10620, 3, (("Local Hospital Network", 1539),)),
         Table.PROCEDURE: (

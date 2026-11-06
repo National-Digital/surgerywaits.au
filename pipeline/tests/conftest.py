@@ -1,10 +1,14 @@
 import ipaddress
+import os
 import socket
 from collections.abc import Callable
 from typing import Any, cast
 
 import pytest
 
+pytest_plugins = ["pytester"]
+
+PLANNED = "planned:"
 LOOPBACK = {"localhost", "127.0.0.1", "::1"}
 
 
@@ -71,3 +75,30 @@ def _no_network(monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(socket.socket, name, _guard_method(name))
     for name in LOOKUPS:
         monkeypatch.setattr(socket, name, _guard_lookup(name))
+
+
+def _unplanned_skip(report: pytest.TestReport | pytest.CollectReport) -> bool:
+    if os.environ.get("SURGERYWAITS_REQUIRE_DATA") != "1" or not report.skipped:
+        return False
+    longrepr = cast("Any", report.longrepr)
+    reason = str(cast("Any", longrepr[2] if isinstance(longrepr, tuple) else longrepr))
+    if reason.removeprefix("Skipped: ").startswith(PLANNED):
+        return False
+    report.longrepr = f"skipped without a planned: reason while data is required: {reason}"
+    return True
+
+
+# With SURGERYWAITS_REQUIRE_DATA=1 only a planned skip is allowed, so no real-data test hides.
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo[None]) -> Any:  # noqa: ANN401, ARG001
+    report = cast("pytest.TestReport", cast("Any", (yield)).get_result())
+    if _unplanned_skip(report):
+        report.outcome = "failed"
+
+
+# Module-level skips and importorskip happen at collection, which the hook above never sees.
+@pytest.hookimpl(hookwrapper=True)
+def pytest_make_collect_report(collector: pytest.Collector) -> Any:  # noqa: ANN401, ARG001
+    report = cast("pytest.CollectReport", cast("Any", (yield)).get_result())
+    if _unplanned_skip(report):
+        report.outcome = "failed"

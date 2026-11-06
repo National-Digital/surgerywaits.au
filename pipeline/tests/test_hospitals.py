@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from realdata import pinned
 from surgerywaits.hospitals import (
     HospitalError,
     Register,
@@ -11,8 +12,6 @@ from surgerywaits.hospitals import (
     load_register,
     read_rows,
 )
-from surgerywaits.manifest import load
-from surgerywaits.pull import CACHE_DIR
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 REGISTER_SLUGS = (
@@ -241,17 +240,8 @@ def test_a_duplicate_mapping_for_a_hospital_fails_closed() -> None:
         build_register(units, [*mappings, dup], records)
 
 
-def _pulled(slug: str) -> Path | None:
-    entry = next(e for e in load() if e.slug == slug)
-    path = CACHE_DIR / entry.sha256
-    return path if path.is_file() else None
-
-
 def test_the_full_register_at_the_pinned_versions() -> None:
-    paths = [_pulled(s) for s in REGISTER_SLUGS]
-    if None in paths:
-        pytest.skip("the pinned files are not in pipeline/.downloads")
-    units, mappings, records = (p for p in paths if p is not None)
+    units, mappings, records = pinned(*REGISTER_SLUGS)
     register = load_register(units, mappings, records)
     assert len(register.hospitals) + len(register.excluded_private) == 1166  # noqa: PLR2004
     assert len(register.hospitals) == 714  # noqa: PLR2004
