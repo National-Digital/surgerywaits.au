@@ -1,0 +1,22 @@
+title: 'Public hospitals with planned surgery waiting times: {site}'
+description: "Every public hospital in the national collection, listed by state or territory and then A to Z. Each name links to that hospital's planned surgery waiting times."
+crumb: Hospitals
+heading: Public hospitals
+lede: "{count} public hospitals are listed by state or territory, then A to Z. Each name links to that hospital's planned surgery waiting times."
+closed_note: '{closed} of these hospitals have closed. A closed hospital is marked. Its page keeps past figures and shows no current wait.'
+stamp: 'These counts are for {period}. The register was released on {release}.'
+reporting_note: '{reporting} hospitals reporting, {not_reporting} not reporting.'
+names_note: Some hospitals have more than one name. The other names appear in small type under the hospital name.
+jump_heading: Go to a state or territory
+jump_label: States and territories
+state_count_one: 1 public hospital
+state_count_many: '{count} public hospitals'
+closed_tag: Closed
+types_one: 1 surgery type this period
+types_many: '{count} surgery types this period'
+types_none: not reported for this period
+earlier_one: 1 surgery type last reported earlier
+earlier_many: '{count} surgery types last reported earlier'
+names_label: Also known as
+exclusion_heading: What this list leaves out
+exclusion: Private hospitals are excluded. This page covers public hospitals only, so it shows no private hospital.

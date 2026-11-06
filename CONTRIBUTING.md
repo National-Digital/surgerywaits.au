@@ -39,6 +39,8 @@ npm run format:check    # Prettier
 npm run typecheck       # astro check on the site, tsc on the Worker, the scripts and the lint rules
 npm run knip            # unused files, exports and dependencies
 npm test                # vitest, without the browser proofs
+BUILT_PAGES=1 npm test  # also checks the built pages, after npm run build
+BUILD_TWICE=1 npm test  # also builds again and compares every file byte for byte, after npm run build
 A11Y_TEST=1 npx vitest run scripts/a11y.test.ts   # the accessibility proofs, which need Chromium
 A11Y_TEST=1 npx vitest run scripts/layout.test.ts # the header proof, which needs Chromium and npm run build
 npm run build           # astro build; reads the dist named by SURGERYWAITS_DIST

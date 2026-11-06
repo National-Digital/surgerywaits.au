@@ -140,6 +140,7 @@ export interface HospitalIndexRow {
   network: { code: string; name: string } | null;
   latitude: number | null;
   longitude: number | null;
+  latest_period: string;
 }
 
 export type Kind = HospitalSurgery['kind'];
@@ -222,6 +223,10 @@ export function readHospital(slug: string): Hospital {
 
 export function readHospitalIndex(): HospitalIndexRow[] {
   return (readDist('hospitals.json') as { hospitals: HospitalIndexRow[] }).hospitals;
+}
+
+export function readHospitalSources(): string[] {
+  return (readDist('hospitals.json') as { sources: string[] }).sources;
 }
 
 export function readTrend(slug: string): Trend {

@@ -317,6 +317,56 @@ describe('Built surgery pages', () => {
   });
 });
 
+describe('Built index pages', () => {
+  const index = readHospitalIndex();
+  const page = (path: string): string => pages.find((p) => p.path === path)?.html ?? '';
+  const mainLinks = (html: string): string[] => {
+    const main = elements(html).find((t) => t.tagName === 'main');
+    return main ? anchors(main) : [];
+  };
+
+  it('list every hospital once on /hospitals/ and link only to built hospital pages', () => {
+    const links = mainLinks(page('hospitals/index.html')).filter((h) => h.startsWith('/hospital/'));
+    expect(links.sort()).toEqual(index.map(({ slug }) => `/hospital/${slug}/`).sort());
+    const built = new Set(pages.map(({ path }) => path));
+    for (const href of links) {
+      expect(built.has(`${href.slice(1)}index.html`), href).toBe(true);
+    }
+  });
+
+  it('link /surgery/ to a built page at each surgery address, and to nothing else', () => {
+    const built = new Set(pages.map(({ path }) => path));
+    const expected = surgeryRefs().map((ref) => surgeryPath(ref));
+    const links = mainLinks(page('surgery/index.html')).filter((h) =>
+      /^\/(surgery|specialty)\/.+/.test(h),
+    );
+    expect(links.sort()).toEqual(expected.sort());
+    for (const href of links) {
+      expect(built.has(`${href.slice(1)}index.html`), href).toBe(true);
+    }
+  });
+
+  it('add the Hospitals crumb to every hospital page', () => {
+    const hospitalPages = pages.filter(({ path }) => path.startsWith('hospital/'));
+    expect(hospitalPages.length).toBeGreaterThan(0);
+    for (const { path, html } of hospitalPages) {
+      const nav = elements(html).find(
+        (t) => t.tagName === 'nav' && t.attrs.some((a) => a.value === 'Breadcrumb'),
+      );
+      expect([path, nav ? anchors(nav) : []]).toEqual([path, ['/', '/hospitals/']]);
+    }
+  });
+
+  it('state the private hospital exclusion on both index pages', () => {
+    for (const path of ['hospitals/index.html', 'surgery/index.html']) {
+      expect([
+        path,
+        text(page(path).split('<main')[1] ?? '').includes('Private hospitals are excluded'),
+      ]).toEqual([path, true]);
+    }
+  });
+});
+
 function elements(html: string): DefaultTreeAdapterTypes.Element[] {
   const out: DefaultTreeAdapterTypes.Element[] = [];
   const visit = (node: DefaultTreeAdapterTypes.Node): void => {
