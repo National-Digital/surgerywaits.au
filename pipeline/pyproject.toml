@@ -9,6 +9,8 @@ dependencies = []
 [dependency-groups]
 dev = [
   "pytest==9.2.0",
+  "pyyaml==6.0.3",
+  "types-pyyaml==6.0.12.20261103",
   "ruff==0.17.4",
   "pyright==1.1.414",
 ]

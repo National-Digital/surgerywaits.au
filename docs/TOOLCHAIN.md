@@ -35,6 +35,20 @@ uv run pyright
 uv run pytest
 ```
 
+## CI
+
+`.github/workflows/ci.yml` runs on every pull request and on pushes to `main` with three jobs
+whose names are stable enough to require as status checks.
+
+- `Site checks` runs `npm ci`, then lint, format check, typecheck, knip and vitest.
+- `Pipeline checks` installs the `uv` version in `pipeline/uv.toml`, runs `uv sync --locked`, then
+  ruff, pyright and pytest, leaving out `tests/test_repo.py` because the next job runs it.
+- `Repository tests` runs `pipeline/tests/test_repo.py`, which reads every workflow and checks
+  that jobs with side effects are guarded by the repository name, that no pull request workflow
+  runs Lighthouse or PageSpeed Insights, that `pull_request_target` is unused, that every action
+  is pinned to a commit SHA with a version comment, that each workflow declares top-level
+  `permissions:`, and that each job runs on a named image.
+
 ## Git hooks
 
 `git config core.hooksPath .githooks` turns on three hooks.
@@ -45,7 +59,7 @@ uv run pytest
   zizmor. A tool that is not installed fails the commit with a message naming it.
 - `pre-push` runs `typecheck`, `knip`, `vitest`, pyright and pytest.
 
-Skip a hook once with `--no-verify`.
+Skip a hook once with `--no-verify`. CI runs the same checks on every pull request.
 
 ## Where each version lives
 
