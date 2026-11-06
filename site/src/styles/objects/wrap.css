@@ -1,0 +1,12 @@
+@layer objects {
+  .o-wrap {
+    max-width: var(--column);
+    margin-inline: auto;
+    padding: 0 var(--space-5) var(--space-8);
+  }
+
+  /* Main carries the page's bottom padding, so the bar above it must not repeat it. */
+  .o-wrap--flush {
+    padding-block-end: 0;
+  }
+}

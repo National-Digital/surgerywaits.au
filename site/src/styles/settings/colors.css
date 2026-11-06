@@ -1,0 +1,105 @@
+@layer settings {
+  :root {
+    color-scheme: light dark;
+    --paper: #f6f5f1;
+    --card: #ffffff;
+    --card-2: #fafbfd;
+    --ink: #0b0f1a;
+    --ink-2: #3f4854;
+    --muted: #49525e;
+    /* Decorative only; anything a pointer aims at uses --control-border (WCAG 1.4.11). */
+    --hairline: #e3e7ec;
+    --control-border: #6b7480;
+    --accent: #0001c9;
+    --accent-ink: #ffffff;
+    --accent-wash: #e9ebf4;
+    --wait-fill: #1844b9;
+    --wait-track: #e6e9ee;
+    --grid: #e5e8ed;
+    --axis: #818b96;
+    --s1: #1844b9;
+    --s2: #a44100;
+    --s3: #903081;
+    --s4: #816fdc;
+    --chip-note-ink: #7a3410;
+    --chip-note-wash: #fbe9e1;
+    --chip-good-ink: #0b5a0b;
+    --chip-good-wash: #e4f3e4;
+    --band: #070b5e;
+    --band-ink: #ffffff;
+    --band-ink-2: #cfd4f6;
+    --band-focus: #d6dbff;
+    --sky: #d6dbff;
+    --lift: 0 10px 30px rgb(10 14 40 / 8%);
+    --foot: #0b0f1a;
+    --foot-panel: #171c2b;
+    --foot-ink: #c4cbd4;
+    --foot-ink-2: #9aa3b8;
+    --foot-strong: #fff;
+    --foot-safety: #e6e9f5;
+    --print-paper: #fff;
+    --print-ink: #000;
+  }
+
+  :root[data-theme='light'] {
+    color-scheme: light;
+  }
+
+  /* The two dark blocks must stay identical; tests/contrast.test.ts compares them. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --paper: #101216;
+      --card: #181b20;
+      --card-2: #1d2126;
+      --ink: #f1f3f6;
+      --ink-2: #c4cbd4;
+      --muted: #a6afba;
+      --hairline: #2a2f36;
+      --control-border: #7d8794;
+      --accent: #b3bcff;
+      --accent-ink: #0c0e15;
+      --accent-wash: #1f2438;
+      --wait-fill: #8f9dff;
+      --wait-track: #252a31;
+      --grid: #23282f;
+      --axis: #828c98;
+      --s1: #3569e7;
+      --s2: #bf4c00;
+      --s3: #b747a4;
+      --s4: #8a75f1;
+      --chip-note-ink: #f3b294;
+      --chip-note-wash: #37211a;
+      --chip-good-ink: #8fdc8f;
+      --chip-good-wash: #17301a;
+      --lift: none;
+    }
+  }
+
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+    --paper: #101216;
+    --card: #181b20;
+    --card-2: #1d2126;
+    --ink: #f1f3f6;
+    --ink-2: #c4cbd4;
+    --muted: #a6afba;
+    --hairline: #2a2f36;
+    --control-border: #7d8794;
+    --accent: #b3bcff;
+    --accent-ink: #0c0e15;
+    --accent-wash: #1f2438;
+    --wait-fill: #8f9dff;
+    --wait-track: #252a31;
+    --grid: #23282f;
+    --axis: #828c98;
+    --s1: #3569e7;
+    --s2: #bf4c00;
+    --s3: #b747a4;
+    --s4: #8a75f1;
+    --chip-note-ink: #f3b294;
+    --chip-note-wash: #37211a;
+    --chip-good-ink: #8fdc8f;
+    --chip-good-wash: #17301a;
+    --lift: none;
+  }
+}

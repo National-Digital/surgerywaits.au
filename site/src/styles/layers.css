@@ -1,0 +1,2 @@
+/* Important declarations reverse layer order, so print is first and wins its !important rules. */
+@layer print, settings, generic, elements, objects, components, utilities;

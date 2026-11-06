@@ -1,0 +1,14 @@
+@layer objects {
+  /* One tight column; only a data table breaks out, to the right, so left edges line up. */
+  .o-columns {
+    padding: 0 var(--space-5) var(--space-8) max(var(--space-5), (100% - var(--measure)) / 2);
+  }
+
+  .o-columns > * {
+    max-width: var(--measure);
+  }
+
+  .o-columns > .o-table-scroll {
+    max-width: min(var(--data-column), 100%);
+  }
+}

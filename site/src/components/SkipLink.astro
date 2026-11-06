@@ -1,0 +1,27 @@
+---
+---
+
+<a class="c-skip-link" href="#main">
+  Skip to content
+</a>
+
+<style>
+  @layer components {
+    .c-skip-link {
+      position: absolute;
+      left: -9999px;
+      top: 0;
+      z-index: 20;
+      display: inline-flex;
+      align-items: center;
+      min-height: var(--target);
+      padding: var(--space-3) var(--space-4);
+      background: var(--accent);
+      color: var(--accent-ink);
+    }
+
+    .c-skip-link:focus {
+      left: 0;
+    }
+  }
+</style>

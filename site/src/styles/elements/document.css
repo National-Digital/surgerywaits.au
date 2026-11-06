@@ -1,0 +1,51 @@
+@layer elements {
+  /* The accessibility check wants the root size to grow with the screen. */
+  html {
+    font-size: clamp(100%, 0.75rem + 0.35vw, 125%);
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--serif);
+    text-wrap: balance;
+    margin-block-end: var(--space-2);
+    line-height: var(--lh-heading);
+  }
+
+  h1 {
+    font-size: var(--fs-h1);
+    line-height: var(--lh-h1);
+    letter-spacing: var(--tracking-heading);
+    margin-block-start: var(--space-6);
+  }
+
+  h2 {
+    font-size: var(--fs-h2);
+    line-height: var(--lh-h2);
+    margin-block-start: var(--space-7);
+  }
+
+  h3 {
+    font-size: var(--fs-h3);
+    margin-block-start: var(--space-6);
+  }
+
+  p,
+  li {
+    max-width: var(--measure);
+  }
+
+  a {
+    color: var(--accent);
+  }
+}

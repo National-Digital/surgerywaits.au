@@ -1,0 +1,23 @@
+@layer components, print;
+
+.c-card {
+  color: var(--ink);
+}
+
+@layer theme {
+  .c-card {
+    color: var(--ink);
+  }
+}
+
+@layer components {
+  .c-card {
+    color: var(--ink);
+  }
+}
+
+@keyframes spin {
+  to {
+    rotate: 1turn;
+  }
+}

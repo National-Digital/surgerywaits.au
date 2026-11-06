@@ -1,0 +1,22 @@
+@layer print {
+  @media print {
+    body {
+      background: var(--print-paper);
+      color: var(--print-ink);
+    }
+
+    .u-no-print {
+      display: none !important;
+    }
+
+    /* Removed from the flow, not just hidden: hidden content still paginates into blank pages. */
+    .is-print-hidden {
+      display: none !important;
+    }
+
+    .is-printing .o-print-region {
+      border: none !important;
+      margin: 0 !important;
+    }
+  }
+}

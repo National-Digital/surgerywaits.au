@@ -268,7 +268,7 @@ utilities and print.
 Lint rules from `@eslint/css`, with a local plugin, check the convention: a class-name pattern,
 spacing, colour and timing taken from tokens only, a breakpoint scale from the site's tokens,
 required layers, relative font units, no ID selectors and at most three classes in a selector, and
-Baseline compatibility. This is planned.
+Baseline compatibility.
 
 Why: a named methodology that a lint rule can check holds across contributors. Layers make the
 cascade order explicit, and a fixed naming scheme tells a reader what a class is for.

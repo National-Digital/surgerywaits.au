@@ -1,0 +1,11 @@
+@layer elements {
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  summary:focus-visible,
+  [tabindex]:focus-visible {
+    outline: var(--focus-width) solid var(--accent);
+    outline-offset: 2px;
+  }
+}

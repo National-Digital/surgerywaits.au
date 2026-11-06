@@ -1,10 +1,24 @@
+import { readFileSync } from 'node:fs';
 import { recommended as comments } from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import js from '@eslint/js';
+import css from '@eslint/css';
 import astro from 'eslint-plugin-astro';
+import { defineConfig } from 'eslint/config';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
+import { astroStyles } from './eslint/astro-styles.ts';
+import { siteCss } from './eslint/plugin.ts';
 
-export default tseslint.config(
+// Media queries cannot read custom properties, so the scale is read from the --bp-* tokens.
+const BREAKPOINTS = [
+  ...readFileSync(`${import.meta.dirname}/site/src/styles/settings/layout.css`, 'utf8').matchAll(
+    /--bp-[a-z]+:\s*(\d+px);/g,
+  ),
+].map((m) => m[1] ?? '');
+
+const scriptFiles = ['**/*.{js,mjs,cjs,ts,mts,cts,astro}', '**/*.astro/*.{js,ts}'];
+
+export default defineConfig(
   {
     ignores: [
       '**/dist/',
@@ -12,21 +26,25 @@ export default tseslint.config(
       '**/coverage/',
       '**/node_modules/',
       'pipeline/',
+      'eslint/fixtures/',
       'worker/worker-configuration.d.ts',
     ],
   },
-  js.configs.recommended,
-  tseslint.configs.strictTypeChecked,
-  tseslint.configs.stylisticTypeChecked,
-  comments,
-  astro.configs.recommended,
   {
-    linterOptions: {
-      reportUnusedDisableDirectives: 'error',
-      reportUnusedInlineConfigs: 'error',
-    },
+    files: scriptFiles,
+    extends: [
+      js.configs.recommended,
+      tseslint.configs.strictTypeChecked,
+      tseslint.configs.stylisticTypeChecked,
+      comments,
+      astro.configs['flat/recommended'],
+    ],
     languageOptions: {
-      parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+        extraFileExtensions: ['.astro'],
+      },
     },
     rules: {
       '@eslint-community/eslint-comments/require-description': 'error',
@@ -45,5 +63,48 @@ export default tseslint.config(
     files: ['**/*.mjs', 'eslint.config.ts', 'vitest.config.ts'],
     extends: [tseslint.configs.disableTypeChecked],
     languageOptions: { globals: globals.node },
+  },
+  { files: ['**/*.astro'], processor: astroStyles },
+  {
+    files: ['**/*.css', '**/*.astro/*.css'],
+    language: 'css/css',
+    plugins: { css, site: siteCss },
+    extends: [css.configs.recommended],
+    rules: {
+      // Tokens are defined once in the settings layer, so other files cannot trace them.
+      'css/no-invalid-properties': ['error', { allowUnknownVariables: true }],
+      'site/bem-class-name': 'error',
+      'site/token-values': 'error',
+      'site/breakpoint-scale': ['error', { allowed: BREAKPOINTS }],
+      'site/layer-declared': 'error',
+      // em sizes inline text, such as code, relative to the text around it.
+      'css/relative-font-units': ['error', { allowUnits: ['rem', 'em'] }],
+      'css/selector-complexity': ['error', { maxIds: 0, maxClasses: 3 }],
+      'css/use-baseline': [
+        'error',
+        {
+          // Each is progressive: engines without it keep their defaults.
+          allowAtRules: ['page'],
+          allowProperties: ['orphans', 'text-size-adjust', 'widows'],
+          allowPropertyValues: { 'text-wrap': ['balance'] },
+        },
+      ],
+    },
+  },
+  {
+    // The rule callbacks take their types from the plugin's rule definitions.
+    files: ['eslint/*.ts', 'eslint/rules/*.ts'],
+    rules: { '@typescript-eslint/explicit-function-return-type': 'off' },
+  },
+  {
+    // !important is allowed in utilities and print only (ADR 0001 D18).
+    files: ['site/src/styles/utilities/*.css', 'site/src/styles/print/print.css'],
+    rules: { 'css/no-important': 'off' },
+  },
+  {
+    linterOptions: {
+      reportUnusedDisableDirectives: 'error',
+      reportUnusedInlineConfigs: 'error',
+    },
   },
 );

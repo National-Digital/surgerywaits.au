@@ -1,0 +1,26 @@
+@layer components {
+  .c-card {
+    margin: 12px var(--space-2);
+    background: #fff;
+    color: rgb(0 0 0);
+    transition: color 0.2s ease;
+    padding: 0;
+    border: 1px solid var(--ink);
+  }
+}
+
+@media (width >= 800px) {
+  @layer components {
+    .c-card__body {
+      gap: var(--space-2);
+    }
+  }
+}
+
+@media (width >= 640px) {
+  @layer components {
+    .c-card__body {
+      gap: var(--space-2);
+    }
+  }
+}
