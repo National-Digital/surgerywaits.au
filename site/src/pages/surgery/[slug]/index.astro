@@ -1,0 +1,17 @@
+---
+import SurgeryHub from '../../../components/SurgeryHub.astro';
+import { KINDS, hubRoutes } from '../../../lib/surgery-page';
+import type { Route } from '../../../lib/surgery-page';
+
+interface Props {
+  slug: string;
+}
+
+export function getStaticPaths(): { params: Route; props: Props }[] {
+  return hubRoutes(KINDS.procedure);
+}
+
+const { slug } = Astro.props;
+---
+
+<SurgeryHub kind={KINDS.procedure} urlSlug={slug} />

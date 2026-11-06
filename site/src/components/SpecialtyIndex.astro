@@ -1,0 +1,58 @@
+---
+// Base comes first so its global sheet, and with it the layer order, precedes every component sheet.
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+import LinkList from './LinkList.astro';
+import DataPassport from './DataPassport.astro';
+import SafetyBlock from './SafetyBlock.astro';
+import { getSite, getSurgeryTemplate } from '../lib/content';
+import { formatCount } from '../lib/format';
+import { readSurgeryIndexSources } from '../lib/dist';
+import { fill } from '../lib/slots';
+import { KINDS, SPECIALTY_PATH, SURGERY_PATH, indexGroups, surgeryPath } from '../lib/surgery-page';
+
+const t = getSurgeryTemplate();
+const site = getSite().name;
+const items = indexGroups().find((group) => group.kind === KINDS.specialty)?.items ?? [];
+const sources = readSurgeryIndexSources();
+---
+
+<Base
+  title={fill(t.specialty_index_title, { site })}
+  description={t.specialty_index_description}
+  canonicalPath={SPECIALTY_PATH}
+>
+  <div class="o-columns">
+    <Breadcrumbs items={[{ label: t.crumb_home, href: '/' }, { label: t.crumb_specialty }]} />
+    <h1>{t.specialty_index_heading}</h1>
+    <p>{t.specialty_index_lede}</p>
+    <LinkList links={[{ label: t.specialty_index_back, href: SURGERY_PATH }]} />
+
+    <section aria-labelledby="specialty-heading">
+      <h2 id="specialty-heading">{t.index_specialties_heading}</h2>
+      <ul>
+        {items.map((entry) => (
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+          <li>
+            <a href={surgeryPath(entry.ref)}>{entry.ref.name}</a>
+            <p>
+              {entry.hospitals === 1
+                ? t.index_hospitals_one
+                : fill(t.index_hospitals_many, { count: formatCount(entry.hospitals) })}
+              {'. '}
+              {fill(t.index_period, { period: entry.period })}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section aria-labelledby="exclusion-heading">
+      <h2 id="exclusion-heading">{t.exclusion_heading}</h2>
+      <p>{t.exclusion}</p>
+    </section>
+
+    <SafetyBlock id="specialty-safety-heading" />
+    <DataPassport sources={sources} />
+  </div>
+</Base>

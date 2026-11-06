@@ -1,0 +1,74 @@
+crumb_home: Home
+crumb_surgery: Surgery
+crumb_specialty: Specialty
+index_title: 'Planned surgery waiting times by surgery: {site}'
+index_description: Every planned surgery with waiting times at public hospitals in Australia, with the number of hospitals that publish a median wait for each.
+index_heading: Planned surgery waiting times by surgery
+index_lede: Pick a surgery to see the national figures, each state and territory, and the public hospitals that report a waiting time for it.
+index_procedures_heading: Surgery by procedure
+index_procedures_intro: Each procedure is one kind of operation. The list is in name order.
+index_specialties_heading: Surgery by specialty
+index_specialties_intro: Each specialty groups many operations. Its figures describe all the patients treated under the specialty, and say nothing about one operation.
+index_specialties_link: See every specialty on its own page
+specialty_index_title: 'Planned surgery waiting times by specialty: {site}'
+specialty_index_description: Every surgical specialty with waiting times at public hospitals in Australia, with the number of hospitals that publish a median wait for each.
+specialty_index_heading: Planned surgery waiting times by specialty
+specialty_index_lede: Pick a specialty to see the national figures, each state and territory, and the public hospitals that report a waiting time for it. A specialty covers many operations, so its figures describe all the patients treated under it.
+specialty_index_back: See surgery by procedure as well as by specialty
+index_hospitals_one: 1 public hospital reports it
+index_hospitals_many: '{count} public hospitals report it'
+index_period: 'Figures for {period}.'
+title: '{surgery} waiting times at public hospitals: {site}'
+description: '{surgery}: planned surgery waiting times at public hospitals in Australia, with the shortest median wait first. The latest figures cover {period}.'
+lede: '{surgery} waiting times for planned surgery. Public hospitals that published a median wait in {period}: {count}.'
+renamed_note: 'The source publishes this surgery as "{source}".'
+specialty_note: A specialty covers many operations. Its figures describe all the patients treated under the specialty, and say nothing about one operation.
+national_heading: National figures
+national_intro: These figures cover every public hospital in Australia that reported this surgery. A national figure is never ranked.
+national_none: The source published no national figure for this surgery.
+tile_national: '{measure}, Australia'
+tile_state: '{measure}, {state}'
+states_heading: By state and territory
+states_intro: The shortest median wait comes first. A state with no published median wait follows, in name order. Select a state to see its hospitals.
+states_caption: '{surgery}: state and territory figures'
+states_row_heading: State or territory
+state_link: '{surgery} in {state}'
+hospitals_heading: Hospitals by median wait
+hospitals_intro: The shortest median wait comes first. A hospital with no published median wait follows, in name order, and has no rank.
+hospitals_caption: '{surgery}: public hospitals'
+hospitals_row_heading: Hospital
+hospitals_none: '{surgery}: no public hospital published a figure in {period}.'
+ranking: A rank compares a hospital with every public hospital in Australia that published the same figure for the same period. The page shows a rank only on a current published figure. It never ranks a figure that is withheld, not reported or from an earlier period.
+trends_heading: How waits have changed
+trends_intro: Each chart shows one figure for each year the source published it. A year with no published figure is a gap in the line, and the table under the chart gives the reason.
+trends_note_hub: 'The charts show Australia and the three states that treated the most patients in {period}.'
+trends_note_state: 'The charts show Australia and {state}.'
+trends_note_near: 'The charts show Australia and {state}, where these hospitals are.'
+chart_caption: '{surgery}: median wait by financial year'
+chart_name: 'Line chart of the median wait by financial year for {surgery}, for Australia and selected states'
+series_national: Australia
+near_heading: Hospitals near a place
+near_intro: These pages list the public hospitals in and near one place that published a figure for this surgery.
+near_link: '{surgery} near {place}'
+state_title: '{surgery} waiting times in {state}: {site}'
+state_description: '{surgery} in {state}: planned surgery waiting times at public hospitals, beside the national figures. The latest figures cover {period}.'
+state_lede: '{surgery} in {state}: planned surgery waiting times at public hospitals, with the national figures beside them. Public hospitals in {state} that published a median wait in {period}: {count}.'
+state_figures_heading: 'Figures for {state}'
+state_figures_intro: Each tile shows the state figure and the national figure for the same measure. A state figure is never ranked.
+state_hospitals_heading: 'Hospitals in {state}'
+state_hospitals_caption: '{surgery}: public hospitals in {state}'
+state_other_heading: Other states and territories
+state_other_intro: The same surgery in each state or territory with hospital figures.
+back_to_surgery: 'All of Australia: {surgery}'
+near_title: '{surgery} waiting times near {place}: {site}'
+near_description: '{surgery} near {place}: planned surgery waiting times at public hospitals, with the shortest median wait first. The latest figures cover {period}.'
+near_lede: '{surgery} near {place}: planned surgery waiting times. Hospitals listed here with a median wait in {period}: {count}.'
+near_covers_network: 'This page lists public hospitals of the {network} network within {radius} kilometres of {anchor}.'
+near_covers_outside: 'It also lists public hospitals outside that network within {radius} kilometres of one of them.'
+near_figures_heading: National figures
+near_hospitals_heading: 'Hospitals near {place}'
+near_hospitals_caption: '{surgery}: public hospitals near {place}'
+near_other_heading: Nearby places
+near_other_intro: 'The same surgery near other places in {state}.'
+exclusion_heading: What this page leaves out
+exclusion: Private hospitals are excluded. This page covers public hospitals only, so it shows no private hospital.

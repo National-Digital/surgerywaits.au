@@ -1,11 +1,13 @@
 ---
-import { mark } from '../lib/brand-mark';
+import { mark as shared } from '../lib/brand-mark';
 import { getNavigation, getSite, label } from '../lib/content';
 import { builtLinks } from '../lib/links';
 import { requireLinks } from '../lib/require-links';
 import LinkList from './LinkList.astro';
 
 const { name } = getSite();
+// Astro adds its scope class to a spread object in place, so a shared one grows on every page.
+const mark = structuredClone(shared);
 const links = requireLinks(builtLinks(getNavigation().site));
 ---
 

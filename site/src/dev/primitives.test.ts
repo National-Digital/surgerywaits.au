@@ -38,7 +38,7 @@ describe('the primitives preview page', () => {
     expect(textsOf(html, 'c-table__stamp')).toHaveLength(3);
     expect(textsOf(html, 'c-table__marker').length).toBeGreaterThan(0);
     expect(textsOf(html, 'c-table__rank').length).toBeGreaterThan(0);
-    expect(textsOf(html, 'c-table__value').join(' ')).toContain('not published');
+    expect(textsOf(html, 'td').join(' ')).toContain('not published');
   });
 
   it('shows the safety block, the breadcrumbs and the data passport', async () => {

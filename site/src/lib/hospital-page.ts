@@ -150,11 +150,15 @@ export function surgeryTable(
       return { figure: measure.figure, ...(rank === undefined ? {} : { rank }) };
     }),
   }));
+  return sortedWithSpan(rows);
+}
+
+// With no current row, the table states the range of the earlier periods it holds.
+export function sortedWithSpan(rows: TableRow[]): SurgeryTableModel {
   const sorted = sortRows(rows, 0, 'median_wait');
   if (rows.some((row) => row.stale !== true)) {
     return { rows: sorted };
   }
-  // With no current row, the table states the range of the earlier periods it holds.
   const figures = rows.flatMap((row) => row.cells.map((cell) => cell.figure));
   const periods = figures.map((f) => f.period).sort();
   const release = figures.map((f) => f.release).sort();

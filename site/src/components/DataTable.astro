@@ -46,8 +46,8 @@ const stamp = assertTable(columns, rows, span);
     <tbody>
       {rows.map((row) => (
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
-        <tr class:list={['c-table__row', { 'c-table__row--earlier': row.stale === true }]}>
-          <th class="c-table__name" scope="row">
+        <tr class:list={{ 'c-table__row--earlier': row.stale === true }}>
+          <th scope="row">
             {row.href !== undefined ? <a href={row.href}>{row.name}</a> : row.name}
             {row.stale === true && (
               <small class="c-table__marker">{label('table_earlier_marker')}</small>
@@ -57,24 +57,21 @@ const stamp = assertTable(columns, rows, span);
             const parts = formatFigureParts(role, cell.figure);
             // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
             return (
-              <td class="c-table__cell">
-                <span
-                  class:list={['c-table__value', { 'is-not-published': !isPublished(cell.figure) }]}
-                >
-                  {parts.amount}
-                  {parts.unit !== null && (
-                    <>
-                      {' '}
-                      <span class="c-table__unit">{parts.unit}</span>
-                    </>
-                  )}
-                </span>
+              <td class:list={{ 'is-not-published': !isPublished(cell.figure) }}>
+                {parts.amount}
+                {parts.unit !== null && (
+                  <>
+                    {' '}
+                    <span>{parts.unit}</span>
+                  </>
+                )}
                 {row.stale === true && (
                   <small class="c-table__period">{formatStamp(cell.figure)}</small>
                 )}
                 {cell.rank && (
                   <small class="c-table__rank">
-                    {label('rank_caption')} {formatRank(cell.rank.position, cell.rank.of)}
+                    {label('rank_caption')} {formatRank(cell.rank.position, cell.rank.of)}{' '}
+                    {label('rank_national')}
                   </small>
                 )}
               </td>
@@ -86,7 +83,7 @@ const stamp = assertTable(columns, rows, span);
   </table>
 </div>
 
-<style>
+<style is:global>
   @layer components {
     .c-table {
       width: 100%;
@@ -115,8 +112,8 @@ const stamp = assertTable(columns, rows, span);
     }
 
     .c-table__head,
-    .c-table__name,
-    .c-table__cell {
+    .c-table th,
+    .c-table td {
       padding: var(--space-3) var(--space-4);
       border-block-end: 1px solid var(--hairline);
       text-align: end;
@@ -132,26 +129,26 @@ const stamp = assertTable(columns, rows, span);
     }
 
     .c-table__head--row,
-    .c-table__name {
+    .c-table tbody th {
       position: sticky;
       inset-inline-start: 0;
       min-width: 12rem;
       text-align: start;
     }
 
-    .c-table__name {
+    .c-table tbody th {
       background: var(--card);
       font-weight: 700;
       color: var(--ink);
     }
 
-    .c-table__name a {
+    .c-table tbody th a {
       display: inline-block;
       min-height: var(--target);
       line-height: var(--target);
     }
 
-    .c-table__row:last-child > * {
+    .c-table tbody tr:last-child > * {
       border-block-end: 0;
     }
 
@@ -170,20 +167,20 @@ const stamp = assertTable(columns, rows, span);
       color: var(--ink);
     }
 
-    .c-table__row--earlier .c-table__name {
+    .c-table__row--earlier th {
       border-inline-start: var(--space-1) solid var(--muted);
     }
 
-    .c-table__value {
+    .c-table td {
       font: var(--fs-figure-sm) / 1.3 var(--serif);
     }
 
-    .c-table__value.is-not-published {
+    .c-table td.is-not-published {
       font: italic 400 var(--fs-small) / var(--lh-body) var(--sans);
       color: var(--ink-2);
     }
 
-    .c-table__unit {
+    .c-table td span {
       font-size: var(--fs-small);
     }
   }

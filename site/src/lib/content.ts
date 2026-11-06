@@ -1,11 +1,14 @@
 import { getCollection, getEntry } from 'astro:content';
 import { z } from 'astro/zod';
 import {
+  areasSchema,
   hospitalTemplateSchema,
   labelsSchema,
   navigationSchema,
   pageSchema,
   siteSchema,
+  surgeryNamesSchema,
+  surgeryTemplateSchema,
 } from './content-schema';
 import type { LabelKey } from './content-schema';
 
@@ -32,6 +35,14 @@ const pages = new Map(
 );
 
 const hospitalTemplate = await single('templates', 'hospital', hospitalTemplateSchema);
+
+const surgeryTemplate = await single('surgery', 'surgery', surgeryTemplateSchema);
+const areas = await single('areas', 'areas', areasSchema);
+const surgeryNames = await single('surgery-names', 'surgery-names', surgeryNamesSchema);
+
+export const getSurgeryTemplate = (): typeof surgeryTemplate => surgeryTemplate;
+export const getAreas = (): typeof areas => areas;
+export const getSurgeryNames = (): typeof surgeryNames.names => surgeryNames.names;
 
 export function getHospitalTemplate(): typeof hospitalTemplate {
   return hospitalTemplate;

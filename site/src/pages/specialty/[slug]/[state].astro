@@ -1,0 +1,17 @@
+---
+import SurgeryState from '../../../components/SurgeryState.astro';
+import { KINDS, stateRoutes } from '../../../lib/surgery-page';
+
+interface Props {
+  slug: string;
+  state: string;
+}
+
+export function getStaticPaths(): { params: { slug: string; state: string }; props: Props }[] {
+  return stateRoutes(KINDS.specialty);
+}
+
+const { slug, state } = Astro.props;
+---
+
+<SurgeryState kind={KINDS.specialty} urlSlug={slug} {state} />

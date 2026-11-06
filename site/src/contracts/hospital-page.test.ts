@@ -143,13 +143,13 @@ describe('Hospital page figures', () => {
         }
         ranks += ranked ? 1 : 0;
       }
-      for (const row of elementsOf(html, 'c-table__row')) {
+      for (const row of elementsOf(html, 'tr')) {
         if (row.classes.has('c-table__row--earlier')) {
           expect(row.inside.has('c-table__rank'), `${slug} ${row.text}`).toBe(false);
         }
       }
-      for (const cell of elementsOf(html, 'c-table__cell')) {
-        if (cell.inside.has('is-not-published')) {
+      for (const cell of elementsOf(html, 'td')) {
+        if (cell.classes.has('is-not-published')) {
           expect(cell.inside.has('c-table__rank'), `${slug} ${cell.text}`).toBe(false);
         }
         ranks += cell.inside.has('c-table__rank') ? 1 : 0;

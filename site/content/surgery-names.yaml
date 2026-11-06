@@ -1,0 +1,207 @@
+# Everyday names for procedures, and the address the earlier site gave a page where the name earned one.
+names:
+  anterior-cruciate-ligament-reconstruction:
+    name: 'ACL reconstruction'
+    slug: acl-reconstruction
+  breast-lump-excision-and-or-biopsy:
+    name: 'Breast lump removal'
+    slug: breast-lump-removal
+  bunion-hallux-valgus-removal-of:
+    name: 'Bunion surgery'
+    slug: bunion-surgery
+  carpal-tunnel-release:
+    name: 'Carpal tunnel surgery'
+    slug: carpal-tunnel-surgery
+  cataract-extraction-with-or-without-intra-ocular-lens-insertion:
+    name: 'Cataract surgery'
+    slug: cataract-surgery
+  cholecystectomy-open-laparoscopic:
+    name: 'Gallbladder removal'
+    slug: gallbladder-removal
+  dupytrens-contracture-release:
+    name: "Dupuytren's contracture surgery"
+    slug: dupuytrens-contracture-surgery
+  haemorrhoidectomy:
+    name: 'Haemorrhoid surgery'
+    slug: haemorrhoid-surgery
+  herniorrhaphy:
+    name: 'Hernia repair'
+    slug: hernia-repair
+  hysterectomy-abdominal-vaginal-laparoscopic:
+    name: 'Hysterectomy'
+    slug: hysterectomy
+  hysteroscopy-dilatation-and-curettage:
+    name: 'Dilatation and curettage'
+    slug: dilatation-and-curettage
+  inguinal-herniotomy-herniorrhaphy:
+    name: 'Inguinal hernia repair'
+    slug: inguinal-hernia-repair
+  large-loop-excision-of-the-transformation-zone-cervix-lletz:
+    name: 'LLETZ procedure'
+    slug: lletz-procedure
+  myringoplasty-tympanoplasty:
+    name: 'Eardrum repair'
+    slug: eardrum-repair
+  pressure-equalising-tubes-grommets-insertion-of:
+    name: 'Grommets'
+    slug: grommets
+  procedure-for-strabismus-squint-repair:
+    name: 'Squint surgery'
+    slug: squint-surgery
+  prostatectomy-transurethral-or-open:
+    name: 'Prostate surgery'
+    slug: prostate-surgery
+  rotator-cuff-repair-of:
+    name: 'Rotator cuff repair'
+    slug: rotator-cuff-repair
+  skin-lesion-excision-of:
+    name: 'Skin lesion removal'
+    slug: skin-lesion-removal
+  tonsillectomy-with-or-without-adenoidectomy:
+    name: 'Tonsillectomy'
+    slug: tonsillectomy
+  total-hip-replacement:
+    name: 'Hip replacement'
+    slug: hip-replacement
+  total-knee-replacement:
+    name: 'Knee replacement'
+    slug: knee-replacement
+  trigger-finger-thumb-release:
+    name: 'Trigger finger release'
+    slug: trigger-finger-release
+  vaginal-repair-anterior-posterior:
+    name: 'Prolapse repair'
+    slug: prolapse-repair
+  varicose-veins-treatment:
+    name: 'Varicose vein surgery'
+    slug: varicose-vein-surgery
+  abdominal-or-thoracic-aortic-aneurysm-repair-replacement:
+    name: 'Aortic aneurysm repair'
+  acromioplasty-arthroscopy-shoulder-sub-acromial-decompression:
+    name: 'Shoulder decompression surgery'
+  adenoidectomy:
+    name: 'Adenoid removal'
+  amputation-of-limb:
+    name: 'Limb amputation'
+  anal-fissure-repair-of:
+    name: 'Anal fissure repair'
+  arthrodesis:
+    name: 'Joint fusion surgery'
+  arthroplasty-revision-of:
+    name: 'Joint replacement revision'
+  arthroscopy:
+    name: 'Keyhole joint surgery'
+  axillary-node-dissection:
+    name: 'Armpit lymph node removal'
+  blepharoplasty:
+    name: 'Excess eyelid skin removal'
+  breast-prosthesis-removal-of:
+    name: 'Breast implant removal'
+  carotid-endarterectomy:
+    name: 'Carotid artery plaque removal'
+  cervical-discectomy-and-fusion:
+    name: 'Neck disc removal and fusion'
+  cleft-lip-and-palate-repair-of:
+    name: 'Cleft lip and palate repair'
+  colectomy-anterior-resection-large-bowel-resection:
+    name: 'Large bowel surgery (colectomy)'
+  common-peroneal-nerve-release:
+    name: 'Outer knee nerve release'
+  cone-biopsy:
+    name: 'Cervix cone biopsy'
+  corneal-graft:
+    name: 'Cornea transplant'
+  coronary-artery-bypass-grafting:
+    name: 'Heart bypass surgery'
+  craniotomy:
+    name: 'Brain surgery through the skull (craniotomy)'
+  cystectomy:
+    name: 'Bladder removal'
+  cystoscopy:
+    name: 'Bladder scope (cystoscopy)'
+  discectomy:
+    name: 'Spinal disc removal'
+  ectropion-correction-of:
+    name: 'Out-turned eyelid repair'
+  endometrial-ablation:
+    name: 'Womb lining removal (endometrial ablation)'
+  exostosis-excision-of:
+    name: 'Bony lump removal'
+  fracture-non-union-treatment-of:
+    name: 'Unhealed fracture repair'
+  functional-endoscopic-sinus-surgery:
+    name: 'Keyhole sinus surgery'
+  fundoplication:
+    name: 'Reflux surgery'
+  ganglion-excision-of:
+    name: 'Ganglion cyst removal'
+  hydrocele-repair-of:
+    name: 'Hydrocele surgery'
+  laminectomy:
+    name: 'Spinal bone removal (laminectomy)'
+  laparoscopy:
+    name: 'Keyhole belly surgery (laparoscopy)'
+  lingual-or-maxillary-frenulum-surgery:
+    name: 'Tongue-tie or lip-tie surgery'
+  lithotripsy:
+    name: 'Shock wave stone treatment'
+  mastectomy:
+    name: 'Breast removal'
+  mastoidectomy:
+    name: 'Mastoid surgery behind the ear'
+  meniscectomy:
+    name: 'Torn knee cartilage removal'
+  microlaryngoscopy:
+    name: 'Voice box scope surgery'
+  myringotomy:
+    name: 'Eardrum drainage'
+  nasendoscopy:
+    name: 'Nose and throat scope'
+  nephrectomy:
+    name: 'Kidney removal'
+  nerve-decompression:
+    name: 'Trapped nerve release (other nerves)'
+  orchidectomy:
+    name: 'Testicle removal'
+  orchidopexy:
+    name: 'Undescended testicle surgery'
+  osteotomy:
+    name: 'Bone realignment surgery'
+  parathyroidectomy:
+    name: 'Parathyroid gland removal'
+  parotidectomy-submandibular-gland-excision-of:
+    name: 'Salivary gland removal'
+  pilonidal-sinus-surgery:
+    name: 'Tailbone cyst surgery'
+  pterygium-excision-of:
+    name: 'Pterygium (eye growth) removal'
+  ptosis-repair-of:
+    name: 'Droopy eyelid repair'
+  pyeloplasty-correction-of-ureteropelvic-junction:
+    name: 'Kidney drainage blockage repair'
+  radical-neck-dissection:
+    name: 'Major neck lymph node surgery'
+  repair-of-obstructing-hiatus-hernia:
+    name: 'Hiatus hernia repair'
+  salpingo-oophorectomy-oophorectomy-ovarian-cystectomy:
+    name: 'Ovary and fallopian tube surgery'
+  septoplasty:
+    name: 'Deviated septum surgery'
+  stone-s-urinary-tract-removal-of:
+    name: 'Urinary stone removal'
+  stress-incontinence-surgery:
+    name: 'Bladder leakage surgery'
+  thyroidectomy-hemi-thyroidectomy:
+    name: 'Thyroid gland removal'
+  trabeculectomy:
+    name: 'Glaucoma drainage surgery'
+  turbinectomy:
+    name: 'Turbinate surgery (inside the nose)'
+  ureteric-reimplantation:
+    name: 'Ureter reconnection surgery'
+  ureteric-stent-insertion-of:
+    name: 'Kidney drainage stent insertion'
+  urethra-dilatation-of:
+    name: 'Urine passage widening'
+  vitrectomy-including-buckling-cryotherapy:
+    name: 'Retina surgery'

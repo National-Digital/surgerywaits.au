@@ -36,14 +36,16 @@ export function text(html: string): string {
   return plain(parseFragment(html)).replace(/\s+/g, ' ').trim();
 }
 
+// A selector is a class name, or a tag name such as td.
+function matches(node: Node, selector: string): boolean {
+  return node.nodeName === selector || classesOf(node).includes(selector);
+}
+
 // The text of every element that carries a class, in document order.
 export function textsOf(html: string, className: string): string[] {
   const found: string[] = [];
   walk(parseFragment(html), (node) => {
-    if (
-      'attrs' in node &&
-      node.attrs.some((a) => a.name === 'class' && a.value.split(' ').includes(className))
-    ) {
+    if (matches(node, className)) {
       found.push(plain(node).replace(/\s+/g, ' ').trim());
     }
   });
@@ -79,7 +81,7 @@ export function elementsOf(html: string, className: string): Found[] {
   const found: Found[] = [];
   walk(parseFragment(html), (node) => {
     const classes = classesOf(node);
-    if (classes.includes(className)) {
+    if (matches(node, className)) {
       found.push({
         classes: new Set(classes),
         inside: below(node),

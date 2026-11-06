@@ -1,0 +1,17 @@
+---
+import SurgeryNear from '../../../../components/SurgeryNear.astro';
+import { nearRoutes } from '../../../../lib/surgery-page';
+
+interface Props {
+  slug: string;
+  area: string;
+}
+
+export function getStaticPaths(): { params: Props; props: Props }[] {
+  return nearRoutes();
+}
+
+const { slug, area } = Astro.props;
+---
+
+<SurgeryNear urlSlug={slug} {area} />

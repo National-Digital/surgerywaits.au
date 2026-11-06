@@ -1,0 +1,176 @@
+---
+// Base comes first so its global sheet, and with it the layer order, precedes every component sheet.
+import Base from '../layouts/Base.astro';
+import BlockLink from './BlockLink.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+import DataPassport from './DataPassport.astro';
+import DataTable from './DataTable.astro';
+import LinkList from './LinkList.astro';
+import SafetyBlock from './SafetyBlock.astro';
+import StatTile from './StatTile.astro';
+import StatTiles from './StatTiles.astro';
+import TrendChart from './TrendChart.astro';
+import { getHospitalTemplate, getSite, getSurgeryTemplate, label } from '../lib/content';
+import { readSurgery } from '../lib/dist';
+import type { Kind } from '../lib/dist';
+import { formatCount } from '../lib/format';
+import { TABLE_ROLES } from '../lib/hospital-page';
+import { fill } from '../lib/slots';
+import {
+  NATIONAL,
+  SURGERY_PATH,
+  hospitalRows,
+  listable,
+  nationalTiles,
+  publishedMedians,
+  refOf,
+  roleLabels,
+  statePath,
+  statesWithRows,
+  surgeryPath,
+  trendScope,
+} from '../lib/surgery-page';
+
+interface Props {
+  kind: Exclude<Kind, 'urgency'>;
+  urlSlug: string;
+  state: string;
+}
+
+const { kind, urlSlug, state } = Astro.props;
+const t = getSurgeryTemplate();
+const states = getHospitalTemplate().states;
+const site = getSite().name;
+const ref = refOf(kind, urlSlug);
+const surgery = readSurgery(ref.kind, ref.slug);
+const roles = roleLabels(label);
+const stateName = states[state as keyof typeof states];
+
+const rows = listable(surgery).filter((r) => r.state === state);
+const table = hospitalRows(surgery, rows);
+const count = formatCount(publishedMedians(surgery, rows));
+const own = surgery.benchmarks.states.find((s) => s.state === state)?.measures ?? null;
+const ownTiles = nationalTiles(own);
+const nationalByRole = new Map(
+  nationalTiles(surgery.benchmarks.national).map((tile) => [tile.role, tile.figure]),
+);
+const columns = TABLE_ROLES.map((role) => ({ heading: roles[role], role }));
+const charts = trendScope(surgery, [NATIONAL, state], { [NATIONAL]: t.series_national, ...states });
+const others = statesWithRows(surgery)
+  .filter((s) => s !== state)
+  .map((s) => ({
+    label: fill(t.state_link, { surgery: ref.name, state: states[s as keyof typeof states] }),
+    href: statePath(ref, s),
+  }));
+---
+
+<Base
+  title={fill(t.state_title, { surgery: ref.name, state: stateName, site })}
+  description={fill(t.state_description, {
+    surgery: ref.name,
+    state: stateName,
+    period: surgery.period,
+  })}
+  canonicalPath={statePath(ref, state)}
+>
+  <div class="o-columns">
+    <Breadcrumbs
+      items={[
+        { label: t.crumb_home, href: '/' },
+        { label: t.crumb_surgery, href: SURGERY_PATH },
+        { label: ref.name, href: surgeryPath(ref) },
+        { label: stateName },
+      ]}
+    />
+    <h1>{fill(t.state_link, { surgery: ref.name, state: stateName })}</h1>
+    <p>
+      {fill(t.state_lede, { surgery: ref.name, state: stateName, period: surgery.period, count })}
+    </p>
+    {kind === 'specialty' && <p>{t.specialty_note}</p>}
+
+    {ownTiles.length > 0 && (
+      <section aria-labelledby="figures-heading">
+        <h2 id="figures-heading">{fill(t.state_figures_heading, { state: stateName })}</h2>
+        <p>{t.state_figures_intro}</p>
+        <StatTiles>
+          {ownTiles.map((tile) => {
+            const national = nationalByRole.get(tile.role);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+            return (
+              <>
+                <StatTile
+                  heading={fill(t.tile_state, { measure: roles[tile.role], state: stateName })}
+                  role={tile.role}
+                  figure={tile.figure}
+                />
+                {national !== undefined && (
+                  <StatTile
+                    heading={fill(t.tile_national, { measure: roles[tile.role] })}
+                    role={tile.role}
+                    figure={national}
+                  />
+                )}
+              </>
+            );
+          })}
+        </StatTiles>
+      </section>
+    )}
+  </div>
+
+  <section aria-labelledby="hospitals-heading">
+    <div class="o-columns">
+      <h2 id="hospitals-heading">{fill(t.state_hospitals_heading, { state: stateName })}</h2>
+      <p>{t.hospitals_intro}</p>
+      <p>{t.ranking}</p>
+    </div>
+    {table !== null && (
+      <DataTable
+        id="hospitals"
+        caption={fill(t.state_hospitals_caption, { surgery: ref.name, state: stateName })}
+        rowHeading={t.hospitals_row_heading}
+        columns={columns}
+        rows={table.rows}
+        {...(table.span ? { span: table.span } : {})}
+      />
+    )}
+  </section>
+
+  <div class="o-columns">
+    {charts.length > 0 && (
+      <section aria-labelledby="trends-heading">
+        <h2 id="trends-heading">{t.trends_heading}</h2>
+        <p>{t.trends_intro}</p>
+        <p>{fill(t.trends_note_state, { state: stateName })}</p>
+        {charts.map((chart) => (
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+          <TrendChart
+            id={chart.id}
+            name={fill(t.chart_name, { surgery: ref.name })}
+            caption={fill(t.chart_caption, { surgery: ref.name })}
+            role="median_wait"
+            series={chart.series}
+          />
+        ))}
+      </section>
+    )}
+
+    <BlockLink href={surgeryPath(ref)}>{fill(t.back_to_surgery, { surgery: ref.name })}</BlockLink>
+
+    {others.length > 0 && (
+      <section aria-labelledby="other-states-heading">
+        <h2 id="other-states-heading">{t.state_other_heading}</h2>
+        <p>{t.state_other_intro}</p>
+        <LinkList links={others} />
+      </section>
+    )}
+
+    <section aria-labelledby="exclusion-heading">
+      <h2 id="exclusion-heading">{t.exclusion_heading}</h2>
+      <p>{t.exclusion}</p>
+    </section>
+
+    <SafetyBlock id="surgery-safety-heading" />
+    <DataPassport sources={surgery.sources} />
+  </div>
+</Base>
