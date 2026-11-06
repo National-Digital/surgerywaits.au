@@ -29,7 +29,11 @@ describe('Determinism', () => {
       cwd: root,
       env: { ...process.env, ASTRO_TELEMETRY_DISABLED: '1' },
       encoding: 'utf8',
+      // The build logs one line per page; keeping stdout would overflow the buffer.
+      stdio: ['ignore', 'ignore', 'pipe'],
+      maxBuffer: 64 * 1024 * 1024,
     });
+    expect(build.error).toBeUndefined();
     expect(build.status, build.stderr).toBe(0);
     expect(checksums()).toEqual(first);
   }, 300_000);
