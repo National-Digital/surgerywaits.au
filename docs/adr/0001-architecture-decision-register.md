@@ -12,7 +12,7 @@ before changing it.
 
 ## Decision
 
-The register below holds seventeen decisions, D1 to D17. Each has the decision and the reason for
+The register below holds twenty-eight decisions, D1 to D28. Each has the decision and the reason for
 it. A part that is not built yet is marked as planned, and the decision still stands. A later record
 supersedes or refines a decision when it changes.
 
@@ -31,9 +31,10 @@ a worked example.
 ### D2: publicdata.au's stable API is the only data source
 
 The build reads immutable dated version files at `/d/<slug>/v/<date>/data.parquet` on publicdata.au.
-Each file is verified against a sha256 pinned in a manifest. A refresh finds new versions through
-`/api/v1/datasets/<slug>/versions`. Each emptied cell's publisher code comes from the `markers`
-column. The credit line uses the citation that publicdata.au publishes with each version.
+Each file is verified against a sha256 pinned in a manifest, on every download. A refresh finds new
+versions through `/api/v1/datasets/<slug>/versions`. Each emptied cell's publisher code comes from
+the `markers` column. The credit line uses the citation that publicdata.au publishes with each
+version.
 
 The build has no fallback to any other source. It does not fetch from AIHW, Queensland Health or the
 ABS directly.
@@ -52,9 +53,8 @@ code in the `markers` column:
 - "-": no patients reported.
 - "NP": not published by AIHW.
 
-The methodology page, once built, says that "NP" covers more than one reason AIHW gives.
-A suppressed cell is
-never shown as 0, never left blank and never ranked.
+The methodology page, once built, says that "NP" covers more than one reason AIHW gives. A
+suppressed cell is never shown as 0, never left blank and never ranked.
 
 Why: each code means something different to a reader. A zero reads as "no patients waited", which is
 false for "<5" and "NP". Naming the reason lets a reader judge whether a gap is small, absent or
@@ -63,8 +63,8 @@ withheld.
 ### D4: The data build is Python 3.13, checked strictly
 
 `pipeline/` is a Python 3.13 package managed with uv. It is checked with ruff, pyright in strict
-mode and pytest. Parquet is read with pyarrow or duckdb, pinned to an exact version.
-The Parquet reader is planned.
+mode and pytest. Parquet is read with pyarrow or duckdb, pinned to an exact version. The Parquet
+reader is planned.
 
 Why: Python has mature Parquet and data-frame libraries. Strict type checking catches a column that
 changes type before it reaches a published figure, and pinned readers keep the output reproducible
@@ -82,9 +82,9 @@ either half disagrees with it. The schemas and the OpenAPI description are plann
 
 ### D6: The site is Astro with strict TypeScript
 
-`site/` is an Astro project with static output and TypeScript in strict mode. The compare
-tool is one vanilla TypeScript module that Astro loads as a script. It uses no framework. The site
-is planned.
+`site/` is an Astro project with static output and TypeScript in strict mode. The compare tool is
+one vanilla TypeScript module that Astro loads as a script. It uses no framework. The site is
+planned.
 
 Why: Astro renders each page to HTML at build time, so a static page needs no JavaScript to read. A
 single dependency-free module keeps the one interactive part small enough to audit for privacy
@@ -96,7 +96,11 @@ One Cloudflare Worker serves the built site as static assets. It also holds the 
 redirects, content negotiation and the MCP route ([D9][d9]).
 
 There are no per-pull-request preview deployments. Checks run in CI. Production deploys only from
-`main`, through a protected environment. The deploy workflow comes later and is planned.
+`main`, through a protected environment. The deploy workflow, the environment's token and the
+account identifier are added when the site is ready to ship, and are planned. Until then CI will
+build the Worker and run `wrangler deploy --dry-run`, which needs no Cloudflare credentials. This is
+planned. If previews are wanted after that, they use a hostname on the site's own domain with
+`noindex`, and never a `workers.dev` hostname.
 
 Why: a Worker serves static assets and runs code in one deployment. Headers, redirects, content
 negotiation and the MCP route then live in one deployment as code that tests can run. Without
@@ -147,8 +151,8 @@ The content collections are planned.
 A single site entity file holds the publisher's details. The footer and the legal pages read the
 line "Built and operated by National Digital, Burleigh Heads, Queensland", with links to
 nationaldigital.com.au and its contact page. The site prints no ACN, no ABN and no "Pty Ltd". The
-terms and privacy pages follow the structure of publicdata.au's. The entity file, the footer and
-the legal pages are planned.
+terms and privacy pages follow the structure of publicdata.au's. The entity file, the footer and the
+legal pages are planned.
 
 Why: one file means the publisher is named the same way on every page. The line states who runs the
 site and where, and gives a reader a way to make contact.
@@ -201,7 +205,9 @@ The `main` ruleset requires each check by name. These checks exist today:
 - Pipeline checks
 - Repository tests
 
-Later checks join the ruleset as each lands. A single aggregate check is not used.
+Later checks join the ruleset as each lands. They are planned: determinism for the pipeline and the
+site, HTML validity ([D17][d17]), accessibility, extractability, the content and format gates, and
+deploy. A single aggregate check is not used.
 
 Why: a named check says which rule failed, and a reviewer sees the cause in the check list. An
 aggregate hides which of its parts failed and lets a skipped part count as a pass.
@@ -230,11 +236,194 @@ did not cause. Running on demand against production measures what visitors recei
 
 The W3C Nu Html Checker runs with `--Werror` over every file in the built output. An error or a
 warning fails the run. The checker's version is pinned exactly, and each line in its filter file
-carries a comment giving the reason. This decision is planned and the check is not built yet.
+carries a comment giving the reason. The checker needs Java 21, installed through a pinned setup
+action, and the `vnu-jar` install script is turned off. The command skips non-HTML files and runs
+over the build output. The filter file starts empty. This decision is planned and the check is not
+built yet.
 
 Why: the checker tests pages against the HTML standard itself. Running it over the whole output
 catches an invalid page that a sample would miss, and this supports the accessibility floor in
 `docs/ARCHITECTURE.md` rule 9.
+
+### D18: CSS follows ITCSS layers and BEM names
+
+Styles are plain CSS with no Sass, and use native nesting, custom properties, `@layer`,
+`color-mix()` and range media queries. One `@layer` order is declared once: print, settings,
+generic, elements, objects, components, utilities. Class names follow `.o-object`,
+`.c-block__element--modifier` and `.u-utility`, with `is-` and `has-` for state and `js-` for script
+hooks. Astro components use scoped styles inside the components layer. `!important` appears only in
+utilities and print.
+
+Lint rules from `@eslint/css`, with a local plugin, check the convention: a class-name pattern,
+spacing, colour and timing taken from tokens only, a breakpoint scale from the site's tokens,
+required layers, relative font units, no ID selectors and at most three classes in a selector, and
+Baseline compatibility. This is planned.
+
+Why: a named methodology that a lint rule can check holds across contributors. Layers make the
+cascade order explicit, and a fixed naming scheme tells a reader what a class is for.
+
+### D19: Pages ship no client JavaScript by default
+
+Every page is complete and usable with scripts off, including the menu. The compare tool is the only
+script: one vanilla TypeScript module loaded as `<script type="module">` from the site itself, with
+no framework and no islands runtime. Scripts find their elements through `js-` classes or `data-`
+attributes and never through styling classes, so a CSS rename cannot break behaviour. The tool keeps
+no storage, URL state or history, fetches only from its own site and sends nothing a person types
+([D8][d8]). A weight check holds the module to a set byte budget and fails when it grows past it.
+Browser support follows Baseline "widely available", and newer APIs sit behind a feature check. The
+weight check is planned.
+
+Why: this records how the site works, so that adding a framework or a second script needs a new
+record. Pages that work without scripts are easier to make accessible and to read for tools that do
+not run scripts.
+
+### D20: Types are strict everywhere
+
+The site uses TypeScript `strict` with `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`,
+`noImplicitOverride`, `noPropertyAccessFromIndexSignature`, `verbatimModuleSyntax` and
+`isolatedModules`. Today `tsc --noEmit` is the type check, and `astro check` will replace it once
+the site lands. ESLint uses `typescript-eslint` with `strictTypeChecked` and
+`stylisticTypeChecked`, `eslint-plugin-astro`, no `any`, no non-null assertions, and knip for unused
+exports. Zod schemas use `.strict()` and never `z.any()`. A lint rule is never disabled inline
+without a one-line reason. The Astro, Zod and Worker parts are planned.
+
+Every script is TypeScript, so no `.js` or `.mjs` file is written. The one exception is
+`eslint.config.mjs`, which is planned to move to `eslint.config.ts`. The Worker's bindings are typed
+by `wrangler types`, and CI fails when the generated file is out of date. Shellcheck runs today over
+workflow scripts through actionlint. Covering every shell file, including those in `.githooks/`, in
+the hook and in CI is planned. The Python side keeps pyright in strict mode and ruff ([D4][d4]). The
+Astro and Worker parts are planned.
+
+Why: strict flags left to each author vary from file to file. A fixed list makes the type check the
+same for every contributor and catches a missing array element or an unchecked optional before it
+reaches a page.
+
+### D21: Previews and deploys wait until the site is ready to ship
+
+No preview and no deploy workflow exists before go-live. CI will build the Worker and check it with
+`wrangler deploy --dry-run`. The deploy workflow, the production environment's token and the
+account identifier are added when the site is ready to ship. Details are in [D7][d7].
+
+Why: keeping every Cloudflare credential out of the repository until it is needed removes a source
+of leaks. A dry run checks the Worker's configuration and size without one.
+
+### D22: The repository follows Astro's project layout
+
+The layout follows Astro's documented structure, read from the current Astro documentation when each
+part is written:
+
+- `src/` holds `pages/`, `layouts/`, `components/`, `lib/` and `styles/`. `styles/` has one folder
+  for each ITCSS layer ([D18][d18]).
+- `content/` holds every YAML file ([D10][d10]), read by Astro's `glob` loader.
+- `public/` holds static files served as they are, such as the font and `security.txt`.
+- `worker/` holds the one Worker: assets, headers, redirects, content negotiation and the MCP route
+  ([D7][d7], [D9][d9]).
+- `pipeline/` holds the Python package, with its own `src/` and `tests/`.
+- `contract/` holds the JSON Schemas ([D5][d5]) and `data/` holds the manifest.
+- `scripts/` holds one TypeScript script for each package script ([D20][d20]).
+- `tests/` holds the Vitest and Playwright tests ([D28][d28]).
+- `docs/` is set out in [D24][d24].
+
+The root holds the files GitHub and the licences expect, and configuration files. Parts of this
+layout that are not built are planned.
+
+Why: a layout that any Astro developer recognises lowers the cost of a first contribution. One
+folder for each job makes it plain where a change belongs.
+
+### D23: Library choices follow the current official documentation
+
+Each library, framework and platform choice follows the official documentation current when the pull
+request is written. The pull request names the version and the documentation page used, in a "Docs"
+line of the pull request template. The "Docs" line is planned.
+
+Why: tooling changes quickly, and a cited page lets a reviewer check the pattern against its source.
+
+### D24: Documentation has one place for each audience
+
+- `README.md` is for people: what the site is, how to run it, how to contribute, and links to the
+  decision records.
+- The files GitHub recognises stay at the root: contributing, security, code of conduct, governance,
+  support, citation, code owners, the licences, third-party notices and brand.
+- `AGENTS.md` is for agents: a short lookup table of where to look and what must hold, which never
+  restates code or a schema.
+- `docs/` holds three things: `ARCHITECTURE.md`, `adr/` and `refs/` (planned), where
+  machine-readable policies such as the HTML checker's filter file live. Each rule in
+  `ARCHITECTURE.md` is one line naming the test or check that enforces it, and the docs-drift test
+  fails when a named test does not exist. This is planned.
+- The corrections policy and its log, and the accessibility statement, are planned to move into the
+  site's own content. They are served at `/corrections/` and `/accessibility/` and each has a
+  Markdown twin. The data-problem issue template links the corrections page. `docs/TOOLCHAIN.md`,
+  `docs/CORRECTIONS.md` and `docs/ACCESSIBILITY.md` are planned to move into `CONTRIBUTING.md` and
+  the site content.
+
+Why: readers find governance files where GitHub shows them, and each policy is written once. A
+corrections log kept in the repository and again on the site would drift apart.
+
+### D25: Copy follows the Australian Government Style Manual
+
+The Australian Government Style Manual is the style reference for every YAML string. Copy uses plain
+declarative sentences in the active voice, sentence-case headings, and no superlative without a
+number beside it.
+
+The terminology rule in `docs/ARCHITECTURE.md` becomes a terms file in `content/` that lists each
+preferred term and the terms it replaces, and a test fails on a replaced term in any copy.
+Readability is measured on every prose field, with slots filled by sample values. Guides and
+template copy must score Flesch-Kincaid grade 8 or lower. Methodology and legal pages must score
+grade 12 or lower. An exception is listed in a policy file with its reason. The readability library
+is pinned exactly. The terms file and the readability test are planned.
+
+Why: many readers are older patients reading about their own surgery. A measured floor keeps the
+copy plain whoever writes it.
+
+### D26: One module formats every figure and date
+
+`src/lib/format.ts` formats every figure and date the site shows, using `Intl` with the `en-AU`
+locale. Dates follow the Style Manual's day-month-year form, such as "2 November 2026". The output
+files hold ISO dates, and the module formats them in UTC so the build machine's time zone cannot
+shift a day. Numbers group thousands with a comma, and units such as "1 day" and "42 days" use
+`Intl.PluralRules`. A lint rule bans `toLocaleString`, `toLocaleDateString`, `new Intl.*` and `Date`
+getters outside that module, and the compare tool bundles the same module. The pipeline writes ISO
+dates and raw numbers only, and never display strings. The pinned Node build carries full ICU, and
+the site determinism check proves the output is byte-identical across machines. This is planned.
+
+Why: formatting in many places lets dates and plurals drift between pages. One module is testable
+and gives the same result on every machine.
+
+### D27: Python lint is `ruff` with every rule selected
+
+`ruff` runs with `select = ["ALL"]` and `ruff format` as the formatter, both in CI and the
+pre-commit hook. The target ignore list in `pyproject.toml` is short and each entry has a one-line
+reason: the docstring rules, because comments and docstrings are one short line where needed;
+`COM812` and `ISC001`, because they conflict with `ruff format`; and `S101` in tests only, because
+pytest uses `assert`. pyright stays in strict mode ([D4][d4]). The target for pytest is
+`--strict-markers`, `--strict-config` and `-W error`, with `xfail_strict = true`.
+
+Aligning the ignore list to that target and adding the pytest options are planned. Today the list
+also ignores `CPY`, because no file carries a copyright header and the licence files cover the code;
+`E501`, because `ruff format` owns line length; and `PLR2004` in tests, because test assertions
+compare against literal values. The docstring ignore is `D1` only, so missing docstrings pass.
+
+Why: selecting every rule and ignoring a few with stated reasons catches more than a short allow
+list, and the same stance applies to TypeScript in [D20][d20].
+
+### D28: Three test runners each have one job
+
+- pytest tests the pipeline.
+- Vitest runs unit, contract and gate tests for the site, scripts and Worker. It runs today for the
+  site. The Worker's tests are planned to run in Cloudflare's Vitest pool, so they use the real
+  runtime.
+- Playwright covers anything a browser must do: the accessibility check, print, the compare tool,
+  the 390px layouts and the menu without scripts. Browser versions are pinned with the package.
+
+Every check ships with a fixture built to fail it. Every bug fix adds a test that fails without the
+fix. Tests never touch the network and use fixtures and a fixed clock. Tests assert specific facts,
+and no HTML snapshot files are committed. No coverage percentage gates a pull request, and each
+subject has its own named check ([D14][d14]). Playwright, the Worker pool and the `tests/` folder
+are planned.
+
+Why: naming the runner for each job keeps tests where they belong. Fixtures that fail on purpose
+show that a check can fail, and the absence of a coverage gate avoids tests written to raise a
+number.
 
 ## Alternatives considered
 
@@ -265,5 +454,12 @@ See `docs/ARCHITECTURE.md` ("The planned shape", "Rules that decide the code"), 
 [d7]: #d7-a-cloudflare-worker-with-static-assets-hosts-the-site
 [d8]: #d8-analytics-count-page-views-and-nothing-else
 [d9]: #d9-mcp-is-a-route-in-the-same-worker
+[d4]: #d4-the-data-build-is-python-313-checked-strictly
+[d10]: #d10-every-word-a-person-wrote-lives-in-yaml-under-content
 [d14]: #d14-each-required-check-is-named-in-the-ruleset
 [d16]: #d16-lighthouse-runs-on-demand-and-never-gates-a-pull-request
+[d17]: #d17-the-whole-build-is-checked-by-the-w3c-nu-html-checker
+[d18]: #d18-css-follows-itcss-layers-and-bem-names
+[d20]: #d20-types-are-strict-everywhere
+[d24]: #d24-documentation-has-one-place-for-each-audience
+[d28]: #d28-three-test-runners-each-have-one-job
