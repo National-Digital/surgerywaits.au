@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Menu state</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --fg: #111;
+        --bg: #fff;
+        --link: #0000b3;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --fg: #f2f2f2;
+          --bg: #101010;
+          --link: #9ecbff;
+        }
+      }
+      html {
+        font-size: clamp(100%, 0.75rem + 0.35vw, 125%);
+      }
+      body {
+        margin: 0;
+        font:
+          1rem/1.55 Arial,
+          sans-serif;
+        color: var(--fg);
+        background: var(--bg);
+      }
+      .site {
+        max-width: 70rem;
+        padding: 1rem;
+      }
+      p {
+        max-width: 65ch;
+      }
+      a {
+        color: var(--link);
+      }
+      :focus-visible {
+        outline: 2px solid var(--link);
+        outline-offset: 2px;
+      }
+      a.big,
+      button {
+        display: inline-flex;
+        min-height: 2.75rem;
+        min-width: 2.75rem;
+        align-items: center;
+        padding: 0 1rem;
+      }
+      button {
+        font: inherit;
+        color: var(--fg);
+        background: var(--bg);
+        border: 1px solid var(--fg);
+      }
+      nav {
+        display: none;
+      }
+      header.open nav {
+        display: flex;
+        flex-direction: column;
+      }
+      nav a {
+        min-height: 2.75rem;
+        display: flex;
+        align-items: center;
+        padding: 0 1rem;
+      }
+      @media (scripting: none) {
+        nav {
+          display: flex;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="site">
+      <header>
+        <button type="button" aria-expanded="false" aria-controls="n">Menu</button>
+        <nav id="n" aria-label="Site"><a href="/a">Waiting times</a><a href="/b">About</a></nav>
+      </header>
+      <script>
+        var b = document.querySelector('header button'),
+          h = b.parentElement;
+        b.onclick = function () {
+          var on = !h.classList.contains('open');
+          h.classList.toggle('open', on);
+        };
+        h.onkeydown = function (e) {
+          if (e.key === 'Escape') {
+            b.setAttribute('aria-expanded', 'false');
+            h.classList.remove('open');
+            b.focus();
+          }
+        };
+      </script>
+      <main>
+        <h1>Menu state</h1>
+        <p>
+          Waiting times are measured in days. Waiting times are measured in days. Waiting times are
+          measured in days. Waiting times are measured in days. Waiting times are measured in days.
+          Waiting times are measured in days. Waiting times are measured in days. Waiting times are
+          measured in days.
+        </p>
+      </main>
+    </div>
+  </body>
+</html>

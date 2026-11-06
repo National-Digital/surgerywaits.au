@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Target size</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --fg: #111;
+        --bg: #fff;
+        --link: #0000b3;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --fg: #f2f2f2;
+          --bg: #101010;
+          --link: #9ecbff;
+        }
+      }
+      html {
+        font-size: clamp(100%, 0.75rem + 0.35vw, 125%);
+      }
+      body {
+        margin: 0;
+        font:
+          1rem/1.55 Arial,
+          sans-serif;
+        color: var(--fg);
+        background: var(--bg);
+      }
+      .site {
+        max-width: 70rem;
+        padding: 1rem;
+      }
+      p {
+        max-width: 65ch;
+      }
+      a {
+        color: var(--link);
+      }
+      :focus-visible {
+        outline: 2px solid var(--link);
+        outline-offset: 2px;
+      }
+      a.big,
+      button {
+        display: inline-flex;
+        min-height: 2.75rem;
+        min-width: 2.75rem;
+        align-items: center;
+        padding: 0 1rem;
+      }
+      button {
+        font: inherit;
+        color: var(--fg);
+        background: var(--bg);
+        border: 1px solid var(--fg);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="site">
+      <main>
+        <h1>Target size</h1>
+        <a href="/a" style="display: inline-block; padding: 2px">Waiting times</a>
+      </main>
+    </div>
+  </body>
+</html>
