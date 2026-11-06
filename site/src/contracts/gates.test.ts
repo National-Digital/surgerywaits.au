@@ -66,8 +66,6 @@ describe('Accessibility', () => {
   it.todo('with the WCAG text-spacing settings forced, nothing is cut off');
   it.todo("every size is relative, so a reader's own browser text size applies");
   it.todo('colour is never the only carrier of meaning');
-  it.todo('each accessibility check is proven to fire on a page built to fail it');
-  it.todo('an accessibility exception that no longer matches anything fails the check');
 });
 
 describe('Contrast', () => {

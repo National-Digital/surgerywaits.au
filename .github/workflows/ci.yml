@@ -53,6 +53,28 @@ jobs:
       - run: npm run worker:types:check
       - run: npm run worker:dry-run -- "$RUNNER_TEMP/worker-out"
 
+  accessibility:
+    name: Accessibility
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      # The Chromium build is fixed by the exact playwright version in package.json.
+      - run: npx playwright install --with-deps chromium
+      # Proves every check fires on a page built to fail it, at desktop width and 390px, in light
+      # and dark. The built site joins this job with Astro.
+      - run: npm run a11y
+      - run: npx vitest run scripts/a11y.test.ts
+        env:
+          A11Y_TEST: '1'
+
   pipeline:
     name: Pipeline checks
     runs-on: ubuntu-24.04

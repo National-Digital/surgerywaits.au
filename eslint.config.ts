@@ -42,7 +42,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['**/*.mjs', 'eslint.config.ts'],
+    files: ['**/*.mjs', 'eslint.config.ts', 'vitest.config.ts'],
     extends: [tseslint.configs.disableTypeChecked],
     languageOptions: { globals: globals.node },
   },

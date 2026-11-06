@@ -36,10 +36,12 @@ From the repository root:
 ```
 npm run lint            # ESLint, no warnings, every disable needs a reason
 npm run format:check    # Prettier
-npm run typecheck       # astro check on the site, tsc on the Worker
+npm run typecheck       # astro check on the site, tsc on the Worker and the scripts
 npm run knip            # unused files, exports and dependencies
-npm test                # vitest
+npm test                # vitest, without the browser proofs
+A11Y_TEST=1 npx vitest run scripts/a11y.test.ts   # the accessibility proofs, which need Chromium
 npm run build           # astro build
+npm run a11y            # accessibility checks on their fixture pages (npx playwright install chromium first)
 npm run worker:types:check   # fails when worker/worker-configuration.d.ts is stale
 npm run worker:dry-run -- /tmp/worker-out   # wrangler deploy --dry-run, no credentials
 ```
@@ -115,6 +117,7 @@ Skip a hook once with `--no-verify`. CI runs the same checks on every pull reque
 | Site checks                     | Runs ESLint, Prettier, `astro check` and the TypeScript compiler, knip and vitest.                            |
 | Worker build                    | Builds the site, checks the generated Worker types are current and runs `wrangler deploy --dry-run`.          |
 | Pipeline checks                 | Runs ruff, pyright and pytest on the pipeline.                                                                |
+| Accessibility                   | Proves each accessibility check fires on a page built to fail it, at two widths in light and dark.            |
 | Repository tests                | Checks every workflow against the repository's rules, such as pinned actions and least-privilege permissions. |
 
 More checks will join this list as the pipeline and the site are built, and each is added here
@@ -122,7 +125,7 @@ when it starts to run.
 
 ### How CI runs
 
-`.github/workflows/ci.yml` runs on every pull request and on pushes to `main` with four jobs
+`.github/workflows/ci.yml` runs on every pull request and on pushes to `main` with five jobs
 whose names are stable enough to require as status checks.
 
 - `Site checks` runs `npm ci`, then lint, format check, typecheck, knip and vitest.
@@ -132,6 +135,10 @@ whose names are stable enough to require as status checks.
 - `Pipeline checks` installs the `uv` version in `pipeline/uv.toml`, runs `uv sync --locked`, then
   ruff, pyright and pytest. It leaves out `tests/test_repo.py` and `tests/test_docs.py`, because
   the next job runs them.
+- `Accessibility` installs Chromium with `npx playwright install --with-deps chromium`, then runs
+  `npm run a11y` and the tests in `scripts/a11y.test.ts`. The first proves each accessibility
+  check fires on its fixture page in `scripts/a11y-fixtures/`. See
+  [`ACCESSIBILITY.md`](docs/ACCESSIBILITY.md).
 - `Repository tests` runs `pipeline/tests/test_repo.py` and `pipeline/tests/test_docs.py`. The
   second fails when a document links to a missing file or heading, names a missing path or npm
   script, lists a check that no workflow defines, or cites a test, pending test or CI job in
