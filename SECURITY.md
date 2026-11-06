@@ -49,5 +49,6 @@ denial-of-service findings.
   its pull requests and issues, comments and commit messages included. Gitleaks scans the whole
   history, and GitHub secret scanning with push protection is on.
 - Dependency review runs on every pull request. CodeQL runs on each push to `main`, every week
-  and on every pull request.
+  and on every pull request. A failed scheduled run opens a GitHub issue, which the next success
+  closes.
 - Changes to `main` go through a pull request with green checks.
