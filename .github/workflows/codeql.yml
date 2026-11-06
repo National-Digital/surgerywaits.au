@@ -38,3 +38,16 @@ jobs:
       - uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           category: '/language:${{ matrix.language }}'
+
+  report:
+    name: Report
+    needs: analyze
+    if: ${{ github.repository == 'National-Digital/surgerywaits.au' && always() && github.event_name == 'schedule' }}
+    permissions:
+      contents: read
+      issues: write # the called workflow opens and closes the issue
+    uses: ./.github/workflows/report-scheduled-run.yml # zizmor: ignore[self-repository] actionlint rejects the $/ form
+    with:
+      title: 'Scheduled CodeQL run is failing'
+      label: scheduled-codeql
+      result: ${{ needs.analyze.result }}

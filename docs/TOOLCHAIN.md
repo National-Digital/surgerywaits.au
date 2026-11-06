@@ -49,7 +49,17 @@ whose names are stable enough to require as status checks.
   that jobs with side effects are guarded by the repository name, that no pull request workflow
   runs Lighthouse or PageSpeed Insights, that `pull_request_target` is unused, that every action
   is pinned to a commit SHA with a version comment, that each workflow declares top-level
-  `permissions:`, and that each job runs on a named image.
+  `permissions:`, that each job runs on a named image, and that every scheduled workflow reports
+  its failures through the reusable workflow.
+
+## Scheduled runs
+
+`.github/workflows/report-scheduled-run.yml` is a reusable workflow that keeps one open GitHub
+issue per failing scheduled job. A failure opens the issue, or comments on it when one is open.
+The next success closes it. It uses the run's own token with `issues: write`, in a job that runs
+only in the public repository, and creates its label if the label is missing. `codeql.yml` calls
+it from a `report` job on the weekly run with the label `scheduled-codeql`. Every workflow with a
+`schedule` trigger must call it, and `pipeline/tests/test_repo.py` fails when one does not.
 
 ## Git hooks
 

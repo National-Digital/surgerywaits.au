@@ -380,3 +380,120 @@ def test_every_job_runs_on_a_named_image() -> None:
         for f in WORKFLOWS
         if floating_runners(f.read_text("utf-8"))
     } == {}
+
+
+REPORTER = "./.github/workflows/report-scheduled-run.yml"
+
+
+RESULT = re.compile(r"^\$\{\{ needs\.(\w+)\.result \}\}$")
+ALL_RESULTS = "${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}"
+
+
+def _report_condition_ok(cond: object) -> bool:
+    expr = re.sub(r"^\$\{\{|\}\}$", "", str(cond or "").strip()).strip()
+    parts = [p.strip() for p in expr.split(" && ")]
+    return parts[0] == GUARD and sorted(parts[1:]) == sorted(
+        ["always()", "github.event_name == 'schedule'"]
+    )
+
+
+def _report_ok(job: dict[Any, Any], others: set[str]) -> bool:
+    needs = job.get("needs", [])
+    needed = {needs} if isinstance(needs, str) else set(cast("list[str]", needs))
+    with_ = _map(job.get("with"))
+    result = str(with_.get("result", ""))
+    m = RESULT.match(result)
+    result_ok = (m is not None and {m[1]} == needed) or (len(needed) > 1 and result == ALL_RESULTS)
+    return (
+        _map(job.get("permissions")).get("issues") == "write"
+        and _report_condition_ok(job.get("if"))
+        and needed == others
+        and result_ok
+        and bool(with_.get("title"))
+        and bool(with_.get("label"))
+    )
+
+
+def unreported_schedule(text: str) -> bool:
+    wf = _load(text)
+    if "schedule" not in _triggers(wf):
+        return False
+    jobs = _map(wf.get("jobs"))
+    callers = {n for n, j in jobs.items() if _map(j).get("uses") == REPORTER}
+    others = set(jobs) - callers
+    if any(_map(jobs[n]).get("continue-on-error") for n in others):
+        return True
+    return not any(_report_ok(_map(jobs[n]), others) for n in callers)
+
+
+SCHEDULED = f"""
+on:
+  schedule:
+    - cron: '0 0 * * 1'
+permissions: {{}}
+jobs:
+  work:
+    runs-on: ubuntu-24.04
+    steps: []
+  report:
+    needs: work
+    if: ${{{{ {GUARD} && always() && github.event_name == 'schedule' }}}}
+    permissions: {{issues: write}}
+    uses: {REPORTER}
+    with:
+      title: t
+      label: l
+      result: ${{{{ needs.work.result }}}}
+"""
+
+
+def test_scheduled_workflow_without_a_report_job_is_caught() -> None:
+    assert not unreported_schedule(SCHEDULED)
+    assert unreported_schedule(SCHEDULED.split("  report:", maxsplit=1)[0])
+    assert not unreported_schedule(CLEAN)
+
+
+@pytest.mark.parametrize(
+    "broken",
+    [
+        ("always() && ", ""),
+        (" && github.event_name == 'schedule'", ""),
+        (f"{GUARD} && ", ""),
+        ("needs: work", "needs: []"),
+        ("always()", "!always()"),
+        ("&& github.event_name == 'schedule'", "&& github.event_name != 'schedule'"),
+        ("always() &&", "always() || x &&"),
+        ("${{ needs.work.result }}", "failure"),
+        ("      title: t\n", ""),
+        ("      label: l\n", ""),
+        ("needs: work", "needs: [work, ghost]"),
+        ("permissions: {issues: write}", ""),
+        ("permissions: {issues: write}", "permissions: {issues: read}"),
+        ("  work:\n", "  work:\n    continue-on-error: true\n"),
+        (REPORTER, "./.github/workflows/other.yml"),
+    ],
+)
+def test_incomplete_report_job_is_caught(broken: tuple[str, str]) -> None:
+    assert unreported_schedule(SCHEDULED.replace(*broken))
+
+
+def test_reporter_guard_and_scope_pass_the_side_effect_rules() -> None:
+    assert unguarded_side_effects(SCHEDULED) == []
+    assert unguarded_side_effects(
+        SCHEDULED.replace("always() && ", "").replace(GUARD + " && ", "")
+    ) == ["report"]
+
+
+def test_every_scheduled_workflow_reports_through_the_reusable_workflow() -> None:
+    assert [f.name for f in WORKFLOWS if unreported_schedule(f.read_text("utf-8"))] == []
+
+
+def test_report_job_must_need_every_other_job() -> None:
+    two = SCHEDULED.replace(
+        "  report:", "  more:\n    runs-on: ubuntu-24.04\n    steps: []\n  report:"
+    )
+    assert unreported_schedule(two)
+    both = two.replace("needs: work", "needs: [work, more]").replace(
+        "${{ needs.work.result }}", ALL_RESULTS
+    )
+    assert not unreported_schedule(both)
