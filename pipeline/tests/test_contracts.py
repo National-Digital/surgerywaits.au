@@ -17,7 +17,14 @@ from surgerywaits.hospitals import (
 )
 from surgerywaits.manifest import ManifestError, load
 from surgerywaits.pull import PullError, pull
-from surgerywaits.waiting_times import Table, WaitingTimesError
+from surgerywaits.suppression import (
+    MARKER_REASONS,
+    QLD_VALUE_COLUMNS,
+    SuppressionError,
+    qld_figures,
+    suppress,
+)
+from surgerywaits.waiting_times import Table, WaitingTimes, WaitingTimesError
 from surgerywaits.waiting_times import build as build_waiting_times
 from surgerywaits.waiting_times import read_rows as read_waiting_rows
 
@@ -54,14 +61,38 @@ def test_download_with_wrong_digest_fails_closed(tmp_path: Path) -> None:
     assert list(tmp_path.iterdir()) == []
 
 
-@pytest.mark.skip(reason="planned: every null carries a publisher marker or is reported")
+def _urgency() -> WaitingTimes:
+    path = FIXTURES / "au-elective-surgery-waiting-times" / "data.parquet"
+    return build_waiting_times(read_waiting_rows(path), Table.URGENCY, _register())
+
+
+def _with_cell(result: WaitingTimes, **changes: object) -> WaitingTimes:
+    first = result.observations[0]
+    cell = replace(first.cells[0], **changes)
+    edited = replace(first, cells=(cell, *first.cells[1:]))
+    return replace(result, observations=(edited, *result.observations[1:]))
+
+
 def test_every_null_has_a_publisher_marker_or_is_reported() -> None:
-    raise NotImplementedError
+    result = _urgency()
+    assert suppress(result).observations
+    with pytest.raises(SuppressionError, match="null and carries no marker"):
+        suppress(_with_cell(result, value=None, marker=None))
+    with pytest.raises(SuppressionError, match="sits on a value"):
+        suppress(_with_cell(result, value=7, marker="NP"))
+    row: dict[str, object] = dict.fromkeys(QLD_VALUE_COLUMNS, 1)
+    row["suppressed"] = []
+    row["treated"] = None
+    with pytest.raises(SuppressionError, match="not flagged"):
+        qld_figures(row)
 
 
-@pytest.mark.skip(reason="planned: every publisher marker maps to a known reason")
 def test_every_marker_maps_to_a_known_reason() -> None:
-    raise NotImplementedError
+    result = _urgency()
+    seen = {c.marker for o in result.observations for c in o.cells if c.marker}
+    assert seen <= set(MARKER_REASONS)
+    with pytest.raises(SuppressionError, match="unknown marker 'X9'"):
+        suppress(_with_cell(result, value=None, marker="X9"))
 
 
 def test_unmatched_or_ambiguous_hospital_join_fails() -> None:

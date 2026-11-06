@@ -61,6 +61,12 @@ columns. AIHW does not define that code. It is not one of the three reasons. It 
 the peer-group figures, and the site shows it as "not published: no peer group comparison"
 without giving it a meaning of its own. A code the pipeline does not know will fail the build.
 
+The Queensland tables have no `markers` column. They list the suppressed columns in a `suppressed`
+field. A column that field names is "not published" with the reason "Queensland Health gave no
+figure". A null in the year-on-year change column that the field does not name is "not reported".
+This rests on the register declaring that column nullable. Any other null that the field does not
+name fails the build.
+
 Why: each code means something different to a reader. A zero reads as "no patients waited", which is
 false for "<5" and "NP". Naming the reason lets a reader judge whether a gap is small, absent or
 withheld.
