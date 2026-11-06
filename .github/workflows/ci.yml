@@ -94,7 +94,7 @@ jobs:
       - run: uv run ruff check
       - run: uv run ruff format --check
       - run: uv run pyright
-      - run: uv run pytest --ignore=tests/test_repo.py --ignore=tests/test_docs.py
+      - run: uv run pytest --ignore=tests/test_repo.py --ignore=tests/test_docs.py --ignore=tests/test_testing_rules.py
 
   repository:
     name: Repository tests
@@ -112,4 +112,4 @@ jobs:
           version-file: pipeline/uv.toml
           cache-dependency-glob: pipeline/uv.lock
       - run: uv sync --locked
-      - run: uv run pytest tests/test_repo.py tests/test_docs.py
+      - run: uv run pytest tests/test_repo.py tests/test_docs.py tests/test_testing_rules.py
