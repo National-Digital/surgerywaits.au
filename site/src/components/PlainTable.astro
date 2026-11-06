@@ -1,0 +1,97 @@
+---
+interface Props {
+  id: string;
+  caption: string;
+  // The one period and release every figure in the table shares, in words.
+  stamp: string;
+  rowHeading: string;
+  headings: string[];
+  rows: {
+    code: string;
+    name: string;
+    href: string;
+    cells: { text: string; withheld: boolean }[];
+  }[];
+}
+
+const { id, caption, stamp, rowHeading, headings, rows } = Astro.props;
+---
+
+<div class="o-table-scroll" role="region" aria-labelledby={`${id}-caption`} tabindex="0">
+  <table class="c-plain-table">
+    <caption class="c-plain-table__caption" id={`${id}-caption`}>
+      {caption}
+      <small class="c-plain-table__stamp">{stamp}</small>
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">{rowHeading}</th>
+        {headings.map((heading) => (
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+          <th scope="col">{heading}</th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      {rows.map((row) => (
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+        <tr>
+          <th scope="row">
+            <a href={row.href}>{row.name}</a>
+          </th>
+          {row.cells.map((cell) => (
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+            <td class:list={{ 'is-not-published': cell.withheld }}>{cell.text}</td>
+          ))}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+<style>
+  @layer components {
+    .c-plain-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-variant-numeric: tabular-nums;
+      font-size: var(--fs-small);
+    }
+
+    .c-plain-table__caption {
+      padding: var(--space-3) var(--space-4) 0;
+      text-align: start;
+      color: var(--ink-2);
+    }
+
+    .c-plain-table__stamp {
+      display: block;
+      margin-block-start: var(--space-1);
+      font-size: var(--fs-small);
+      color: var(--muted);
+    }
+
+    .c-plain-table th,
+    .c-plain-table td {
+      padding: var(--space-3) var(--space-4);
+      border-block-end: 1px solid var(--hairline);
+      text-align: end;
+      vertical-align: top;
+    }
+
+    .c-plain-table th:first-child {
+      text-align: start;
+    }
+
+    .c-plain-table tbody th a {
+      display: inline-block;
+      min-height: var(--target);
+      line-height: var(--target);
+    }
+
+    .c-plain-table .is-not-published {
+      font-style: italic;
+      color: var(--ink-2);
+    }
+  }
+</style>

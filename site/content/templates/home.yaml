@@ -2,7 +2,8 @@ title: 'Planned surgery waiting times at public hospitals in Australia: {site}'
 description: 'This site shows how long patients waited for planned surgery at public hospitals in Australia. Find a surgery, a hospital, a state or territory or an urgency category. The latest figures cover {period}.'
 heading: How long will I wait for planned surgery?
 lede: 'This site shows how long patients waited for planned surgery at public hospitals in Australia. The latest figures cover {period}. Each figure comes from published government data, and each figure shows the period it covers.'
-stamp: 'The counts on this page are for {period}. The data was released on {release}.'
+stamp: 'The surgery, state and urgency counts on this page are for {period}. The data was released on {release}.'
+hospitals_stamp: 'The hospital count is for {period}. The data was released on {release}.'
 start_heading: Find your waiting time
 start_intro: Choose how you want to look. Each page shows the published figures and the period they cover.
 surgery_link: Surgery
@@ -11,29 +12,36 @@ surgery_note_many: '{count} procedures and specialties'
 specialty_link: Surgery specialties
 specialty_note: The same figures grouped by medical specialty.
 hospitals_link: Public hospitals
-hospitals_note_one: 1 public hospital
-hospitals_note_many: '{count} public hospitals'
+hospitals_note_one: 1 public hospital on the register
+hospitals_note_many: '{count} public hospitals on the register'
 states_link: States and territories
 states_note_one: 1 state or territory
 states_note_many: '{count} states and territories'
 urgency_link: Urgency categories
 urgency_note_one: 1 urgency category
 urgency_note_many: '{count} urgency categories'
-common_heading: Surgeries with the most patients
-common_intro: 'The table lists the {count} procedures that treated the most patients at public hospitals in Australia. The procedure with the most patients comes first. Select a procedure to see the hospitals that report it.'
-common_caption: 'The {count} planned surgery procedures with the most patients, Australia'
+common_heading: Surgeries that the most hospitals report
+common_intro: 'The table lists the {count} surgery types that the most public hospitals reported. The surgery type with the most hospitals comes first, and surgery types with the same number of hospitals follow in name order. Select a surgery type to see the hospitals that report it.'
+common_caption: 'The {count} surgery types that the most public hospitals reported, Australia'
 common_row_heading: Surgery
-common_median: Median wait, Australia
-common_volume: Patients treated, Australia
+common_median: National median wait
+common_surgeries: Surgeries, Australia
+common_hospitals: Hospitals reporting
 states_heading: Waiting times by state and territory
-states_intro: Each state and territory page shows its waiting times beside the national figures and ranks its public hospitals by median wait.
-state_link: '{state}: planned surgery waiting times'
+states_intro: Each state and territory page shows its waiting times beside the national figures and ranks its public hospitals by median wait. The table gives the number of hospitals that report in each state or territory and the shortest and longest state median wait.
+states_caption: Hospitals reporting, surgery types and state median waits by state and territory
+states_row_heading: State or territory
+states_hospitals: Hospitals reporting
+states_types: Surgery types
+states_shortest: Shortest state median wait
+states_longest: Longest state median wait
+state_extreme: '{wait} for {surgery}'
 urgency_heading: Waiting times by urgency category
-urgency_intro: Your treating specialist gives you an urgency category. Each category page ranks public hospitals by the share of patients treated within the recommended time.
-about_heading: About these figures
+urgency_intro: Your treating specialist gives you an urgency category. Each category page ranks public hospitals by the share of surgeries done within the recommended time.
+about_heading: What this site does
 about:
-  - Every figure on this site comes from published government data. The site does not estimate a figure, and it does not accept payment to change one.
-  - A table orders hospitals by a measured number. The site does not call any hospital the best.
-  - A median wait is the number of days within which half of the patients were treated. A median wait describes past patients and does not predict your own wait.
+  - Public hospitals across Australia report how long people waited for planned surgery. The figures are published once a year, hospital by hospital and surgery by surgery. This site lays them out so that you can compare the hospitals near you.
+  - Every number on this site is a published government figure. Each figure shows the period it covers and the date it was released. The site does not estimate a figure, and it does not accept payment to change one. A table orders hospitals by a measured number, and the site does not call any hospital the best.
+  - A median wait is the number of days within which half of the surgeries took place. A median wait describes past surgeries and does not predict your own wait.
 exclusion_heading: What this site leaves out
 exclusion: Private hospitals are excluded. This site covers public hospitals only, so it shows no private hospital.

@@ -19,7 +19,10 @@ import {
   termsSchema,
   urgencyTemplateSchema,
 } from '../lib/content-schema';
+import { getHomeTemplate } from '../lib/content';
 import { readHospitalIndex } from '../lib/dist';
+import { formatCount } from '../lib/format';
+import { COMMON_COUNT } from '../lib/home-page';
 import { indexablePairPaths, pairRoutes, thinPairPaths } from '../lib/pair-page';
 import { stateFiles } from '../lib/state-page';
 import { categories } from '../lib/urgency-page';
@@ -799,5 +802,28 @@ describe('Built home page', () => {
     }
     expect(home.mainText).toContain('Private hospitals are excluded');
     expect(home.passports).toBe(1);
+  });
+
+  it('holds the surgery table and the state table, with the counts of the data', () => {
+    const home = pageAt('index.html');
+    const states = stateFiles().length;
+    expect(home.tables).toBe(2);
+    expect(home.rows).toHaveLength(2 + COMMON_COUNT + states);
+    expect(home.cells).toHaveLength(COMMON_COUNT * 3 + states * 4);
+    const hospitals = home.cells
+      .slice(0, COMMON_COUNT * 3)
+      .filter((_, i) => i % 3 === 2)
+      .map((cell) => Number(cell.text.replaceAll(',', '')));
+    expect(hospitals).toEqual([...hospitals].sort((a, b) => b - a));
+    const t = getHomeTemplate();
+    const counts = [
+      fill(t.surgery_note_many, { count: formatCount(surgeryRefs().length) }),
+      fill(t.hospitals_note_many, { count: formatCount(readHospitalIndex().length) }),
+      fill(t.states_note_many, { count: formatCount(states) }),
+      fill(t.urgency_note_many, { count: formatCount(categories().length) }),
+    ];
+    for (const count of counts) {
+      expect(home.mainText).toContain(count);
+    }
   });
 });

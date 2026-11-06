@@ -4,8 +4,10 @@ import { describe, expect, it } from 'vitest';
 
 import HomePage from '../components/HomePage.astro';
 import { getHomeTemplate, getSite } from '../lib/content';
-import { readHospitalIndex, readSurgery } from '../lib/dist';
-import { COMMON_COUNT } from '../lib/home-page';
+import { readHospitalIndex, readSurgeryIndex } from '../lib/dist';
+import { formatCount } from '../lib/format';
+import { COMMON_COUNT, commonProcedures } from '../lib/home-page';
+import { hospitalStamp, surgeryStamp } from '../lib/index-pages';
 import { stateFiles, statePath } from '../lib/state-page';
 import { surgeryPath, surgeryRefs } from '../lib/surgery-page';
 import { categories } from '../lib/urgency-page';
@@ -81,38 +83,72 @@ describe('Home page', () => {
     }
   });
 
-  it('counts what the dist holds', () => {
+  it('counts what the dist holds, each count under the stamp of its own dataset', () => {
+    expect(main).toContain(fill(t.surgery_note_many, { count: formatCount(surgeryRefs().length) }));
     expect(main).toContain(
-      fill(t.hospitals_note_many, { count: readHospitalIndex().length.toLocaleString('en-AU') }),
+      fill(t.hospitals_note_many, { count: formatCount(readHospitalIndex().length) }),
     );
-    expect(main).toContain(fill(t.states_note_many, { count: String(stateFiles().length) }));
-    expect(main).toContain(fill(t.urgency_note_many, { count: String(categories().length) }));
-    expect(main).toMatch(/The counts on this page are for \d{4}–\d{2}\. The data was released on/);
+    expect(main).toContain(fill(t.states_note_many, { count: formatCount(stateFiles().length) }));
+    expect(main).toContain(fill(t.urgency_note_many, { count: formatCount(categories().length) }));
+    expect(main).toContain(fill(t.stamp, surgeryStamp()));
+    expect(main).toContain(fill(t.hospitals_stamp, hospitalStamp()));
+    expect(t.hospitals_note_many).toContain('on the register');
   });
 
-  it('orders the common surgeries by patients treated, most first, under one stamp', () => {
-    const expected = surgeryRefs()
-      .filter((ref) => ref.kind === 'procedure')
-      .flatMap((ref) => {
-        const volume = readSurgery(ref.kind, ref.slug).benchmarks.national?.volume;
-        return volume?.state === 'published' ? [{ ref, value: volume.value }] : [];
-      })
-      .sort((a, b) => b.value - a.value || (a.ref.urlSlug < b.ref.urlSlug ? -1 : 1))
-      .slice(0, COMMON_COUNT)
-      .map(({ ref }) => surgeryPath(ref));
+  it('says surgeries where the data counts surgeries, and does not call them patients treated', () => {
+    expect(t.common_surgeries).toContain('Surgeries');
+    expect(/patients treated|most patients/i.test(main)).toBe(false);
+  });
+
+  it('fails loudly when the data holds fewer surgery types than the table needs', () => {
+    const available = readSurgeryIndex().filter((row) => row.kind === 'procedure').length;
+    expect(() => commonProcedures(available + 1)).toThrow(RangeError);
+  });
+
+  it('orders the common surgeries by hospitals reporting, most first, under one stamp', () => {
+    const expected = readSurgeryIndex()
+      .filter((row) => row.kind === 'procedure')
+      .sort(
+        (a, b) =>
+          b.hospitals - a.hospitals ||
+          a.name.localeCompare(b.name, 'en-AU') ||
+          (a.slug < b.slug ? -1 : 1),
+      )
+      .slice(0, COMMON_COUNT);
+    const refs = new Map(surgeryRefs().map((ref) => [`${ref.kind}/${ref.slug}`, ref]));
+    const paths = expected.flatMap((row) => {
+      const ref = refs.get(`${row.kind}/${row.slug}`);
+      return ref === undefined ? [] : [surgeryPath(ref)];
+    });
     const table = html.split('id="common-caption"')[1]?.split('</table>')[0] ?? '';
-    expect([...table.matchAll(/href="(\/surgery\/[^"]+)"/g)].map((m) => m[1])).toEqual(expected);
-    expect(expected).toHaveLength(COMMON_COUNT);
-    expect(textsOf(html, 'c-table__stamp')).toHaveLength(1);
-    expect(textsOf(html, 'c-table__stamp')[0]).toMatch(/\d{4}–\d{2}, released \d{1,2} \w+ \d{4}/);
-    expect(textsOf(html, 'c-table__rank')).toEqual([]);
-    const volumes = elementsOf(`<table>${table}</table>`, 'td')
-      .filter((_, i) => i % 2 === 1)
-      .map((cell) => Number(cell.text.replaceAll(/[^\d]/g, '')));
-    expect(volumes.every((v) => Number.isInteger(v) && v > 0)).toBe(true);
-    expect(volumes).toHaveLength(COMMON_COUNT);
-    expect(volumes).toEqual([...volumes].sort((a, b) => b - a));
+    expect([...table.matchAll(/href="(\/surgery\/[^"]+)"/g)].map((m) => m[1])).toEqual(paths);
+    expect(paths).toHaveLength(COMMON_COUNT);
+    const cells = elementsOf(`<table>${table}</table>`, 'td').map((cell) => cell.text);
+    expect(cells).toHaveLength(COMMON_COUNT * 3);
+    const hospitals = cells.filter((_, i) => i % 3 === 2);
+    expect(hospitals).toEqual(expected.map((row) => formatCount(row.hospitals)));
+    const surgeries = cells.filter((_, i) => i % 3 === 1);
+    expect(surgeries.every((c) => /^[\d,]+ surgeries$/.test(c))).toBe(true);
+    expect(textsOf(html, 'c-plain-table__stamp')[0]).toMatch(
+      /\d{4}–\d{2}, released \d{1,2} \w+ \d{4}/,
+    );
     expect(html.includes('c-figure')).toBe(false);
+  });
+
+  it('gives one row for each state, linked, with the counts and the shortest and longest median', () => {
+    const table = html.split('id="states-caption"')[1]?.split('</table>')[0] ?? '';
+    const links = [...table.matchAll(/href="(\/state\/[^"]+)"/g)].map((m) => m[1]);
+    expect(links).toEqual(stateFiles().map((file) => statePath(file.state)));
+    const rows = elementsOf(`<table>${table}</table>`, 'td');
+    expect(rows).toHaveLength(stateFiles().length * 4);
+    for (const [i, cell] of rows.entries()) {
+      if (i % 4 < 2) {
+        expect(cell.text).toMatch(/^\d[\d,]*$/);
+      } else {
+        expect(cell.text).toMatch(/^[\d,]+ days? for \S/);
+      }
+    }
+    expect(textsOf(html, 'c-plain-table__stamp')).toHaveLength(2);
   });
 
   it('states the private hospital exclusion, the safety block once and the passport once', () => {

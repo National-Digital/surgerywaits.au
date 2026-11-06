@@ -2,26 +2,27 @@
 // Base comes first so its global sheet, and with it the layer order, precedes every component sheet.
 import Base from '../layouts/Base.astro';
 import DataPassport from './DataPassport.astro';
-import DataTable from './DataTable.astro';
 import IndexList from './IndexList.astro';
 import LinkList from './LinkList.astro';
+import PlainTable from './PlainTable.astro';
 import SafetyBlock from './SafetyBlock.astro';
 import { getHomeTemplate, getSite } from '../lib/content';
 import { readHospitalSources, readSurgeryIndexSources } from '../lib/dist';
 import { formatCount } from '../lib/format';
-import { commonColumns, commonProcedures, homeCounts } from '../lib/home-page';
+import { commonProcedures, homeCounts, stateSummary } from '../lib/home-page';
 import { HOSPITALS_PATH } from '../lib/hospital-page';
-import { surgeryStamp } from '../lib/index-pages';
+import { hospitalStamp, surgeryStamp } from '../lib/index-pages';
 import { fill } from '../lib/slots';
-import { STATES_PATH, stateFiles, stateName, statePath } from '../lib/state-page';
+import { STATES_PATH } from '../lib/state-page';
 import { SPECIALTY_PATH, SURGERY_PATH } from '../lib/surgery-page';
 import { URGENCY_PATH, categories } from '../lib/urgency-page';
 
 const t = getHomeTemplate();
 const stamp = surgeryStamp();
+const hospitalsAt = hospitalStamp();
 const counts = homeCounts();
 const common = commonProcedures();
-const columns = commonColumns([t.common_median, t.common_volume]);
+const stateTable = stateSummary(t.state_extreme);
 const count = (n: number, one: string, many: string): string =>
   n === 1 ? one : fill(many, { count: formatCount(n) });
 const start = [
@@ -47,10 +48,6 @@ const start = [
     notes: [count(counts.categories, t.urgency_note_one, t.urgency_note_many)],
   },
 ];
-const states = stateFiles().map((file) => ({
-  label: fill(t.state_link, { state: stateName(file.state) }),
-  href: statePath(file.state),
-}));
 const urgency = categories().map((category) => ({ label: category.label, href: category.path }));
 const sources = [
   ...new Set([...readSurgeryIndexSources(), ...readHospitalSources(), ...common.sources]),
@@ -65,7 +62,9 @@ const sources = [
   <div class="o-columns">
     <h1>{t.heading}</h1>
     <p>{fill(t.lede, { period: stamp.period })}</p>
-    <p>{fill(t.stamp, stamp)}</p>
+    <p>
+      {fill(t.stamp, stamp)} {fill(t.hospitals_stamp, hospitalsAt)}
+    </p>
 
     <section aria-labelledby="start-heading">
       <h2 id="start-heading">{t.start_heading}</h2>
@@ -74,29 +73,37 @@ const sources = [
     </section>
   </div>
 
-  {common.rows.length > 0 && (
-    <section aria-labelledby="common-heading">
-      <div class="o-columns">
-        <h2 id="common-heading">{t.common_heading}</h2>
-        <p>{fill(t.common_intro, { count: formatCount(common.rows.length) })}</p>
-      </div>
-      <DataTable
-        id="common"
-        caption={fill(t.common_caption, { count: formatCount(common.rows.length) })}
-        rowHeading={t.common_row_heading}
-        columns={columns}
-        rows={common.rows}
-      />
-    </section>
-  )}
+  <section aria-labelledby="common-heading">
+    <div class="o-columns">
+      <h2 id="common-heading">{t.common_heading}</h2>
+      <p>{fill(t.common_intro, { count: formatCount(common.rows.length) })}</p>
+    </div>
+    <PlainTable
+      id="common"
+      caption={fill(t.common_caption, { count: formatCount(common.rows.length) })}
+      stamp={common.stamp}
+      rowHeading={t.common_row_heading}
+      headings={[t.common_median, t.common_surgeries, t.common_hospitals]}
+      rows={common.rows}
+    />
+  </section>
 
-  <div class="o-columns">
-    <section aria-labelledby="states-heading">
+  <section aria-labelledby="states-heading">
+    <div class="o-columns">
       <h2 id="states-heading">{t.states_heading}</h2>
       <p>{t.states_intro}</p>
-      <LinkList links={states} />
-    </section>
+    </div>
+    <PlainTable
+      id="states"
+      caption={t.states_caption}
+      stamp={stateTable.stamp}
+      rowHeading={t.states_row_heading}
+      headings={[t.states_hospitals, t.states_types, t.states_shortest, t.states_longest]}
+      rows={stateTable.rows}
+    />
+  </section>
 
+  <div class="o-columns">
     <section aria-labelledby="urgency-heading">
       <h2 id="urgency-heading">{t.urgency_heading}</h2>
       <p>{t.urgency_intro}</p>
