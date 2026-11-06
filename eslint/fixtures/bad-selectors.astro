@@ -1,0 +1,16 @@
+---
+---
+
+<p class="c-note">Note</p>
+
+<style>
+  @layer components {
+    :global(.Bad) {
+      color: var(--ink);
+    }
+
+    [class~='Bad'] {
+      color: var(--ink);
+    }
+  }
+</style>

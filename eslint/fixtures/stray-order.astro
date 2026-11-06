@@ -1,0 +1,15 @@
+---
+---
+
+<p class="c-note">Note</p>
+
+<style>
+  @layer print, components;
+  @import url('./y.css') layer(theme);
+
+  @layer components {
+    .c-note {
+      color: var(--ink);
+    }
+  }
+</style>

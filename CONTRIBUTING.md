@@ -34,9 +34,9 @@ uv sync
 From the repository root:
 
 ```
-npm run lint            # ESLint, no warnings, every disable needs a reason
+npm run lint            # ESLint, which also lints CSS and Astro style blocks, no warnings, every disable needs a reason
 npm run format:check    # Prettier
-npm run typecheck       # astro check on the site, tsc on the Worker and the scripts
+npm run typecheck       # astro check on the site, tsc on the Worker, the scripts and the lint rules
 npm run knip            # unused files, exports and dependencies
 npm test                # vitest, without the browser proofs
 A11Y_TEST=1 npx vitest run scripts/a11y.test.ts   # the accessibility proofs, which need Chromium
@@ -66,6 +66,24 @@ description. Ruff selects every rule and ignores only the few listed with a reas
 `pipeline/pyproject.toml`. Pytest runs with `--strict-markers`, `--strict-config`, `-W error` and
 `xfail_strict`. The `Workflow lint` job also runs shellcheck over `.githooks/*` and every `*.sh`
 file.
+
+### Styles and the font
+
+CSS lives in `site/src/styles/`, one folder for each ITCSS layer, and component styles sit in a
+`<style>` block of the `.astro` file ([D18](docs/adr/0001-architecture-decision-register.md)).
+`npm run lint` checks class names, tokens, breakpoints, layers and selectors. The local rules
+are `eslint/rules/bem-class-name.ts`, `eslint/rules/layer-declared.ts`, `eslint/rules/token-values.ts`
+and `eslint/rules/breakpoint-scale.ts`. A new colour pair goes in the pair lists of
+`site/src/styles/contrast.test.ts`, which holds every text pair to 7:1 in both colour schemes. The
+test also collects each `color` and `background` token pair a rule sets in the stylesheets and
+fails on a pair the lists do not cover. `color-mix()` of tokens may be used anywhere, while
+`light-dark()` and `color()` belong in the settings layer. The layer order is declared only in
+`site/src/styles/layers.css`, and the build job checks that the built CSS opens its layers in that order.
+
+The Newsreader font in `site/public/fonts/` comes from `scripts/fonts.sh`, which downloads a pinned
+upstream commit, checks its SHA-256 and rebuilds the file. Run it by hand with `fonttools` and
+`brotli` installed. No CI job or build step downloads anything. The font is not preloaded on purpose: `font-display: swap`
+shows text in the fallback face at once, and a preload would spend early bandwidth on a font that text does not wait for.
 
 ### Pulling the pinned data
 

@@ -1,0 +1,11 @@
+@layer components {
+  .c-card {
+    color: red;
+    border: 1px solid blue;
+    background: color-mix(in srgb, var(--accent) 20%, var(--paper));
+    outline-color: currentcolor;
+    fill: light-dark(var(--ink), var(--paper));
+    stroke: color(srgb 1 0 0);
+    --local: light-dark(var(--ink), var(--paper));
+  }
+}

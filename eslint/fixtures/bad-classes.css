@@ -1,0 +1,18 @@
+@layer components {
+  .hero-card {
+    color: var(--ink);
+  }
+
+  .c-Card__title {
+    color: var(--ink);
+  }
+
+  .c-card__title--large {
+    color: var(--ink);
+  }
+
+  .is-open,
+  .js-menu {
+    color: var(--ink);
+  }
+}

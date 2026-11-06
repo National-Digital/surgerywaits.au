@@ -1,0 +1,17 @@
+@layer components {
+  :global(.Bad) {
+    color: var(--ink);
+  }
+
+  [class~='Bad'] {
+    color: var(--ink);
+  }
+
+  [class='foo-bar'] {
+    color: var(--ink);
+  }
+
+  :global(.c-ok) {
+    color: var(--ink);
+  }
+}

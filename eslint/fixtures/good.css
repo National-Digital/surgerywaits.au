@@ -1,0 +1,19 @@
+@layer components {
+  .c-card {
+    margin: 0 var(--space-2);
+    color: var(--ink);
+    transition: color var(--duration-fast) ease;
+  }
+
+  .c-card__title--large.is-open {
+    color: var(--ink);
+  }
+}
+
+@media (width >= 640px) {
+  @layer components {
+    .c-card__body.js-menu {
+      gap: var(--space-2);
+    }
+  }
+}

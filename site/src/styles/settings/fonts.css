@@ -1,0 +1,9 @@
+@layer settings {
+  @font-face {
+    font-family: 'Newsreader';
+    src: url('/fonts/newsreader.1bf9d9e7.woff2') format('woff2');
+    font-weight: 400 700;
+    font-style: normal;
+    font-display: swap;
+  }
+}

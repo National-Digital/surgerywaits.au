@@ -36,9 +36,22 @@ publicdata.au, pinned to a version. The licence and attribution for each source 
 
 ## Typefaces, libraries and marks
 
-None are committed to the repository yet. Packages installed at build time from lockfiles keep
-their own licences. A font, an icon set or any other asset that is committed is listed here in
-the pull request that adds it.
+The site's headings use **Newsreader**, by The Newsreader Project Authors (Production Type). It is
+licensed under the [SIL Open Font License 1.1](site/public/fonts/OFL.txt), which declares no
+Reserved Font Name, so the subset keeps the family name. The font sits beside the code licence
+([AGPL-3.0-or-later](LICENSE)) and is not covered by it.
+
+| File                                          | Source                                                                                                                         | SHA-256 of the file                                                |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| `site/public/fonts/newsreader.1bf9d9e7.woff2` | [productiontype/Newsreader](https://github.com/productiontype/Newsreader) at commit `cfcb4f7af0e52c25e8df2a2431814c8e5fe2e155` | `1bf9d9e7e1a626442a0b54551bcc3be958fb0638ea559702031de85bb2bb20f7` |
+| `site/public/fonts/OFL.txt`                   | the same commit                                                                                                                | `fdfad38143ec470553cae82a1e45320bdd1b9ec70415d37bd0171051d8a4ded8` |
+
+The woff2 is one variable font with the optical size fixed at 32 and the weight axis from 400 to 700. It covers Basic Latin and the characters `– — ‘ ’ “ ” · › …`, and keeps the `tnum`, `kern`
+and `liga` features. `scripts/fonts.sh` rebuilds it from the pinned commit and checks the source
+files against the hashes above before it writes anything.
+
+Packages installed at build time from lockfiles keep their own licences. Any other font, icon set
+or asset that is committed is listed here in the pull request that adds it.
 
 ## This project's own marks
 

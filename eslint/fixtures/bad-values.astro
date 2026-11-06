@@ -1,0 +1,22 @@
+---
+---
+
+<p class="c-note">Note</p>
+
+<style>
+  @layer components {
+    .c-note {
+      margin: 12px;
+      color: #fff;
+      transition: color 120ms;
+    }
+  }
+
+  @media (width >= 800px) {
+    @layer components {
+      .c-note {
+        gap: var(--space-2);
+      }
+    }
+  }
+</style>

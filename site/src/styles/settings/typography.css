@@ -1,0 +1,24 @@
+@layer settings {
+  :root {
+    --serif:
+      'Newsreader', 'Charter', 'Bitstream Charter', 'Iowan Old Style', Georgia, 'Times New Roman',
+      serif;
+    --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --fs-display: clamp(2.25rem, 1.4rem + 3.6vw, 3.625rem);
+    --fs-h1: clamp(2rem, 1.5rem + 2vw, 2.75rem);
+    --fs-h2: 1.875rem;
+    --fs-h3: 1.12rem;
+    --fs-figure: clamp(1.75rem, 1.4rem + 1.2vw, 2.125rem);
+    --fs-figure-sm: 1.125rem;
+    --fs-lede: 1.1875rem;
+    --fs-body: 1rem;
+    --fs-small: 0.875rem;
+    --fs-label: 0.75rem;
+    --lh-body: 1.55;
+    --lh-heading: 1.25;
+    --lh-h2: 1.2;
+    --lh-h1: 1.08;
+    --lh-display: 1.05;
+    --tracking-heading: -0.02em;
+  }
+}
