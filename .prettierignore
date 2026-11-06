@@ -5,3 +5,4 @@ coverage/
 pipeline/
 package-lock.json
 worker/worker-configuration.d.ts
+dist-preview/

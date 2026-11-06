@@ -1,0 +1,51 @@
+---
+import { formatFigureParts, formatQueenslandFigure, formatStamp, isPublished } from '../lib/format';
+import type { Figure, QueenslandColumn, QueenslandFigure, Role } from '../lib/format';
+
+type Props =
+  | { role: Role; figure: Figure; column?: never }
+  | { column: QueenslandColumn; figure: QueenslandFigure; role?: never };
+
+const { figure, role, column } = Astro.props;
+// A figure with no period or no release date throws here, so it cannot ship.
+const stamp = formatStamp(figure);
+const parts =
+  column === undefined
+    ? formatFigureParts(role, figure)
+    : { amount: formatQueenslandFigure(column, figure), unit: null };
+const withheld = !isPublished(figure);
+---
+
+{/* prettier-ignore */}
+<span class="c-figure"><span class:list={['c-figure__value', { 'is-not-published': withheld }]}>{parts.amount}{parts.unit !== null && <> <span class="c-figure-unit">{parts.unit}</span></>}</span><small class="c-stamp">{stamp}</small></span>
+
+<style>
+  @layer components {
+    .c-figure {
+      display: block;
+    }
+
+    .c-figure__value {
+      display: block;
+      font: var(--fs-figure) / 1 var(--serif);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .c-figure__value.is-not-published {
+      font: italic 400 var(--fs-figure-sm) / var(--lh-body) var(--sans);
+      color: var(--ink-2);
+    }
+
+    .c-figure-unit {
+      font-size: 0.5em;
+    }
+
+    .c-stamp {
+      display: block;
+      margin-block-start: var(--space-2);
+      font-size: var(--fs-small);
+      line-height: 1.4;
+      color: var(--muted);
+    }
+  }
+</style>

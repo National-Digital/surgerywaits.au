@@ -24,6 +24,23 @@ export const labelsSchema = z.strictObject({
   title_home: text,
   title_not_found: text,
   go_home: text,
+  earlier_period_note: text,
+  rank_caption: text,
+  change_caption: text,
+  role_median_wait: text,
+  role_volume: text,
+  role_long_wait: text,
+  role_on_time: text,
+  qld_treated: text,
+  qld_percent_treated_in_time: text,
+  qld_percent_change_treated_on_prior_year: text,
+  title_primitives: text,
+  preview_heading: text,
+  preview_intro: text,
+  preview_figures: text,
+  preview_tiles: text,
+  preview_withheld: text,
+  preview_queensland: text,
 });
 
 export const pageSchema = z.strictObject({

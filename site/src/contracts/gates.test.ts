@@ -1,4 +1,5 @@
 import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ESLint } from 'eslint';
 import { describe, expect, it } from 'vitest';
@@ -15,10 +16,22 @@ import {
   replacedTerms,
   strings,
 } from '../lib/content-files';
-import { formatFigure } from '../lib/format';
+import Figure from '../components/Figure.astro';
+import {
+  DistError,
+  distDirectory,
+  listDist,
+  readHospital,
+  readQueenslandFacility,
+  validateDist,
+  validateDocument,
+} from '../lib/dist';
+import { formatDate, formatFigure, formatStamp } from '../lib/format';
 import type { NotPublishedReason, Role } from '../lib/format';
+import { render, textsOf } from '../lib/test-render';
 
 const contractDir = new URL('../../../contract/', import.meta.url);
+const siteSrc = new URL('../', import.meta.url).pathname;
 
 function propertyNames(node: unknown): string[] {
   if (Array.isArray(node)) {
@@ -45,14 +58,55 @@ const reasons = (
 ).$defs.not_published_figure.properties.reason.enum;
 
 describe('Contract: dist files', () => {
-  it.todo('validate against their JSON Schemas in contract/');
-  it.todo("the site reads only the pipeline's dist output");
+  it('validate against their JSON Schemas in contract/', () => {
+    const listed = readFileSync(join(distDirectory(), 'SHA256SUMS'), 'utf8')
+      .trim()
+      .split('\n')
+      .map((line) => line.split('  ')[1])
+      .sort();
+    expect(listed.length).toBeGreaterThan(0);
+    expect(validateDist()).toEqual(listed);
+    // A file built to fail the gate.
+    expect(() => {
+      validateDocument('hospital', { code: 'H1' });
+    }).toThrow(DistError);
+  });
+  it("the site reads only the pipeline's dist output", () => {
+    const sources = readdirSync(siteSrc, { recursive: true, encoding: 'utf8' })
+      .filter((f) => /\.(ts|astro)$/.test(f) && !f.endsWith('.test.ts'))
+      .map((f) => ({ f, text: readFileSync(join(siteSrc, f), 'utf8') }));
+    expect(sources.length).toBeGreaterThan(0);
+    const reachesIn = sources.filter(({ text }) => text.includes('pipeline/')).map(({ f }) => f);
+    const readsTheVariable = sources
+      .filter(({ text }) => text.includes('SURGERYWAITS_DIST'))
+      .map(({ f }) => f);
+    expect(reachesIn).toEqual([]);
+    expect(readsTheVariable).toEqual(['lib/dist.ts']);
+  });
 });
 
 describe('Suppressed values', () => {
-  it.todo(
-    "render 'not published' with the reason taken from the publisher's marker (<5, -, NP); an unknown marker fails the build",
-  );
+  const stamp = { period: '2024–25', release: '2026-08-19' };
+  it("render 'not published' with the reason taken from the publisher's marker (<5, -, NP); an unknown marker fails the build", async () => {
+    const byMarker = {
+      '<5': ['too_few_patients', 'not published: too few patients'],
+      '-': ['no_patients_reported', 'not published: no patients reported'],
+      NP: ['not_published_by_aihw', 'not published: AIHW did not publish a figure'],
+    };
+    for (const [reason, words] of Object.values(byMarker)) {
+      const html = await render(Figure, {
+        role: 'median_wait',
+        figure: { state: 'not_published', reason, ...stamp },
+      });
+      expect(textsOf(html, 'c-figure__value')).toEqual([words]);
+    }
+    await expect(
+      render(Figure, {
+        role: 'median_wait',
+        figure: { state: 'not_published', reason: '??', ...stamp },
+      }),
+    ).rejects.toThrow(RangeError);
+  });
 });
 
 describe('Suppressed cells', () => {
@@ -90,7 +144,37 @@ describe('Suppressed cells', () => {
 });
 
 describe('Reference period and release date', () => {
-  it.todo('every rendered figure shows its reference period and the data release date');
+  it('every rendered figure shows its reference period and the data release date', async () => {
+    let shown = 0;
+    for (const slug of listDist('hospitals')) {
+      for (const surgery of readHospital(slug).surgeries) {
+        for (const [role, measure] of Object.entries(surgery.measures)) {
+          const html = await render(Figure, { role, figure: measure.figure });
+          expect(textsOf(html, 'c-stamp')).toEqual([formatStamp(measure.figure)]);
+          shown++;
+        }
+      }
+    }
+    for (const code of listDist('queensland')) {
+      for (const quarter of readQueenslandFacility(code).quarters) {
+        for (const [column, figure] of Object.entries(quarter.total)) {
+          const html = await render(Figure, { column, figure });
+          expect(textsOf(html, 'c-stamp')).toEqual([
+            `${figure.period}, released ${formatDate(figure.release)}`,
+          ]);
+          shown++;
+        }
+      }
+    }
+    expect(shown).toBeGreaterThan(1000);
+    // A figure built to fail the gate: it cannot say both, so it does not render.
+    for (const figure of [
+      { state: 'published', value: 5, release: '2026-08-19' },
+      { state: 'published', value: 5, period: '2024–25' },
+    ]) {
+      await expect(render(Figure, { role: 'median_wait', figure })).rejects.toThrow();
+    }
+  }, 60_000);
 });
 
 describe('Ranking', () => {

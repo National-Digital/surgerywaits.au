@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -11,6 +11,9 @@ import {
 import { termsSchema } from '../lib/content-schema';
 
 const dist = new URL('../../dist/', import.meta.url);
+if (!existsSync(dist)) {
+  throw new Error('site/dist is missing: run `npm run build` before BUILT_PAGES=1 npm test');
+}
 const pages = readdirSync(dist, { recursive: true, encoding: 'utf8' })
   .filter((f) => f.endsWith('.html'))
   .sort()
@@ -32,6 +35,13 @@ describe('Built pages', () => {
     expect(
       pages.flatMap(({ path, html }) => replacedTerms(distSlug(path), pageStrings(html), terms)),
     ).toEqual([]);
+  });
+
+  it('hold no development preview route', () => {
+    expect(pages.filter(({ path }) => path.startsWith('dev/')).map(({ path }) => path)).toEqual([]);
+    expect(pages.filter(({ html }) => html.includes('noindex')).map(({ path }) => path)).toEqual(
+      [],
+    );
   });
 
   it('carry the operator line in the footer', () => {

@@ -1,0 +1,15 @@
+<dl class="c-tiles">
+  <slot />
+</dl>
+
+<style>
+  @layer components {
+    .c-tiles {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: var(--space-3);
+      margin: 0 0 var(--space-4);
+      padding: 0;
+    }
+  }
+</style>
