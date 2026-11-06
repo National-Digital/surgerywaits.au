@@ -30,6 +30,6 @@ jobs:
           if printf '%s' "$TITLE" | grep -qE "$pattern"; then
             echo "ok"
           else
-            echo "::error::PR title is not a Conventional Commit. Use '<type>[optional scope]: <subject>'. Allowed types: ${types//|/, }."
+            echo "::error::PR title is not a Conventional Commit. Use '<type>[optional scope]: <subject>'. Allowed types: ${types//|/, }. See CONTRIBUTING.md."
             exit 1
           fi

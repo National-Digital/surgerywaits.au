@@ -1,0 +1,37 @@
+name: Bug report
+description: Something on the site is broken
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not report security vulnerabilities here. See [SECURITY.md](https://github.com/National-Digital/surgerywaits.au/blob/main/SECURITY.md).
+        A figure that differs from the source belongs in a Data problem issue.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The page URL and what you did.
+    validations:
+      required: true
+  - type: input
+    id: where
+    attributes:
+      label: Where
+      placeholder: "Firefox 140 on Windows, with a screen reader if you use one"
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: This is not a security vulnerability
+          required: true
+        - label: I searched the existing issues
+          required: true

@@ -1,7 +1,7 @@
 name: DCO
 
 # Every commit in a pull request carries a Signed-off-by trailer, the Developer Certificate of
-# Origin. No third-party actions, just the GitHub API.
+# Origin (CONTRIBUTING.md). No third-party actions, just the GitHub API.
 on:
   pull_request:
     types: [opened, synchronize, reopened]
@@ -41,6 +41,6 @@ jobs:
             fi
           done <<< "$commits"
           if [ "$missing" -ne 0 ]; then
-            echo "::error::A commit has no DCO sign-off. Run 'git rebase --signoff main' and force-push."
+            echo "::error::A commit has no DCO sign-off. Run 'git rebase --signoff main' and force-push. See CONTRIBUTING.md."
             exit 1
           fi
