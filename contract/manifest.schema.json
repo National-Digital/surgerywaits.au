@@ -1,5 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://surgerywaits.au/contract/manifest.schema.json",
   "title": "Data manifest",
   "description": "Each publicdata.au dated version the pipeline reads, pinned by sha256.",
   "type": "object",

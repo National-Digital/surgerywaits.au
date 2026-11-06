@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://surgerywaits.au/contract/trend.schema.json",
+  "title": "Hospital trends",
+  "description": "trends/<slug>.json: each reported period of each category for one hospital, oldest first.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["code", "slug", "series", "sources"],
+  "properties": {
+    "code": {
+      "$ref": "common.schema.json#/$defs/code"
+    },
+    "slug": {
+      "$ref": "common.schema.json#/$defs/slug"
+    },
+    "series": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "slug", "role", "release", "periods", "points"],
+        "properties": {
+          "kind": {
+            "$ref": "common.schema.json#/$defs/kind"
+          },
+          "slug": {
+            "$ref": "common.schema.json#/$defs/slug"
+          },
+          "role": {
+            "$ref": "common.schema.json#/$defs/role"
+          },
+          "points": {
+            "description": "One point for each period, in the same order.",
+            "type": "array",
+            "minItems": 2,
+            "items": {
+              "$ref": "common.schema.json#/$defs/trend_point"
+            }
+          },
+          "release": {
+            "$ref": "common.schema.json#/$defs/date"
+          },
+          "periods": {
+            "description": "The reference period of each point, oldest first.",
+            "type": "array",
+            "minItems": 2,
+            "items": {
+              "$ref": "common.schema.json#/$defs/period"
+            }
+          }
+        }
+      }
+    },
+    "sources": {
+      "$ref": "common.schema.json#/$defs/sources"
+    }
+  }
+}

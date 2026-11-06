@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://surgerywaits.au/contract/queensland-index.schema.json",
+  "title": "Queensland index",
+  "description": "queensland.json: which Queensland facilities joined a national hospital, which were left out and why, and the quarters held.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["facilities", "unmapped", "not_facilities", "specialties", "quarters", "sources"],
+  "properties": {
+    "facilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["facility_code", "facility_name", "hospital_code", "matched_by", "slug"],
+        "properties": {
+          "facility_code": {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          "facility_name": {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          "hospital_code": {
+            "$ref": "common.schema.json#/$defs/code"
+          },
+          "matched_by": {
+            "enum": ["name", "override"]
+          },
+          "slug": {
+            "oneOf": [
+              {
+                "$ref": "common.schema.json#/$defs/slug"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "unmapped": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["facility_code", "facility_name", "reason"],
+        "properties": {
+          "facility_code": {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          "facility_name": {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          "reason": {
+            "$ref": "common.schema.json#/$defs/text"
+          }
+        }
+      }
+    },
+    "not_facilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["facility_code", "facility_name", "reason"],
+        "properties": {
+          "facility_code": {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          "facility_name": {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          "reason": {
+            "$ref": "common.schema.json#/$defs/text"
+          }
+        }
+      }
+    },
+    "specialties": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "slug", "name"],
+        "properties": {
+          "code": {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          "slug": {
+            "$ref": "common.schema.json#/$defs/slug"
+          },
+          "name": {
+            "$ref": "common.schema.json#/$defs/text"
+          }
+        }
+      }
+    },
+    "quarters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["period", "period_end"],
+        "properties": {
+          "period": {
+            "type": "string",
+            "minLength": 1
+          },
+          "period_end": {
+            "$ref": "common.schema.json#/$defs/date"
+          }
+        }
+      }
+    },
+    "sources": {
+      "$ref": "common.schema.json#/$defs/sources"
+    }
+  }
+}

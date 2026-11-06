@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://surgerywaits.au/contract/hospital-index.schema.json",
+  "title": "Hospital index",
+  "description": "hospitals.json: one compact row for each public hospital that has a page, for lists, search and the compare tool.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["scope", "hospitals", "sources"],
+  "properties": {
+    "scope": {
+      "$ref": "common.schema.json#/$defs/scope"
+    },
+    "hospitals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "slug",
+          "name",
+          "state",
+          "closed",
+          "network",
+          "latitude",
+          "longitude",
+          "surgeries",
+          "latest_period"
+        ],
+        "properties": {
+          "code": {
+            "$ref": "common.schema.json#/$defs/code"
+          },
+          "slug": {
+            "$ref": "common.schema.json#/$defs/slug"
+          },
+          "name": {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          "state": {
+            "$ref": "common.schema.json#/$defs/state"
+          },
+          "closed": {
+            "type": "boolean"
+          },
+          "network": {
+            "oneOf": [
+              {
+                "$ref": "common.schema.json#/$defs/network"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "latitude": {
+            "oneOf": [
+              {
+                "$ref": "common.schema.json#/$defs/latitude"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "longitude": {
+            "oneOf": [
+              {
+                "$ref": "common.schema.json#/$defs/longitude"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "surgeries": {
+            "description": "How many categories the hospital has figures for.",
+            "$ref": "common.schema.json#/$defs/count"
+          },
+          "latest_period": {
+            "$ref": "common.schema.json#/$defs/period"
+          }
+        }
+      }
+    },
+    "sources": {
+      "$ref": "common.schema.json#/$defs/sources"
+    }
+  }
+}

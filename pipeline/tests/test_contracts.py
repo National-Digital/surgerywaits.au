@@ -1,12 +1,16 @@
 import json
+import re
 from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
 from fakes import FakeOpener, FakeResponse, Sleeps, make_entry
+from fixture_dist import fixture_docs, fixture_inputs
+from surgerywaits.build import read_inputs
 from surgerywaits.catalogue import Role
 from surgerywaits.derive import RankStatus, derive_table
+from surgerywaits.dist import build_dist, render
 from surgerywaits.hospitals import (
     LATITUDE_RANGE,
     LONGITUDE_RANGE,
@@ -158,14 +162,27 @@ def test_no_ranking_uses_suppressed_or_stale_rows() -> None:
     }
 
 
-@pytest.mark.skip(reason="planned: building the pipeline twice gives byte-identical dist")
-def test_building_twice_gives_byte_identical_dist() -> None:
-    raise NotImplementedError
+def test_building_twice_gives_byte_identical_dist(tmp_path: Path) -> None:
+    first = build_dist(read_inputs(load(), _fixture_files()), tmp_path / "one")
+    second = build_dist(read_inputs(load(), _fixture_files()), tmp_path / "two")
+    assert first == second
+    for path, data in first.items():
+        assert (tmp_path / "two" / path).read_bytes() == data
 
 
-@pytest.mark.skip(reason="planned: no wall-clock value lands in dist")
+def _fixture_files() -> dict[str, Path]:
+    return {e.slug: FIXTURES / e.slug / "data.parquet" for e in load()}
+
+
 def test_no_wall_clock_values_in_dist() -> None:
-    raise NotImplementedError
+    dates = {d for e in load() for d in (e.as_at, e.version) if d}
+    dates |= {r.release_date.isoformat() for r in fixture_inputs().overlay.records}
+    dates |= {r.quarter.end.isoformat() for r in fixture_inputs().overlay.records}
+    clock = re.compile(r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}|\b\d{2}:\d{2}:\d{2}\b|\b1[5-9]\d{8}\b")
+    for path, data in render(fixture_docs()).items():
+        text = data.decode("utf-8")
+        assert not clock.search(text), path
+        assert set(re.findall(r"\d{4}-\d{2}-\d{2}", text)) <= dates, path
 
 
 def test_private_sector_is_excluded() -> None:
