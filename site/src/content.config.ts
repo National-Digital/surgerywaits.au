@@ -1,7 +1,9 @@
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
+import { z } from 'astro/zod';
 import {
   areasSchema,
+  hospitalsIndexSchema,
   hospitalTemplateSchema,
   labelsSchema,
   navigationSchema,
@@ -25,8 +27,8 @@ export const collections = {
   }),
   terms: defineCollection({ loader: file('terms.yaml'), schema: termsSchema }),
   templates: defineCollection({
-    loader: glob({ pattern: 'hospital.yaml', base: './content/templates' }),
-    schema: hospitalTemplateSchema,
+    loader: glob({ pattern: ['hospital.yaml', 'hospitals.yaml'], base: './content/templates' }),
+    schema: z.union([hospitalTemplateSchema, hospitalsIndexSchema]),
   }),
   surgery: defineCollection({
     loader: glob({ pattern: 'surgery.yaml', base: './content/templates' }),

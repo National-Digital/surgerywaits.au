@@ -261,8 +261,9 @@ Styles are plain CSS with no Sass, and use native nesting, custom properties, `@
 `color-mix()` and range media queries. One `@layer` order is declared once: print, settings,
 generic, elements, objects, components, utilities. Class names follow `.o-object`,
 `.c-block__element--modifier` and `.u-utility`, with `is-` and `has-` for state and `js-` for script
-hooks. Astro components use scoped styles inside the components layer. `!important` appears only in
-utilities and print.
+hooks. Astro components use scoped styles inside the components layer, except DataTable, which uses
+`<style is:global>` because scoped styles add an attribute to every cell and that made the largest page
+more than twice the size. `!important` appears only in utilities and print.
 
 Lint rules from `@eslint/css`, with a local plugin, check the convention: a class-name pattern,
 spacing, colour and timing taken from tokens only, a breakpoint scale from the site's tokens,

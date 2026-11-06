@@ -18,6 +18,11 @@ specialty_index_back: See surgery by procedure as well as by specialty
 index_hospitals_one: 1 public hospital reports it
 index_hospitals_many: '{count} public hospitals report it'
 index_period: 'Figures for {period}.'
+index_stamp: 'Hospital counts are for {period}. The data was released on {release}.'
+index_jump_heading: Go to a group
+index_jump_label: Groups of surgery
+index_urgency_heading: Urgency categories
+index_urgency_intro: Your treating specialist gives you an urgency category. You do not choose it. Category 1 is recommended within 30 days, category 2 within 90 days and category 3 within 365 days.
 title: '{surgery} waiting times at public hospitals: {site}'
 description: '{surgery}: planned surgery waiting times at public hospitals in Australia, with the shortest median wait first. The latest figures cover {period}.'
 lede: '{surgery} waiting times for planned surgery. Public hospitals that published a median wait in {period}: {count}.'

@@ -1,0 +1,90 @@
+---
+import Base from '../../layouts/Base.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import DataPassport from '../../components/DataPassport.astro';
+import IndexList from '../../components/IndexList.astro';
+import JumpList from '../../components/JumpList.astro';
+import SafetyBlock from '../../components/SafetyBlock.astro';
+import { getHospitalsIndex, getHospitalTemplate, getSite } from '../../lib/content';
+import { HOSPITALS_PATH } from '../../lib/hospital-page';
+import { readHospitalSources } from '../../lib/dist';
+import { hospitalGroups, hospitalStamp, reportingCounts } from '../../lib/index-pages';
+import { fill } from '../../lib/slots';
+
+const t = getHospitalsIndex();
+const names = getHospitalTemplate().states;
+const groups = hospitalGroups(Object.keys(names));
+const total = groups.reduce((sum, group) => sum + group.hospitals.length, 0);
+const closed = groups.reduce((sum, g) => sum + g.hospitals.filter((h) => h.closed).length, 0);
+const stamp = hospitalStamp();
+const { reporting, not } = reportingCounts(groups);
+const crumbs = [{ label: getHospitalTemplate().crumb_home, href: '/' }, { label: t.crumb }];
+---
+
+<Base
+  title={fill(t.title, { site: getSite().name })}
+  description={t.description}
+  canonicalPath={HOSPITALS_PATH}
+>
+  <div class="o-columns">
+    <Breadcrumbs items={crumbs} />
+    <h1>{t.heading}</h1>
+    <p>{fill(t.lede, { count: String(total) })}</p>
+    {closed > 0 && <p>{fill(t.closed_note, { closed: String(closed) })}</p>}
+    <p>{fill(t.reporting_note, { reporting: String(reporting), not_reporting: String(not) })}</p>
+    <p>{t.names_note}</p>
+    <p>{fill(t.stamp, stamp)}</p>
+
+    <JumpList
+      heading={t.jump_heading}
+      label={t.jump_label}
+      items={groups.map((g) => ({ label: names[g.state], href: `#${g.id}` }))}
+    />
+
+    {groups.map((group) => (
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+      <section id={group.id} aria-labelledby={`${group.id}-heading`}>
+        <h2 id={`${group.id}-heading`}>{names[group.state]}</h2>
+        <p>
+          {group.hospitals.length === 1
+            ? t.state_count_one
+            : fill(t.state_count_many, { count: String(group.hospitals.length) })}
+        </p>
+        <IndexList
+          items={group.hospitals.map((h) => ({
+            name: h.name,
+            href: h.href,
+            tag: h.closed ? t.closed_tag : undefined,
+            notes: [
+              [
+                h.current === 0
+                  ? t.types_none
+                  : h.current === 1
+                    ? t.types_one
+                    : fill(t.types_many, { count: String(h.current) }),
+                ...(h.earlier === 0
+                  ? []
+                  : [
+                      h.earlier === 1
+                        ? t.earlier_one
+                        : fill(t.earlier_many, { count: String(h.earlier) }),
+                    ]),
+              ].join(', '),
+              ...(h.alternativeNames.length > 0
+                ? [`${t.names_label}: ${h.alternativeNames.join('; ')}`]
+                : []),
+            ],
+          }))}
+        />
+      </section>
+    ))}
+
+    <section aria-labelledby="exclusion-heading">
+      <h2 id="exclusion-heading">{t.exclusion_heading}</h2>
+      <p>{t.exclusion}</p>
+    </section>
+
+    <SafetyBlock id="hospitals-safety-heading" />
+    <DataPassport sources={readHospitalSources()} />
+  </div>
+</Base>

@@ -1,0 +1,76 @@
+---
+import type { IndexItem } from '../lib/index-pages';
+
+interface Props {
+  items: IndexItem[];
+}
+
+const { items } = Astro.props;
+---
+
+<ul class="c-index-list">
+  {items.map((item) => (
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+    <li class="c-index-list__item">
+      <span class="c-index-list__line">
+        {item.href === undefined ? (
+          <span class="c-index-list__name">{item.name}</span>
+        ) : (
+          <a class="c-index-list__name" href={item.href}>
+            {item.name}
+          </a>
+        )}
+        {item.tag !== undefined && <span class="c-index-list__tag">{item.tag}</span>}
+      </span>
+      {item.notes?.map((note) => (
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+        <small class="c-index-list__note">{note}</small>
+      ))}
+    </li>
+  ))}
+</ul>
+
+<style>
+  @layer components {
+    .c-index-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .c-index-list__item {
+      display: grid;
+      padding-block: var(--space-2);
+      border-block-end: 1px solid var(--hairline);
+    }
+
+    .c-index-list__line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0 var(--space-3);
+    }
+
+    .c-index-list__name {
+      display: inline-flex;
+      min-width: 0;
+      overflow-wrap: anywhere;
+      align-items: center;
+      min-height: var(--target);
+    }
+
+    .c-index-list__tag {
+      padding-inline: var(--space-2);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-sm);
+      color: var(--ink-2);
+      font-size: var(--fs-small);
+    }
+
+    .c-index-list__note {
+      margin-block-end: var(--space-1);
+      color: var(--ink-2);
+      font-size: var(--fs-small);
+    }
+  }
+</style>

@@ -2,6 +2,7 @@ import { getCollection, getEntry } from 'astro:content';
 import { z } from 'astro/zod';
 import {
   areasSchema,
+  hospitalsIndexSchema,
   hospitalTemplateSchema,
   labelsSchema,
   navigationSchema,
@@ -35,6 +36,11 @@ const pages = new Map(
 );
 
 const hospitalTemplate = await single('templates', 'hospital', hospitalTemplateSchema);
+const hospitalsIndex = await single('templates', 'hospitals', hospitalsIndexSchema);
+
+export function getHospitalsIndex(): typeof hospitalsIndex {
+  return hospitalsIndex;
+}
 
 const surgeryTemplate = await single('surgery', 'surgery', surgeryTemplateSchema);
 const areas = await single('areas', 'areas', areasSchema);
