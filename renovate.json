@@ -1,0 +1,58 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":gitSignOff"],
+  "ignorePresets": [":dependencyDashboard", ":semanticPrefixFixDepsChoreOthers"],
+  "timezone": "Australia/Brisbane",
+  "schedule": ["* * 1-7 * *"],
+  "osvVulnerabilityAlerts": true,
+  "prHourlyLimit": 0,
+  "rangeStrategy": "pin",
+  "semanticCommits": "enabled",
+  "semanticCommitType": "build",
+  "semanticCommitScope": null,
+  "enabledManagers": ["pyenv", "nodenv", "github-actions", "pep621", "npm", "custom.regex"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "uv, from uv.toml",
+      "managerFilePatterns": ["/(^|/)uv\\.toml$/"],
+      "matchStrings": ["required-version = \"==(?<currentValue>[^\"]+)\""],
+      "depNameTemplate": "uv",
+      "datasourceTemplate": "pypi"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchManagers": ["github-actions"],
+      "matchDepTypes": ["action"],
+      "groupName": "actions",
+      "semanticCommitType": "ci",
+      "pinDigests": true
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "matchDepTypes": ["github-runner"],
+      "groupName": "runner image",
+      "semanticCommitType": "ci"
+    },
+    {
+      "matchManagers": ["pep621"],
+      "groupName": "pipeline"
+    },
+    {
+      "matchManagers": ["npm"],
+      "groupName": "npm"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "groupName": null
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["engines"],
+      "enabled": false
+    }
+  ],
+  "separateMajorMinor": true,
+  "separateMultipleMajor": true
+}

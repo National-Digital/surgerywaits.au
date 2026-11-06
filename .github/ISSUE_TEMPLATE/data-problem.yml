@@ -1,6 +1,6 @@
 name: Data problem
 description: A figure on the site differs from the source
-labels: ["data"]
+labels: ['data']
 body:
   - type: markdown
     attributes:
@@ -13,7 +13,7 @@ body:
     id: url
     attributes:
       label: Page URL
-      placeholder: "https://surgerywaits.au/..."
+      placeholder: 'https://surgerywaits.au/...'
     validations:
       required: true
   - type: input

@@ -39,4 +39,4 @@ correction is recorded in the log below with its date and the pull request.
 Each correction to a published figure is recorded here, newest first. The log is empty.
 
 | Date | Pages affected | What was wrong | What changed | Pull request |
-| --- | --- | --- | --- | --- |
+| ---- | -------------- | -------------- | ------------ | ------------ |

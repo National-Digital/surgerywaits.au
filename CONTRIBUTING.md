@@ -16,7 +16,8 @@ section before you change anything that shows data, copy or markup.
 
 ## Setting up
 
-Toolchain instructions and git hooks are not set up yet. They will be added here when they are.
+[`docs/TOOLCHAIN.md`](docs/TOOLCHAIN.md) sets out how to install the toolchain and turn on the
+git hooks, and where each pinned version lives.
 
 ## Making a change
 
@@ -41,14 +42,16 @@ Toolchain instructions and git hooks are not set up yet. They will be added here
 
 ## Checks on each pull request
 
-| Check | What it does |
-| --- | --- |
-| Check sign-off | Confirms every commit has a `Signed-off-by` line. |
-| Check title | Confirms the pull request title is a Conventional Commit. |
-| Secret scan (gitleaks) | Scans the full history for credentials. |
-| Workflow lint | Lints the workflow files under `.github/workflows/`. |
-| Review dependency changes | Fails on a new dependency with a known high or critical vulnerability. |
-| Analyze (actions) | Runs CodeQL static analysis on the workflows. Other languages join as their code lands. |
+| Check                           | What it does                                                           |
+| ------------------------------- | ---------------------------------------------------------------------- |
+| Check sign-off                  | Confirms every commit has a `Signed-off-by` line.                      |
+| Check title                     | Confirms the pull request title is a Conventional Commit.              |
+| Secret scan (gitleaks)          | Scans the full history for credentials.                                |
+| Workflow lint                   | Lints the workflow files under `.github/workflows/`.                   |
+| Review dependency changes       | Fails on a new dependency with a known high or critical vulnerability. |
+| Analyze (actions)               | Runs CodeQL static analysis on the workflows.                          |
+| Analyze (javascript-typescript) | Runs CodeQL static analysis on the TypeScript and JavaScript.          |
+| Analyze (python)                | Runs CodeQL static analysis on the Python.                             |
 
 More checks will join this list as the pipeline and the site are built, and each is added here
 when it starts to run.

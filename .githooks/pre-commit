@@ -1,0 +1,109 @@
+#!/bin/sh
+# Lints and format-checks the staged files, reading the staged content so an unstaged fix cannot
+# hide a fault: ESLint and Prettier for the site, ruff for pipeline/, and actionlint, zizmor
+# and the shell linter for .github/. A missing tool fails the commit with a message.
+# Every check runs before the commit fails. Skip once with git commit --no-verify.
+
+failed=0
+
+# Reads the version a workflow pins for a tool, from the staged copy.
+pinned() {
+  git show :.github/workflows/workflow-lint.yml 2>/dev/null |
+    sed -n "s/^ *$1: *//p" | head -n 1
+}
+
+# Warns when an installed tool differs from the version CI pins.
+check_version() {
+  have=$("$1" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
+  [ -z "$2" ] || [ "$have" = "$2" ] ||
+    echo "pre-commit: warning: $1 is ${have:-of unknown version} here and $2 in CI"
+}
+
+if [ -n "$(git diff --cached --name-only -- .github)" ]; then
+  tree=""
+  for tool in actionlint zizmor shellcheck; do
+    pin=$(pinned "$(printf '%s' "$tool" | tr '[:lower:]' '[:upper:]')_VERSION")
+    if command -v "$tool" >/dev/null 2>&1; then
+      check_version "$tool" "$pin"
+    else
+      echo "pre-commit: $tool not found; install it to lint workflows (see docs/TOOLCHAIN.md)"
+      tree=missing
+      failed=1
+    fi
+  done
+  if [ -z "$tree" ]; then
+    # actionlint finds its project by a .git beside .github, so it runs over a copy of the index.
+    if wf_tree=$(mktemp -d); then
+      trap 'rm -rf "$wf_tree"; exit 1' INT TERM HUP
+      if mkdir "$wf_tree/.git" &&
+        git ls-files -z -- .github | git checkout-index -z --stdin --prefix="$wf_tree/"; then
+        (cd "$wf_tree" && actionlint -shellcheck "$(command -v shellcheck)") || failed=1
+        (cd "$wf_tree" && zizmor --offline --persona auditor --strict-collection \
+          --format plain --no-progress .github) || failed=1
+      else
+        failed=1
+      fi
+      rm -rf "$wf_tree"
+      trap - INT TERM HUP
+    else
+      failed=1
+    fi
+  fi
+fi
+
+web=$(git -c core.quotePath=false diff --cached --name-only --diff-filter=ACMR -- '*.ts' '*.mjs' '*.js' '*.json' '*.md' \
+  '*.yml' '*.yaml' '*.css')
+if [ -n "$web" ]; then
+  if [ ! -x node_modules/.bin/eslint ] || [ ! -x node_modules/.bin/prettier ]; then
+    echo "pre-commit: node_modules is missing, so ESLint and Prettier cannot run (run: npm ci)"
+    failed=1
+  else
+    IFS='
+'
+    for f in $web; do
+      case $f in
+        *.ts | *.mjs | *.js)
+          git show ":$f" | npx --no-install eslint --max-warnings 0 --no-warn-ignored --stdin \
+            --stdin-filename "$f" || failed=1
+          ;;
+      esac
+      if ! git show ":$f" | npx --no-install prettier --check --stdin-filepath "$f" >/dev/null 2>&1; then
+        echo "$f: not formatted as Prettier would (run: npx prettier --write $f)"
+        failed=1
+      fi
+    done
+    unset IFS
+  fi
+fi
+
+py=$(git -c core.quotePath=false diff --cached --name-only --diff-filter=ACMR -- 'pipeline/*.py')
+if [ -n "$py" ]; then
+  if command -v ruff >/dev/null 2>&1; then
+    ruff=ruff
+  elif [ -x pipeline/.venv/bin/ruff ]; then
+    ruff=$(pwd)/pipeline/.venv/bin/ruff
+  else
+    ruff=""
+    echo "pre-commit: ruff not found, so the Python checks cannot run (run: cd pipeline && uv sync)"
+    failed=1
+  fi
+  if [ -n "$ruff" ]; then
+    top=$(pwd)
+    IFS='
+'
+    for f in $py; do
+      rel=${f#pipeline/}
+      cd "$top/pipeline" || exit 1
+      git show ":$f" | "$ruff" check --quiet --stdin-filename "$rel" - || failed=1
+      if ! git show ":$f" | "$ruff" format --check --quiet --stdin-filename "$rel" - >/dev/null 2>&1; then
+        echo "$f: not formatted as ruff format would (run: cd pipeline && uv run ruff format $rel)"
+        failed=1
+      fi
+    done
+    unset IFS
+    cd "$top" || exit 1
+  fi
+fi
+
+[ "$failed" -eq 0 ] || echo "pre-commit: problems found; fix them or commit with --no-verify"
+exit "$failed"

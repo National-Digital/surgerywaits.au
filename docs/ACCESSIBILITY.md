@@ -24,15 +24,15 @@ and will follow this page.
 The checks will run over a build of every kind of page, in light and in dark. Each check will be
 proven to fire on a page built to fail it before it is trusted to pass a real page.
 
-| Check | What it tests |
-| --- | --- |
+| Check                    | What it tests                                                            |
+| ------------------------ | ------------------------------------------------------------------------ |
 | axe-core at WCAG 2.2 AAA | Every rule axe has through WCAG 2.2, including enhanced contrast at 7:1. |
-| Type size | Text a person reads is at or above a set minimum size. |
-| Line length | No paragraph averages more than 80 characters a line. |
-| Target size | Every link, button and field meets a minimum target size. |
-| Link names | No link is named by a word that does not say where it goes. |
-| Reflow | No page scrolls sideways at 320 CSS pixels wide. |
-| Text spacing | With the WCAG text-spacing settings forced, nothing is cut off. |
+| Type size                | Text a person reads is at or above a set minimum size.                   |
+| Line length              | No paragraph averages more than 80 characters a line.                    |
+| Target size              | Every link, button and field meets a minimum target size.                |
+| Link names               | No link is named by a word that does not say where it goes.              |
+| Reflow                   | No page scrolls sideways at 320 CSS pixels wide.                         |
+| Text spacing             | With the WCAG text-spacing settings forced, nothing is cut off.          |
 
 A result a person has judged acceptable is recorded with the reason and the date. An entry that no
 longer matches anything fails the check, so the list cannot outlive the markup it describes.

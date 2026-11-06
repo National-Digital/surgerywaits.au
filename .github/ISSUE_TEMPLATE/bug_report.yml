@@ -1,6 +1,6 @@
 name: Bug report
 description: Something on the site is broken
-labels: ["bug"]
+labels: ['bug']
 body:
   - type: markdown
     attributes:
@@ -25,7 +25,7 @@ body:
     id: where
     attributes:
       label: Where
-      placeholder: "Firefox 140 on Windows, with a screen reader if you use one"
+      placeholder: 'Firefox 140 on Windows, with a screen reader if you use one'
   - type: checkboxes
     id: checks
     attributes:
