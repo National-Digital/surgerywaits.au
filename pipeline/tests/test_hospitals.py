@@ -6,6 +6,7 @@ from surgerywaits.hospitals import (
     HospitalError,
     Register,
     Row,
+    SharedAlias,
     build_register,
     load_register,
     read_rows,
@@ -83,7 +84,7 @@ def test_the_fixtures_build_the_register() -> None:
         _path("au-hospitals-myhospitals"),
     )
     by_code = {h.code: h for h in register.hospitals}
-    assert len(by_code) == 12  # noqa: PLR2004
+    assert len(by_code) == 17  # noqa: PLR2004
     assert [h.code for h in register.hospitals] == sorted(by_code)
     assert {c for c, h in by_code.items() if h.closed} == {"H0066", "H0389"}
     assert register.excluded_private == ()
@@ -107,15 +108,17 @@ def test_a_private_hospital_is_excluded_and_listed() -> None:
     register = build_register(units, mappings, records)
     assert register.excluded_private == ("H0075",)
     assert "H0075" not in {h.code for h in register.hospitals}
-    assert len(register.hospitals) == 11  # noqa: PLR2004
+    assert len(register.hospitals) == 16  # noqa: PLR2004
 
 
 def test_duplicate_codes_fail_closed() -> None:
     units, mappings, records = _rows()
+    unit = next(u for u in units if u["code"] == "H0075")
+    record = next(r for r in records if r["code"] == "H0075")
     with pytest.raises(HospitalError, match="duplicate code H0075"):
-        build_register([*units, units[1]], mappings, records)
+        build_register([*units, unit], mappings, records)
     with pytest.raises(HospitalError, match="duplicate code H0075"):
-        build_register(units, mappings, [*records, records[1]])
+        build_register(units, mappings, [*records, record])
 
 
 def test_a_mapping_to_a_missing_unit_fails_closed() -> None:
@@ -191,14 +194,22 @@ def test_an_alternative_name_equal_to_another_hospitals_name_fails_closed() -> N
         build_register(units, mappings, records)
 
 
+def test_an_alternative_name_equal_to_another_hospitals_name_after_whitespace_fails_closed() -> (
+    None
+):
+    mappings = [_state("A1"), _state("A2")]
+    units = [_unit("A1", "Alpha Hospital"), _unit("A2", "Beta Hospital", "Alpha  Hospital")]
+    records = [_record("A1", "Alpha Hospital"), _record("A2", "Beta Hospital")]
+    with pytest.raises(HospitalError, match="is the name of A1 in Vic"):
+        build_register(units, mappings, records)
+
+
 def test_an_alias_shared_by_hospitals_in_one_state_is_kept_and_listed() -> None:
     register = _fixture_register()
-    (shared,) = register.shared_aliases
-    assert (shared.state, shared.alias) == ("Vic", "WDHS")
-    assert [h.name for h in register.hospitals if h.code in shared.codes] == [
-        "Western District Health Service [Hamilton]",
-        "Western District Health Service [Penshurst]",
-    ]
+    assert register.shared_aliases == (
+        SharedAlias("NSW", "Wollongong", ("H0041", "H0047")),
+        SharedAlias("Vic", "WDHS", ("H0233", "H0234")),
+    )
     mappings = [_state("A1"), _state("A2")]
     units = [_unit("A1", "Alpha", "Town"), _unit("A2", "Beta", "town")]
     records = [_record("A1", "Alpha"), _record("A2", "Beta")]
@@ -220,7 +231,7 @@ def test_non_hospital_rows_and_their_duplicate_mappings_are_ignored() -> None:
     assert {r["type"] for r in records} > {"Hospital", "Local Hospital Network", "State"}
     pairs = [(m["reporting_unit_code"], m["map_type_code"], m["mapped_code"]) for m in mappings]
     assert ("NSW", "STATE_MAPPING", "NSW") in {p for p in pairs if pairs.count(p) > 1}
-    assert len(build_register(units, mappings, records).hospitals) == 12  # noqa: PLR2004
+    assert len(build_register(units, mappings, records).hospitals) == 17  # noqa: PLR2004
 
 
 def test_a_duplicate_mapping_for_a_hospital_fails_closed() -> None:

@@ -28,10 +28,23 @@ import pyarrow.parquet as pq
 BASE = "https://publicdata.au"
 OUT = Path(__file__).resolve().parents[1] / "tests" / "fixtures"
 
-# Hospitals chosen across NSW, Vic and Qld: one with every marker, one closed, one ordinary.
+# Hospitals chosen across NSW, Vic, Qld and the ACT: one with every marker, one closed, one
+# ordinary, two sharing the alias "Wollongong", a hospital published under a new name beside its
+# old one, and a hospital whose name a network also carries.
 HOSPITALS = {
-    "NSW": ["Armidale Hospital", "Bourke Multi Purpose Service", "Manly Hospital"],
+    "ACT": [
+        "North Canberra Hospital",
+        "North Canberra Hospital (previously known as Calvary Public Hospital Bruce)",
+    ],
+    "NSW": [
+        "Armidale Hospital",
+        "Bourke Multi Purpose Service",
+        "Bulli Hospital",
+        "Manly Hospital",
+        "Wollongong Hospital",
+    ],
     "Vic": [
+        "Northeast Health Wangaratta",
         "Sunbury Day Hospital",
         "Victorian Heart Hospital",
         "Healesville Hospital and Yarra Valley Health",
@@ -50,7 +63,12 @@ SHARED_ALIAS_PAIR = [
 ]
 NATIONAL = "NAT"
 QLD_FACILITIES = ["Ayr", "Cooktown", "Mater Adult", "Cairns", "Thursday Island"]
-STATE_NAMES = {"NSW": "New South Wales", "Vic": "Victoria", "Qld": "Queensland"}
+STATE_NAMES = {
+    "ACT": "Australian Capital Territory",
+    "NSW": "New South Wales",
+    "Vic": "Victoria",
+    "Qld": "Queensland",
+}
 KEEP_YEARS = 2
 WAITS = "au-elective-surgery-waiting-times"
 SLUGS = [
