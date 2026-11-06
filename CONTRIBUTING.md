@@ -89,6 +89,35 @@ Skip a hook once with `--no-verify`. CI runs the same checks on every pull reque
    for a Docs line: the library, its version and the official documentation page you followed.
    Name anything a maintainer must do beyond merging.
 
+## Writing tests
+
+[ADR 0001](docs/adr/0001-architecture-decision-register.md) (decision D28) sets these rules.
+
+- **Three runners.** Use pytest for the pipeline, Vitest for unit, contract and gate tests, and
+  Playwright for work that needs a browser.
+- **A gate ships with a fixture built to fail it.** A check that has only been seen to pass proves
+  nothing. Add the smallest input that has the defect, and a test that asserts the gate reports it.
+  The accessibility gate keeps one page per check in `scripts/a11y-fixtures/fail/`, a clean page in
+  `scripts/a11y-fixtures/pass/`, and `scripts/a11y.test.ts` proves each check fires on its page.
+  `pipeline/tests/test_repo.py` follows the same pattern: each check is a function over text, a
+  `*_fixture_*_is_caught` test feeds it a bad workflow, and a second test runs it over the real
+  files. `pipeline/tests/test_testing_rules.py` does the same for the rules in this section.
+- **A bug fix adds a test that fails without the fix.** Write the test first, watch it fail, then
+  fix the code.
+- **Tests never touch the network.** Read data from `pipeline/tests/fixtures` and use a fixed clock.
+  `pipeline/tests/conftest.py` makes pytest raise on any connection, send or name lookup except to
+  localhost. The guard covers pytest only. Subprocesses, C extensions, calls made straight to
+  `_socket` and functions imported before the guard starts are out of its reach.
+- **Tests assert specific facts.** Assert the value, the row or the sentence that must appear. Do
+  not commit HTML snapshot files, `__snapshots__` or `*-snapshots` directories, `toMatch*Snapshot`
+  calls or `toHaveScreenshot` calls.
+- **There is no coverage percentage gate.** A number goes up when tests are written to raise it.
+  Do not add coverage thresholds to Vitest or `fail_under` to pytest.
+
+`pipeline/tests/test_testing_rules.py` fails the build on a tracked snapshot file, a snapshot
+matcher in a TypeScript test and a coverage gate. It also proves that the pytest network guard
+refuses a remote connection, send or lookup.
+
 ## Commits and pull requests
 
 - Sign off every commit with `git commit -s`. The sign-off is the
@@ -133,21 +162,22 @@ whose names are stable enough to require as status checks.
   `wrangler deploy --dry-run` into a temporary directory. It uses no Cloudflare credential or
   account identifier, and nothing is deployed.
 - `Pipeline checks` installs the `uv` version in `pipeline/uv.toml`, runs `uv sync --locked`, then
-  ruff, pyright and pytest. It leaves out `tests/test_repo.py` and `tests/test_docs.py`, because
-  the next job runs them.
+  ruff, pyright and pytest. It leaves out `tests/test_repo.py`, `tests/test_docs.py` and
+  `tests/test_testing_rules.py`, because the next job runs them.
 - `Accessibility` installs Chromium with `npx playwright install --with-deps chromium`, then runs
   `npm run a11y` and the tests in `scripts/a11y.test.ts`. The first proves each accessibility
   check fires on its fixture page in `scripts/a11y-fixtures/`. See
   [`ACCESSIBILITY.md`](docs/ACCESSIBILITY.md).
-- `Repository tests` runs `pipeline/tests/test_repo.py` and `pipeline/tests/test_docs.py`. The
-  second fails when a document links to a missing file or heading, names a missing path or npm
-  script, lists a check that no workflow defines, or cites a test, pending test or CI job in
-  `docs/ARCHITECTURE.md` that does not exist. The first reads every workflow and checks
+- `Repository tests` runs `pipeline/tests/test_repo.py`, `pipeline/tests/test_docs.py` and
+  `pipeline/tests/test_testing_rules.py`. The first reads every workflow and checks
   that jobs with side effects are guarded by the repository name, that no pull request workflow
   runs Lighthouse or PageSpeed Insights, that `pull_request_target` is unused, that every action
   is pinned to a commit SHA with a version comment, that each workflow declares top-level
   `permissions:`, that each job runs on a named image, and that every scheduled workflow reports
-  its failures through the reusable workflow.
+  its failures through the reusable workflow. The second fails when a document links to a missing
+  file or heading, names a missing path or npm script, lists a check that no workflow defines, or
+  cites a test, pending test or CI job in `docs/ARCHITECTURE.md` that does not exist. The third
+  fails on snapshot files, snapshot matchers and coverage gates, and proves the network guard.
 
 ### Scheduled runs
 
