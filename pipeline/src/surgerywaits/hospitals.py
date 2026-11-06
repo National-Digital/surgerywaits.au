@@ -4,6 +4,8 @@ from importlib import import_module
 from pathlib import Path
 from typing import Any, Literal, cast
 
+from surgerywaits.names import name_key
+
 # pyarrow ships no type stubs, so it is loaded dynamically and read only through read_rows.
 PQ: Any = import_module("pyarrow.parquet")
 
@@ -181,11 +183,11 @@ def _network(
 def _check_alternative_names(hospitals: Sequence[Hospital]) -> tuple[SharedAlias, ...]:
     names: dict[tuple[str, str], str] = {}
     for h in hospitals:
-        names.setdefault((h.state, h.name.casefold()), h.code)
+        names.setdefault((h.state, name_key(h.name)), h.code)
     users: dict[tuple[str, str], tuple[str, set[str]]] = {}
     for h in hospitals:
         for alt in h.alternative_names:
-            key = (h.state, alt.casefold())
+            key = (h.state, name_key(alt))
             owner = names.get(key)
             if owner is not None and owner != h.code:
                 msg = f"{h.code}: alternative name {alt!r} is the name of {owner} in {h.state}"

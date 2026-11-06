@@ -1,4 +1,5 @@
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -16,6 +17,9 @@ from surgerywaits.hospitals import (
 )
 from surgerywaits.manifest import ManifestError, load
 from surgerywaits.pull import PullError, pull
+from surgerywaits.waiting_times import Table, WaitingTimesError
+from surgerywaits.waiting_times import build as build_waiting_times
+from surgerywaits.waiting_times import read_rows as read_waiting_rows
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / "pipeline" / "tests" / "fixtures"
@@ -60,9 +64,25 @@ def test_every_marker_maps_to_a_known_reason() -> None:
     raise NotImplementedError
 
 
-@pytest.mark.skip(reason="planned: an unmatched or ambiguous hospital join fails the build")
 def test_unmatched_or_ambiguous_hospital_join_fails() -> None:
-    raise NotImplementedError
+    register = _register()
+    rows = read_waiting_rows(FIXTURES / "au-elective-surgery-waiting-times" / "data.parquet")
+    assert build_waiting_times(rows, Table.URGENCY, register).observations
+    renamed = [
+        {**r, "reporting_unit": "Armidale Health Service"}
+        if r["reporting_unit"] == "Armidale Hospital"
+        else r
+        for r in rows
+    ]
+    with pytest.raises(WaitingTimesError, match="unmatched"):
+        build_waiting_times(renamed, Table.URGENCY, register)
+    twin = next(h for h in register.hospitals if h.name == "Manly Hospital")
+    twins = tuple(
+        replace(h, name=twin.name) if h.name == "Armidale Hospital" else h
+        for h in register.hospitals
+    )
+    with pytest.raises(WaitingTimesError, match="ambiguous"):
+        build_waiting_times(rows, Table.URGENCY, replace(register, hospitals=twins))
 
 
 def test_licence_is_on_the_allow_list(tmp_path: Path) -> None:
