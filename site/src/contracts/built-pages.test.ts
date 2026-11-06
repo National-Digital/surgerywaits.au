@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { parse } from 'parse5';
+import { parse, parseFragment } from 'parse5';
 import type { DefaultTreeAdapterTypes } from 'parse5';
 import { beforeAll, describe, expect, it } from 'vitest';
 
@@ -550,7 +550,11 @@ describe('Built state and urgency pages', () => {
   const urgency = urgencyTemplateSchema.parse(
     readContent().find(({ path }) => path === 'templates/urgency.yaml')?.data,
   );
-  const mine = pages.filter(({ path }) => path.startsWith('state/') || path.startsWith('urgency/'));
+  // Read after beforeAll has listed the built pages.
+  const mine = (): { path: string; html: string }[] =>
+    pages
+      .filter(({ path }) => path.startsWith('state/') || path.startsWith('urgency/'))
+      .map(({ path }) => ({ path, html: read(path) }));
   const address = (path: string): string => `/${path.replace(/index\.html$/, '')}`;
   const codes = ['act', 'nsw', 'nt', 'qld', 'sa', 'tas', 'vic', 'wa'];
   // The addresses the earlier site published, from its sitemap.
@@ -565,7 +569,9 @@ describe('Built state and urgency pages', () => {
   ];
 
   it('hold only addresses the earlier site used, and every one it used for a state with figures', () => {
-    const built = mine.map(({ path }) => address(path)).sort();
+    const built = mine()
+      .map(({ path }) => address(path))
+      .sort();
     expect(built.length).toBeGreaterThan(0);
     for (const path of built) {
       expect([path, earlier.includes(path)]).toEqual([path, true]);
@@ -587,8 +593,10 @@ describe('Built state and urgency pages', () => {
   });
 
   it('state the private hospital exclusion, the safety block and the data passport on every page', () => {
-    for (const { path, html } of mine) {
-      const body = text(html.split('<main')[1] ?? '');
+    for (const { path, html } of mine()) {
+      const body = plain(parseFragment(html.split('<main')[1] ?? ''))
+        .replace(/\s+/g, ' ')
+        .trim();
       expect(body, path).toContain(path.startsWith('state/') ? state.exclusion : urgency.exclusion);
       expect(html.match(/id="[a-z]+-safety-heading"/g) ?? [], path).toHaveLength(1);
       expect((html.match(/class="c-passport"/g) ?? []).length, path).toBe(1);
@@ -596,7 +604,7 @@ describe('Built state and urgency pages', () => {
   });
 
   it('give every figure a stamp and every table a stated period', () => {
-    for (const { path, html } of mine) {
+    for (const { path, html } of mine()) {
       expect(textsOf(html, 'c-stamp'), path).toHaveLength(textsOf(html, 'c-figure').length);
       expect(
         textsOf(html, 'c-table__stamp').length + textsOf(html, 'c-qld-table__stamp').length,
@@ -607,7 +615,7 @@ describe('Built state and urgency pages', () => {
 
   it('rank no stale or withheld figure, and no benchmark', () => {
     let ranks = 0;
-    for (const { path, html } of mine) {
+    for (const { path, html } of mine()) {
       for (const cell of elementsOf(html, 'td')) {
         expect([
           path,
@@ -628,10 +636,10 @@ describe('Built state and urgency pages', () => {
   });
 
   it('keep the Queensland overlay on the Queensland page and rank nothing in it', () => {
-    for (const { path, html } of mine) {
+    for (const { path, html } of mine()) {
       expect([path, html.includes('c-qld-table')]).toEqual([path, path === 'state/qld/index.html']);
     }
-    const html = mine.find(({ path }) => path === 'state/qld/index.html')?.html ?? '';
+    const html = mine().find(({ path }) => path === 'state/qld/index.html')?.html ?? '';
     const overlay = html.split('id="qld-heading"')[1]?.split('</section>')[0] ?? '';
     expect(overlay).toContain('c-qld-table');
     expect(overlay).not.toMatch(/c-table__rank|nationally/);
@@ -639,7 +647,7 @@ describe('Built state and urgency pages', () => {
 
   it('link only to pages that are built', () => {
     const built = new Set(pages.map(({ path }) => `/${path.replace(/index\.html$/, '')}`));
-    for (const { path, html } of mine) {
+    for (const { path, html } of mine()) {
       const main = elements(parse(html)).find((t) => t.tagName === 'main');
       for (const href of (main ? anchors(main) : []).filter((h) => h.startsWith('/'))) {
         expect([path, href, built.has(href)]).toEqual([path, href, true]);
