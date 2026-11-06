@@ -1,0 +1,12 @@
+#!/bin/sh
+# Adds the DCO Signed-off-by trailer to every commit, once, so the DCO check never fails on a
+# forgotten -s. Enable with: git config core.hooksPath .githooks
+
+name=$(git config user.name)
+email=$(git config user.email)
+[ -n "$name" ] && [ -n "$email" ] || exit 0
+
+git interpret-trailers \
+  --if-exists doNothing \
+  --trailer "Signed-off-by: $name <$email>" \
+  --in-place "$1"

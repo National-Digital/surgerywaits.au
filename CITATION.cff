@@ -1,9 +1,9 @@
 cff-version: 1.2.0
 message: "If you use surgerywaits.au's code, please cite it as below. To cite a figure, cite the publisher named on the page that shows it."
-title: "surgerywaits.au"
+title: 'surgerywaits.au'
 type: software
 authors:
-  - name: "National Digital"
-url: "https://surgerywaits.au"
-repository-code: "https://github.com/National-Digital/surgerywaits.au"
+  - name: 'National Digital'
+url: 'https://surgerywaits.au'
+repository-code: 'https://github.com/National-Digital/surgerywaits.au'
 license: AGPL-3.0-or-later

@@ -1,0 +1,26 @@
+#!/bin/sh
+# Runs the checks CI runs that the commit hook leaves out: typecheck, knip, pyright and both test
+# suites. Skip once with git push --no-verify.
+
+# Git exports these to the hook from a linked worktree; the tools must not see them.
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX GIT_COMMON_DIR GIT_CONFIG_PARAMETERS
+
+status=0
+
+if [ ! -x node_modules/.bin/tsc ]; then
+  echo "pre-push: node_modules is missing (run: npm ci)"
+  exit 1
+fi
+npm run --silent typecheck || status=1
+npm run --silent knip || status=1
+npm run --silent test || status=1
+
+if ! command -v uv >/dev/null 2>&1; then
+  echo "pre-push: uv not found (see docs/TOOLCHAIN.md)"
+  exit 1
+fi
+(cd pipeline && uv run --frozen pyright) || status=1
+(cd pipeline && uv run --frozen pytest -q -p no:cacheprovider) || status=1
+
+[ "$status" -eq 0 ] || echo "pre-push: a check failed; fix it or push with --no-verify"
+exit "$status"

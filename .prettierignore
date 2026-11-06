@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.astro/
+coverage/
+pipeline/
+package-lock.json

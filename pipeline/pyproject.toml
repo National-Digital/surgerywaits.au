@@ -1,0 +1,57 @@
+[project]
+name = "surgerywaits-pipeline"
+version = "0.1.0"
+description = "Builds the surgerywaits.au data from publicdata.au's pinned versions."
+requires-python = "==3.13.*"
+license = "AGPL-3.0-or-later"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "pytest==9.2.0",
+  "ruff==0.17.4",
+  "pyright==1.1.414",
+]
+
+[build-system]
+requires = ["hatchling==1.29.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/surgerywaits"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+  # These two fight ruff format, which owns trailing commas and joined strings.
+  "COM812",
+  "ISC001",
+  # No file carries a copyright header; the licence files cover the code.
+  "CPY",
+  # ruff format owns line length.
+  "E501",
+  # A docstring is optional and holds a why.
+  "D1",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "PLR2004"]
+
+[tool.pyright]
+include = ["src", "tests"]
+pythonVersion = "3.13"
+typeCheckingMode = "strict"
+reportMissingTypeStubs = true
+reportUnnecessaryTypeIgnoreComment = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

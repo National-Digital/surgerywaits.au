@@ -1,0 +1,32 @@
+{
+  "name": "surgerywaits",
+  "private": true,
+  "type": "module",
+  "description": "Public hospital planned-surgery waiting times in Australia.",
+  "license": "AGPL-3.0-or-later",
+  "engines": {
+    "node": "^26.13.0"
+  },
+  "workspaces": [
+    "site"
+  ],
+  "scripts": {
+    "lint": "eslint --max-warnings 0 .",
+    "format:check": "prettier --check .",
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit",
+    "knip": "knip",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "26.6.6",
+    "eslint": "10.14.0",
+    "globals": "17.14.0",
+    "knip": "6.44.1",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1",
+    "vitest": "5.1.0"
+  }
+}
