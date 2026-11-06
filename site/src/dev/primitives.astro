@@ -1,9 +1,10 @@
 ---
+// Base comes first so its global sheet, and with it the layer order, precedes every component sheet.
+import Base from '../layouts/Base.astro';
 import DataTable from '../components/DataTable.astro';
 import Figure from '../components/Figure.astro';
 import StatTile from '../components/StatTile.astro';
 import StatTiles from '../components/StatTiles.astro';
-import Base from '../layouts/Base.astro';
 import { label } from '../lib/content';
 import type { QueenslandColumn } from '../lib/format';
 import {

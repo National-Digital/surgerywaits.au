@@ -5,6 +5,7 @@ import { readContent } from './content-files';
 const COLLECTIONS = new Map([
   ['site.yaml', 'site'],
   ['labels.yaml', 'labels'],
+  ['navigation.yaml', 'navigation'],
   ['terms.yaml', 'terms'],
 ]);
 

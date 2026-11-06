@@ -5,7 +5,13 @@ import { ESLint } from 'eslint';
 import { describe, expect, it } from 'vitest';
 import type { z } from 'astro/zod';
 
-import { labelsSchema, pageSchema, siteSchema, termsSchema } from '../lib/content-schema';
+import {
+  labelsSchema,
+  navigationSchema,
+  pageSchema,
+  siteSchema,
+  termsSchema,
+} from '../lib/content-schema';
 import {
   contentSlug,
   decode,
@@ -232,7 +238,6 @@ describe('Determinism', () => {
 });
 
 describe('Static pages', () => {
-  it.todo('static pages ship zero JavaScript');
   it.todo("every hospital's figures are reachable without script");
 });
 
@@ -325,6 +330,7 @@ describe('Copy', () => {
     const schemas: Record<string, z.ZodType> = {
       'site.yaml': siteSchema,
       'labels.yaml': labelsSchema,
+      'navigation.yaml': navigationSchema,
       'terms.yaml': termsSchema,
     };
     const files = readContent();

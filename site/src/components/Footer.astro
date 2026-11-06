@@ -1,0 +1,101 @@
+---
+import { getNavigation, label } from '../lib/content';
+import { builtLinks } from '../lib/links';
+import LinkList from './LinkList.astro';
+import OperatorLine from './OperatorLine.astro';
+
+interface Props {
+  compact?: boolean;
+}
+
+const { compact = false } = Astro.props;
+const aboutLinks = builtLinks(getNavigation().about);
+---
+
+<footer class="c-footer">
+  <div class="c-footer__inner o-wrap o-wrap--flush">
+    <h2 class="c-footer__heading">{label('footer_safety_heading')}</h2>
+    <div class="c-footer__safety">
+      <p>{label(compact ? 'footer_safety_compact' : 'footer_safety_full')}</p>
+      <p>
+        <strong>{label('footer_emergency')}</strong>
+      </p>
+      <p>{label('footer_exclusion')}</p>
+    </div>
+    {aboutLinks.length > 0 && (
+      <nav class="c-footer__about" aria-label={label('nav_about')}>
+        <h2 class="c-footer__title">{label('nav_about')}</h2>
+        <LinkList links={aboutLinks} />
+      </nav>
+    )}
+    <p class="c-footer__top">
+      <a class="c-footer__top-link" href="#top">
+        {label('back_to_top')}
+      </a>
+    </p>
+    <div class="c-footer__operator">
+      <OperatorLine />
+    </div>
+  </div>
+</footer>
+
+<style>
+  @layer components {
+    .c-footer {
+      background: var(--foot);
+      --link: var(--foot-strong);
+      color: var(--foot-ink);
+      font-size: var(--fs-small);
+    }
+
+    .c-footer__inner {
+      padding-block: var(--space-6) var(--space-7);
+    }
+
+    .c-footer :focus-visible {
+      outline-color: var(--band-focus);
+    }
+
+    .c-footer__heading,
+    .c-footer__title {
+      margin-block: 0 var(--space-2);
+      color: var(--foot-strong);
+      font-size: 1rem;
+    }
+
+    .c-footer__title {
+      color: var(--foot-ink-2);
+      font-size: var(--fs-small);
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .c-footer__safety {
+      margin-block-end: var(--space-6);
+      padding: var(--space-3) var(--space-5);
+      border-inline-start: 4px solid var(--sky);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      background: var(--foot-panel);
+      color: var(--foot-safety);
+    }
+
+    .c-footer__safety p {
+      max-width: 26rem;
+    }
+
+    .c-footer__top {
+      margin-block: var(--space-4) 0;
+    }
+
+    .c-footer__top-link {
+      display: inline-flex;
+      align-items: center;
+      min-width: var(--target);
+      min-height: var(--target);
+    }
+
+    .c-footer__operator {
+      margin-block-start: var(--space-4);
+    }
+  }
+</style>

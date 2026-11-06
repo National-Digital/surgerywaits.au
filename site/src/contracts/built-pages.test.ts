@@ -1,4 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { parse } from 'parse5';
+import type { DefaultTreeAdapterTypes } from 'parse5';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -51,4 +53,90 @@ describe('Built pages', () => {
       );
     }
   });
+
+  it('hold a banner, a labelled site navigation, one main landmark and a footer', () => {
+    for (const { path, html } of pages) {
+      const tags = elements(html);
+      const count = (name: string): number => tags.filter((t) => t.tagName === name).length;
+      expect([path, count('header'), count('main'), count('footer')]).toEqual([path, 1, 1, 1]);
+      const labels = tags
+        .filter((t) => t.tagName === 'nav')
+        .map((t) => t.attrs.find((a) => a.name === 'aria-label')?.value);
+      expect(labels).toContain('Site');
+      expect(labels.every((l) => l !== undefined && l !== '')).toBe(true);
+      expect(new Set(labels).size).toBe(labels.length);
+    }
+  });
+
+  it('print no ACN, ABN or company suffix in the footer', () => {
+    for (const { html } of pages) {
+      const footer = elements(html).find((t) => t.tagName === 'footer');
+      expect(footer && textOf(footer)).toMatch(/Built and operated by\s+National Digital/);
+      expect(entityPattern.test(footer ? textOf(footer) : '')).toBe(false);
+    }
+  });
+
+  it('link every footer entry to a page that is built', () => {
+    const built = new Set(pages.map(({ path }) => path));
+    for (const { path, html } of pages) {
+      const footer = elements(html).find((t) => t.tagName === 'footer');
+      const hrefs = footer ? anchors(footer) : [];
+      expect(hrefs.length).toBeGreaterThan(0);
+      for (const href of hrefs.filter((h) => h.startsWith('/'))) {
+        expect([path, href, built.has(`${href.slice(1)}index.html`)]).toEqual([path, href, true]);
+      }
+    }
+  });
+
+  it('show the compare bar only when its page is built', () => {
+    const target = pages.some(({ path }) => path === 'compare/index.html');
+    for (const { html } of pages) {
+      expect(html.includes('c-compare-bar')).toBe(target);
+    }
+  });
+
+  it('ship zero JavaScript on every static page', () => {
+    for (const { path, html } of pages) {
+      const tags = elements(html);
+      expect([path, tags.filter((t) => t.tagName === 'script').length]).toEqual([path, 0]);
+      const handlers = tags.flatMap((t) => t.attrs).filter((a) => /^on/i.test(a.name));
+      expect([path, handlers.length]).toEqual([path, 0]);
+      expect(html).not.toMatch(/href="javascript:/i);
+    }
+  });
 });
+
+function elements(html: string): DefaultTreeAdapterTypes.Element[] {
+  const out: DefaultTreeAdapterTypes.Element[] = [];
+  const visit = (node: DefaultTreeAdapterTypes.Node): void => {
+    if ('tagName' in node) {
+      out.push(node);
+    }
+    if ('childNodes' in node) {
+      node.childNodes.forEach(visit);
+    }
+  };
+  visit(parse(html));
+  return out;
+}
+
+function textOf(node: DefaultTreeAdapterTypes.Node): string {
+  if ('value' in node) {
+    return node.value;
+  }
+  return 'childNodes' in node ? node.childNodes.map(textOf).join(' ') : '';
+}
+
+function anchors(root: DefaultTreeAdapterTypes.Element): string[] {
+  const out: string[] = [];
+  const visit = (node: DefaultTreeAdapterTypes.Node): void => {
+    if ('tagName' in node && node.tagName === 'a') {
+      out.push(node.attrs.find((a) => a.name === 'href')?.value ?? '');
+    }
+    if ('childNodes' in node) {
+      node.childNodes.forEach(visit);
+    }
+  };
+  visit(root);
+  return out;
+}
