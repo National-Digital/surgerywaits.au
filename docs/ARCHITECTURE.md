@@ -44,7 +44,10 @@ the rules, and why each was made.
 
 Checks will enforce each rule as the build lands, and until then reviewers apply them. Each check
 is listed in [CONTRIBUTING.md](../CONTRIBUTING.md#checks-on-each-pull-request) when it starts to
-run.
+run. The planned checks are listed as pending tests in
+[`site/src/contracts/gates.test.ts`](../site/src/contracts/gates.test.ts) and
+[`pipeline/tests/test_contracts.py`](../pipeline/tests/test_contracts.py). Each becomes a real test
+when its part lands.
 
 1. **Two halves with one boundary.** `pipeline/` (Python) is the data build and `site/`
    (TypeScript) is the front end. The site consumes only the pipeline's output, and that output is
