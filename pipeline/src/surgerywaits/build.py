@@ -7,6 +7,7 @@ from pathlib import Path
 from surgerywaits.catalogue import load as load_catalogue
 from surgerywaits.derive import derive
 from surgerywaits.dist import DistError, Inputs, build_dist
+from surgerywaits.gates import GateError
 from surgerywaits.hospitals import load_register
 from surgerywaits.manifest import MANIFEST_PATH, Entry, ManifestError, load
 from surgerywaits.pull import CACHE_DIR, PullError, pull
@@ -60,7 +61,7 @@ def main(argv: list[str] | None = None) -> int:
         entries = load(args.manifest)
         files = pull(entries, args.cache)
         built = build_dist(read_inputs(entries, files), args.out)
-    except (ManifestError, PullError, DistError) as err:
+    except (ManifestError, PullError, DistError, GateError) as err:
         sys.stderr.write(f"build failed: {err}\n")
         return 1
     total = sum(len(b) for b in built.values())
