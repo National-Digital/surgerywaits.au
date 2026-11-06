@@ -5,8 +5,7 @@ from typing import cast
 
 import pytest
 
-from surgerywaits.manifest import load
-from surgerywaits.pull import CACHE_DIR
+from realdata import pinned
 from surgerywaits.suburbs import (
     Row,
     SuburbError,
@@ -238,10 +237,7 @@ def test_reading_twice_gives_the_same_suburbs() -> None:
 
 
 def test_pinned_boundary_file_gives_every_suburb_a_centre() -> None:
-    entry = next(e for e in load() if e.slug == "abs-suburbs-localities-2021")
-    path = CACHE_DIR / entry.sha256
-    if not path.is_file():
-        pytest.skip("the pinned files are not in pipeline/.downloads")
+    (path,) = pinned("abs-suburbs-localities-2021")
     result = read_suburbs(path)
     by_name = {s.name: s for s in result.suburbs}
     by_code = {s.code: s for s in result.suburbs}

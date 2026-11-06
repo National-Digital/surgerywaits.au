@@ -1,4 +1,3 @@
-import json
 from collections import Counter
 from dataclasses import replace
 from importlib import import_module
@@ -7,6 +6,7 @@ from typing import Any
 
 import pytest
 
+from realdata import pinned
 from surgerywaits.catalogue import (
     MAPPINGS,
     Catalogue,
@@ -254,16 +254,8 @@ def test_padded_values_in_a_file_are_stored_stripped(tmp_path: Path) -> None:
     assert read_rows(tmp_path / "x.parquet") == rows
 
 
-def real_file() -> Path:
-    manifest = json.loads((ROOT / "data" / "manifest.json").read_text("utf-8"))
-    pinned = next(d for d in manifest["datasets"] if d["slug"] == SLUG)
-    return ROOT / "pipeline" / ".downloads" / pinned["sha256"]
-
-
 def test_the_pinned_release_has_the_expected_scope() -> None:
-    path = real_file()
-    if not path.is_file():
-        pytest.skip("the pinned file is not cached")
+    (path,) = pinned(SLUG)
     catalogue = load(path)
     counts = Counter(c.type_code for c in catalogue.categories)
     assert counts == {"ES_IP": 151, "ES_SS": 12, "ES_URGENCY": 3}

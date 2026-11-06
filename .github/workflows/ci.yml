@@ -113,3 +113,31 @@ jobs:
           cache-dependency-glob: pipeline/uv.lock
       - run: uv sync --locked
       - run: uv run pytest tests/test_repo.py tests/test_docs.py tests/test_testing_rules.py
+
+  data:
+    name: Data checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: pipeline
+    env:
+      SURGERYWAITS_REQUIRE_DATA: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version-file: pipeline/uv.toml
+          cache-dependency-glob: pipeline/uv.lock
+      - run: uv sync --locked
+      # The pull verifies every sha256, so a restored file is trusted only when its hash matches.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: pipeline/.downloads
+          key: pinned-data-${{ hashFiles('data/manifest.json') }}
+      # Runs before pytest because the tests refuse the network.
+      - run: uv run python -m surgerywaits.pull
+      # The variable turns any skip without a planned: reason into a failure.
+      - run: uv run --locked pytest -rs

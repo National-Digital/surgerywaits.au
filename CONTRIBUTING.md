@@ -160,6 +160,7 @@ refuses a remote connection, send or lookup.
 | Site checks                     | Runs ESLint, Prettier, `astro check` and the TypeScript compiler, knip and vitest.                            |
 | Worker build                    | Builds the site, checks the generated Worker types are current and runs `wrangler deploy --dry-run`.          |
 | Pipeline checks                 | Runs ruff, pyright and pytest on the pipeline.                                                                |
+| Data checks                     | Pulls the pinned publicdata.au files and runs the whole pipeline suite, with no unplanned skips.              |
 | Accessibility                   | Proves each accessibility check fires on a page built to fail it, at two widths in light and dark.            |
 | Repository tests                | Checks every workflow against the repository's rules, such as pinned actions and least-privilege permissions. |
 
@@ -168,7 +169,7 @@ when it starts to run.
 
 ### How CI runs
 
-`.github/workflows/ci.yml` runs on every pull request and on pushes to `main` with five jobs
+`.github/workflows/ci.yml` runs on every pull request and on pushes to `main` with six jobs
 whose names are stable enough to require as status checks.
 
 - `Site checks` runs `npm ci`, then lint, format check, typecheck, knip and vitest.
@@ -178,6 +179,12 @@ whose names are stable enough to require as status checks.
 - `Pipeline checks` installs the `uv` version in `pipeline/uv.toml`, runs `uv sync --locked`, then
   ruff, pyright and pytest. It leaves out `tests/test_repo.py`, `tests/test_docs.py` and
   `tests/test_testing_rules.py`, because the next job runs them.
+- `Data checks` restores the pipeline's download cache from the Actions cache, keyed on the hash of
+  `data/manifest.json`, then runs `uv run python -m surgerywaits.pull`, which verifies every
+  sha256 and fetches only from publicdata.au. About 140 MB downloads on a cache miss. It then runs
+  the whole pytest suite with `SURGERYWAITS_REQUIRE_DATA=1`, which turns any skip whose reason
+  does not start with `planned:` into a failure, so a missing pinned file cannot hide. Set the
+  same variable locally after a pull to see the same result.
 - `Accessibility` installs Chromium with `npx playwright install --with-deps chromium`, then runs
   `npm run a11y` and the tests in `scripts/a11y.test.ts`. The first proves each accessibility
   check fires on its fixture page in `scripts/a11y-fixtures/`. See

@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from realdata import pinned
 from surgerywaits.catalogue import Role
 from surgerywaits.derive import (
     Derived,
@@ -15,9 +16,7 @@ from surgerywaits.derive import (
     derive_trends,
 )
 from surgerywaits.hospitals import Hospital, Register, load_register
-from surgerywaits.manifest import load
 from surgerywaits.nearby import NEIGHBOURS, build_meshes, distance_km
-from surgerywaits.pull import CACHE_DIR
 from surgerywaits.suppression import SuppressedTable, suppress
 from surgerywaits.waiting_times import Cell, Observation, Table, WaitingTimes
 from surgerywaits.waiting_times import load as load_waiting_times
@@ -183,10 +182,8 @@ HOSPITAL_SLUGS = (
 
 
 def _real() -> tuple[Register, Derived]:
-    files = {e.slug: CACHE_DIR / e.sha256 for e in load()}
     wanted = [*HOSPITAL_SLUGS, *REAL_SLUGS.values()]
-    if not all(files[s].is_file() for s in wanted):
-        pytest.skip("the pinned files are not in the pipeline cache")
+    files = dict(zip(wanted, pinned(*wanted), strict=True))
     register = load_register(*(files[s] for s in HOSPITAL_SLUGS))
     tables = {
         t: suppress(load_waiting_times(Path(files[s]), t, register)) for t, s in REAL_SLUGS.items()
