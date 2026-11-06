@@ -34,7 +34,8 @@ The build reads immutable dated version files at `/d/<slug>/v/<date>/data.parque
 Each file is verified against a sha256 pinned in a manifest, on every download. A refresh finds new
 versions through `/api/v1/datasets/<slug>/versions`. Each emptied cell's publisher code comes from
 the `markers` column. The credit line uses the citation that publicdata.au publishes with each
-version.
+version, with the dataset title, publisher and version page from the same metadata. The build checks
+the manifest's copy of each against the file's own metadata.
 
 The build has no fallback to any other source. It does not fetch from AIHW, Queensland Health or the
 ABS directly.

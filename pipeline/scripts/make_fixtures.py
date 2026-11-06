@@ -367,9 +367,11 @@ def main() -> None:
                 if same
                 else sum_status(slug, version, digest),
                 "publisher": meta["publisher"]["name"],
+                "publisher_url": meta["publisher"]["url"],
                 "source_rows": table.num_rows,
                 "source_sha256": digest,
                 "source_url": f"{BASE}/d/{slug}/v/{version}/data.parquet",
+                "title": meta["title"],
                 "version": version,
             }
             if (

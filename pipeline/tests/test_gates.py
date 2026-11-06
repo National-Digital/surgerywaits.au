@@ -65,6 +65,9 @@ def test_a_credit_that_drifts_from_the_manifest_is_caught() -> None:
     for field, value in (
         ("sha256", "0" * 64),
         ("citation", "Someone else."),
+        ("title", "Another title"),
+        ("publisher", {"name": "Someone else", "url": "https://else.example/"}),
+        ("dataset_url", "https://publicdata.au/d/other/v/2020-01-01/"),
         ("version", "2020-01-01"),
     ):
         docs = _docs()

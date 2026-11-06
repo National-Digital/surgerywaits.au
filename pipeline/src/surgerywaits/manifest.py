@@ -1,6 +1,6 @@
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import date
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
@@ -21,6 +21,12 @@ class ManifestError(Exception):
 
 
 @dataclass(frozen=True)
+class Publisher:
+    name: str
+    url: str
+
+
+@dataclass(frozen=True)
 class Entry:
     slug: str
     version: str
@@ -29,6 +35,9 @@ class Entry:
     licence: str
     attribution: str
     citation: str
+    title: str
+    publisher: Publisher
+    dataset_url: str
     url: str
     sha256: str
 
@@ -42,7 +51,8 @@ def _read_json(path: Path) -> Any:  # noqa: ANN401
 
 
 def _entry(raw: dict[str, Any]) -> Entry:
-    entry = Entry(**raw)
+    fields: dict[str, Any] = {**raw, "publisher": Publisher(**raw["publisher"])}
+    entry = Entry(**fields)
     try:
         for value in (entry.version, entry.as_at):
             if value is not None:
@@ -54,7 +64,15 @@ def _entry(raw: dict[str, Any]) -> Entry:
     if found is None or found.groups() != (entry.slug, entry.version):
         msg = f"{entry.slug}: url does not name its own slug and version"
         raise ManifestError(msg)
+    if entry.dataset_url != entry.url.removesuffix("data.parquet"):
+        msg = f"{entry.slug}: dataset_url is not the page of its own version"
+        raise ManifestError(msg)
     return entry
+
+
+def as_credit(entry: Entry) -> dict[str, Any]:
+    """The entry as credits.json carries it."""
+    return asdict(entry)
 
 
 def load(path: Path = MANIFEST_PATH, schema_path: Path = SCHEMA_PATH) -> tuple[Entry, ...]:

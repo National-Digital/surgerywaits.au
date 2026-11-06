@@ -335,3 +335,16 @@ export function formatTrendChange(role: Role, point: TrendPoint): string {
   }
   return point[2] === null ? 'no earlier figure to compare' : formatChange(role, point[2]);
 }
+
+const LICENCES: Record<string, string> = {
+  'CC-BY-4.0': 'CC BY 4.0',
+  'CC-BY-3.0-AU': 'CC BY 3.0 AU',
+};
+
+export function formatLicence(licence: string): string {
+  const name = LICENCES[licence];
+  if (name === undefined) {
+    throw new RangeError(`unknown licence: ${licence}`);
+  }
+  return name;
+}

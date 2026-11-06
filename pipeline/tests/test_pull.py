@@ -1,6 +1,7 @@
 import json
 import urllib.error
 import urllib.request
+from dataclasses import asdict, replace
 from pathlib import Path
 
 import pytest
@@ -85,7 +86,7 @@ def test_a_404_fails_at_once(tmp_path: Path) -> None:
 
 def test_a_url_outside_publicdata_is_refused(tmp_path: Path) -> None:
     bad = make_entry()
-    bad = Entry(**{**bad.__dict__, "url": "https://example.com/data.parquet"})
+    bad = replace(bad, url="https://example.com/data.parquet")
     opener = FakeOpener(FakeResponse(BODY))
     with pytest.raises(PullError, match=r"outside publicdata\.au"):
         pull((bad,), tmp_path, opener, Sleeps())
@@ -93,7 +94,7 @@ def test_a_url_outside_publicdata_is_refused(tmp_path: Path) -> None:
 
 
 def test_a_url_naming_another_version_is_refused(tmp_path: Path) -> None:
-    bad = Entry(**{**make_entry().__dict__, "version": "2026-01-03"})
+    bad = replace(make_entry(), version="2026-01-03")
     with pytest.raises(PullError, match=r"outside publicdata\.au"):
         pull((bad,), tmp_path, FakeOpener(FakeResponse(BODY)), Sleeps())
 
@@ -145,7 +146,7 @@ def test_leftover_partial_files_are_swept_first(tmp_path: Path) -> None:
 
 
 def write_manifest(path: Path, entry: Entry) -> Path:
-    doc = {"datasets": [{**entry.__dict__, "release": None, "as_at": None}]}
+    doc = {"datasets": [{**asdict(entry), "release": None, "as_at": None}]}
     path.write_text(json.dumps(doc), encoding="utf-8")
     return path
 

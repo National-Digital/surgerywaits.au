@@ -4,7 +4,7 @@ import urllib.error
 import urllib.request
 from typing import TYPE_CHECKING, Self
 
-from surgerywaits.manifest import Entry
+from surgerywaits.manifest import Entry, Publisher
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -22,6 +22,9 @@ def make_entry(sha256: str = GOOD) -> Entry:
         licence="CC-BY-4.0",
         attribution="A publisher.",
         citation="A publisher.",
+        title="A dataset",
+        publisher=Publisher(name="A publisher", url="https://publisher.example/"),
+        dataset_url="https://publicdata.au/d/demo/v/2026-01-02/",
         url="https://publicdata.au/d/demo/v/2026-01-02/data.parquet",
         sha256=sha256,
     )

@@ -1,0 +1,65 @@
+---
+import { label } from '../lib/content';
+
+interface Props {
+  // The last item is the current page, so it takes no link.
+  items: { label: string; href?: string | undefined }[];
+}
+
+const { items } = Astro.props;
+const last = items.length - 1;
+---
+
+{items.length > 1 && (
+  <nav class="c-breadcrumbs" aria-label={label('nav_breadcrumb')}>
+    <ol class="c-breadcrumbs__list">
+      {items.map((item, index) => (
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+        <li class="c-breadcrumbs__item">
+          {index === last || item.href === undefined ? (
+            <span aria-current={index === last ? 'page' : undefined}>{item.label}</span>
+          ) : (
+            <a class="c-breadcrumbs__link" href={item.href}>
+              {item.label}
+            </a>
+          )}
+        </li>
+      ))}
+    </ol>
+  </nav>
+)}
+
+<style>
+  @layer components {
+    .c-breadcrumbs {
+      padding-block-start: var(--space-3);
+      color: var(--muted);
+      font-size: var(--fs-small);
+    }
+
+    .c-breadcrumbs__list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .c-breadcrumbs__item {
+      display: flex;
+      align-items: center;
+    }
+
+    .c-breadcrumbs__item:not(:last-child)::after {
+      content: '\203A' / '';
+      margin-inline-start: var(--space-2);
+    }
+
+    .c-breadcrumbs__link {
+      display: inline-flex;
+      align-items: center;
+      min-height: var(--target);
+    }
+  }
+</style>

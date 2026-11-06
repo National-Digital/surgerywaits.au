@@ -362,6 +362,12 @@ describe('formatFigure', () => {
     expect(format.formatStamp(notPublished)).toBe('2024–25, released 19 August 2026');
   });
 
+  it('names a licence in words and rejects one it does not know', () => {
+    expect(format.formatLicence('CC-BY-4.0')).toBe('CC BY 4.0');
+    expect(format.formatLicence('CC-BY-3.0-AU')).toBe('CC BY 3.0 AU');
+    expect(() => format.formatLicence('ARR')).toThrow(RangeError);
+  });
+
   it('writes a trend point', () => {
     expect(format.formatTrendPoint('median_wait', secondPoint)).toBe('35 days');
   });
@@ -382,6 +388,7 @@ describe('every export', () => {
     formatPeriod: () => format.formatPeriod('2024–25'),
     formatPeriodStartingIn: () => format.formatPeriodStartingIn(2024),
     formatDate: () => format.formatDate('2026-08-19'),
+    formatLicence: () => format.formatLicence('CC-BY-4.0'),
     formatQuarter: () => format.formatQuarter('2025-09-30'),
     formatNotPublished: () => format.formatNotPublished('too_few_patients'),
     formatMeasure: () => format.formatMeasure('volume', 0),
