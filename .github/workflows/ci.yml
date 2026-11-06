@@ -51,6 +51,7 @@ jobs:
     env:
       ASTRO_TELEMETRY_DISABLED: '1'
       WRANGLER_SEND_METRICS: 'false'
+      SURGERYWAITS_DIST: ${{ github.workspace }}/pipeline/dist-fixture
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -60,6 +61,15 @@ jobs:
           node-version-file: .node-version
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version-file: pipeline/uv.toml
+          cache-dependency-glob: pipeline/uv.lock
+      - run: uv sync --locked
+        working-directory: pipeline
+      # The site reads a dist at build time, so the fixture dist is built before the site.
+      - run: uv run --locked python tests/fixture_dist.py "$SURGERYWAITS_DIST"
+        working-directory: pipeline
       - run: npm run build
       - run: npx vitest run site/src/styles/built-css.test.ts
         env:
@@ -175,3 +185,21 @@ jobs:
       - run: uv run python -m surgerywaits.pull
       # The variable turns any skip without a planned: reason into a failure.
       - run: uv run --locked pytest -rs
+      # The published site reads the real dist, so the site is built from it and its pages are checked.
+      - run: uv run python -m surgerywaits.build
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+        working-directory: .
+      - run: npm run build
+        working-directory: .
+        env:
+          ASTRO_TELEMETRY_DISABLED: '1'
+          SURGERYWAITS_DIST: ${{ github.workspace }}/pipeline/dist
+      - run: npx vitest run site/src/contracts/built-pages.test.ts
+        working-directory: .
+        env:
+          BUILT_PAGES: '1'
+          SURGERYWAITS_DIST: ${{ github.workspace }}/pipeline/dist

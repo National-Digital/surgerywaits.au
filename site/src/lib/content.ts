@@ -1,6 +1,12 @@
 import { getCollection, getEntry } from 'astro:content';
 import { z } from 'astro/zod';
-import { labelsSchema, navigationSchema, pageSchema, siteSchema } from './content-schema';
+import {
+  hospitalTemplateSchema,
+  labelsSchema,
+  navigationSchema,
+  pageSchema,
+  siteSchema,
+} from './content-schema';
 import type { LabelKey } from './content-schema';
 
 // Parsing here types the entries, because astro:content falls back to any when its types clash.
@@ -24,6 +30,12 @@ const pages = new Map(
     .parse((await getCollection('pages')) as unknown)
     .map(({ id, data }) => [id, data]),
 );
+
+const hospitalTemplate = await single('templates', 'hospital', hospitalTemplateSchema);
+
+export function getHospitalTemplate(): typeof hospitalTemplate {
+  return hospitalTemplate;
+}
 
 export function getSite(): typeof site {
   return site;

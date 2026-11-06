@@ -77,11 +77,24 @@ export function replacedTerms(slug: string, texts: string[], { terms, quotes }: 
 }
 
 // Text nodes and attribute values, as a parser reads them, so entities arrive decoded.
-export function pageStrings(html: string): string[] {
+function isPassport(node: DefaultTreeAdapterTypes.Element): boolean {
+  const attr = (name: string): string | undefined => node.attrs.find((a) => a.name === name)?.value;
+  return (
+    node.tagName === 'section' &&
+    attr('class') === 'c-passport' &&
+    attr('aria-labelledby') === 'passport-heading'
+  );
+}
+
+// The data passport quotes source titles verbatim, so `skipPassport` drops that one section.
+export function pageStrings(html: string, skipPassport = false): string[] {
   const out: string[] = [];
   const visit = (node: DefaultTreeAdapterTypes.Node): void => {
     if ('tagName' in node) {
       if (node.tagName === 'script' || node.tagName === 'style') {
+        return;
+      }
+      if (skipPassport && isPassport(node)) {
         return;
       }
       out.push(

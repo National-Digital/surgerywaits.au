@@ -26,6 +26,8 @@ export default getViteConfig(
     },
     test: {
       exclude,
+      // A real dist holds hundreds of pages, and each scan parses them all.
+      testTimeout: process.env['BUILT_PAGES'] === '1' ? 120_000 : 5_000,
       // A bare `npm test` reads the fixture dist at its usual place; CI sets the variable itself.
       env: {
         SURGERYWAITS_DIST:

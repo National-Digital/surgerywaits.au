@@ -41,7 +41,7 @@ npm run knip            # unused files, exports and dependencies
 npm test                # vitest, without the browser proofs
 A11Y_TEST=1 npx vitest run scripts/a11y.test.ts   # the accessibility proofs, which need Chromium
 A11Y_TEST=1 npx vitest run scripts/layout.test.ts # the header proof, which needs Chromium and npm run build
-npm run build           # astro build; needs no dist while no page reads figures
+npm run build           # astro build; reads the dist named by SURGERYWAITS_DIST
 npm run build:preview   # the same build plus the /dev/primitives/ page, written to site/dist-preview
 npm run a11y -- site/dist / /404.html   # the same checks on the built home and 404 pages
 npm run a11y            # accessibility checks on their fixture pages (npx playwright install chromium first)
@@ -92,8 +92,9 @@ export SURGERYWAITS_DIST="$PWD/dist-fixture"
 `npm test` falls back to that folder when the variable is unset, so a bare run works after the
 first command. To read the real dist instead, run `uv run python -m surgerywaits.pull` and
 `uv run python -m surgerywaits.build` from `pipeline/`, then point the variable at the `dist` folder in `pipeline/`.
-CI does not build the site from the real dist yet, because no page reads figures and the build
-takes the pinned downloads. The `Data checks` job should do it once a page does.
+The `Worker build` and `Accessibility` jobs build the site from the fixture dist. The `Data checks` job also
+builds the site from the real dist and runs the built-page tests on it, because that is the dist the
+published site reads.
 
 The `/dev/primitives/` page renders each state of the figure, the stat tile and the data table from the fixture
 dist. `npm run build:preview` adds it through an Astro integration and writes the result to its own

@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import type { z } from 'astro/zod';
 
 import {
+  hospitalTemplateSchema,
   labelsSchema,
   navigationSchema,
   pageSchema,
@@ -25,6 +26,8 @@ import {
 import DataTable from '../components/DataTable.astro';
 import Figure from '../components/Figure.astro';
 import primitives from '../dev/primitives.astro';
+import hospitalPage from '../pages/hospital/[slug].astro';
+import home from '../pages/index.astro';
 import { sampleCharts, surgeryTables } from '../dev/preview';
 import { planChart } from '../lib/chart';
 import {
@@ -36,9 +39,10 @@ import {
   validateDist,
   validateDocument,
 } from '../lib/dist';
+import { getHospitalTemplate } from '../lib/content';
 import { formatDate, formatFigure, formatStamp } from '../lib/format';
 import type { NotPublishedReason, Role } from '../lib/format';
-import { render, textsOf } from '../lib/test-render';
+import { render, text, textsOf } from '../lib/test-render';
 
 const contractDir = new URL('../../../contract/', import.meta.url);
 const siteSrc = new URL('../', import.meta.url).pathname;
@@ -232,7 +236,17 @@ describe('Ranking', () => {
 });
 
 describe('Private hospitals', () => {
-  it.todo('private hospitals are excluded and the page states the exclusion');
+  it('private hospitals are excluded and the page states the exclusion', async () => {
+    const { exclusion_heading, exclusion } = getHospitalTemplate();
+    const slugs = listDist('hospitals');
+    expect(slugs.length).toBeGreaterThan(0);
+    for (const slug of slugs) {
+      expect(readHospital(slug).scope.sector).toBe('public');
+      const main = text((await render(hospitalPage, { slug })).split('<main')[1] ?? '');
+      expect(main, slug).toContain(exclusion_heading);
+      expect(main, slug).toContain(exclusion);
+    }
+  }, 60_000);
 });
 
 describe('Determinism', () => {
@@ -240,7 +254,24 @@ describe('Determinism', () => {
 });
 
 describe('Static pages', () => {
-  it.todo("every hospital's figures are reachable without script");
+  it("every hospital's figures are reachable without script", async () => {
+    for (const slug of listDist('hospitals')) {
+      const html = await render(hospitalPage, { slug });
+      expect(html).not.toContain('<script');
+      const words = text(html);
+      for (const surgery of readHospital(slug).surgeries) {
+        if (surgery.kind === 'urgency') {
+          continue;
+        }
+        expect(words, `${slug} ${surgery.slug}`).toContain(surgery.name);
+        for (const [role, { figure }] of Object.entries(surgery.measures)) {
+          expect(words, `${slug} ${surgery.slug} ${role}`).toContain(
+            formatFigure(role as Role, figure),
+          );
+        }
+      }
+    }
+  }, 60_000);
 });
 
 describe('Privacy', () => {
@@ -342,12 +373,33 @@ describe('Copy', () => {
     expect(text.join(' ')).not.toContain('var elective');
     expect(entityPattern.test(decode('Pty&nbsp;Ltd'))).toBe(true);
   });
-  it.todo("no 'best hospital' or practitioner-promotion language appears");
+  it("no 'best hospital' or practitioner-promotion language appears", async () => {
+    const promotion = new RegExp(
+      [
+        String.raw`\b(?:best|worst|top|leading|finest)\s+(?:\w+\s+)?(?:hospitals?|surgeons?|doctors?|specialists?|clinics?)\b`,
+        String.raw`\b(?:find|choose|book)\s+(?:a|an|the)\s+(?:surgeon|doctor|specialist|consultation|appointment)\b`,
+        String.raw`\bour\s+(?:surgeons?|doctors?|specialists?|clinics?)\b`,
+      ].join('|'),
+      'i',
+    );
+    expect('The best hospital for hips').toMatch(promotion);
+    expect('Book an appointment with our surgeons').toMatch(promotion);
+    expect('Surgery in category 1 is recommended within 30 days').not.toMatch(promotion);
+    const copy = readContent().flatMap(({ data }) => strings(data));
+    const pages = [await render(home, {})];
+    for (const slug of listDist('hospitals')) {
+      pages.push(await render(hospitalPage, { slug }));
+    }
+    for (const found of [...copy, ...pages.flatMap((html) => pageStrings(html))]) {
+      expect(found).not.toMatch(promotion);
+    }
+  }, 60_000);
   it('copy lives in typed content files', () => {
     const schemas: Record<string, z.ZodType> = {
       'site.yaml': siteSchema,
       'labels.yaml': labelsSchema,
       'navigation.yaml': navigationSchema,
+      'templates/hospital.yaml': hospitalTemplateSchema,
       'terms.yaml': termsSchema,
     };
     const files = readContent();

@@ -1,0 +1,57 @@
+---
+interface Props {
+  id: string;
+  heading: string;
+  rows: { term: string; value: string }[];
+}
+
+const { id, heading, rows } = Astro.props;
+---
+
+<section class="c-about" aria-labelledby={id}>
+  <h2 class="c-about__heading" id={id}>
+    {heading}
+  </h2>
+  <dl class="c-about__facts">
+    {rows.map((row) => (
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+      <>
+        <dt>{row.term}</dt>
+        <dd>{row.value}</dd>
+      </>
+    ))}
+  </dl>
+</section>
+
+<style>
+  @layer components {
+    .c-about {
+      margin-block: var(--space-5);
+      padding: var(--space-4);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-md);
+      background: var(--card);
+    }
+
+    .c-about__heading {
+      margin-block: 0 var(--space-3);
+      font-size: 1.125rem;
+    }
+
+    .c-about__facts {
+      display: grid;
+      grid-template-columns: max-content 1fr;
+      gap: var(--space-2) var(--space-4);
+      margin: 0;
+    }
+
+    .c-about__facts dt {
+      color: var(--muted);
+    }
+
+    .c-about__facts dd {
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+  }
+</style>

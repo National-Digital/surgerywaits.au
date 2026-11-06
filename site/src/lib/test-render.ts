@@ -49,3 +49,43 @@ export function textsOf(html: string, className: string): string[] {
   });
   return found;
 }
+
+export interface Found {
+  classes: Set<string>;
+  // Every class on an element inside this one.
+  inside: Set<string>;
+  text: string;
+}
+
+function classesOf(node: Node): string[] {
+  if (!('attrs' in node)) {
+    return [];
+  }
+  return (node.attrs.find((a) => a.name === 'class')?.value ?? '').split(' ').filter(Boolean);
+}
+
+function below(node: Node): Set<string> {
+  const out = new Set<string>();
+  walk(node, (n) => {
+    if (n !== node) {
+      classesOf(n).forEach((c) => out.add(c));
+    }
+  });
+  return out;
+}
+
+// Each element that carries the class, with its own classes and those inside it.
+export function elementsOf(html: string, className: string): Found[] {
+  const found: Found[] = [];
+  walk(parseFragment(html), (node) => {
+    const classes = classesOf(node);
+    if (classes.includes(className)) {
+      found.push({
+        classes: new Set(classes),
+        inside: below(node),
+        text: plain(node).replace(/\s+/g, ' ').trim(),
+      });
+    }
+  });
+  return found;
+}

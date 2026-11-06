@@ -1,0 +1,53 @@
+---
+import Figure from './Figure.astro';
+import type { QueenslandColumn, QueenslandFigure } from '../lib/format';
+
+interface Props {
+  tiles: { heading: string; column: QueenslandColumn; figure: QueenslandFigure }[];
+}
+
+const { tiles } = Astro.props;
+---
+
+<dl class="c-qld">
+  {tiles.map((tile) => (
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+    <div class="c-qld__tile">
+      <dt class="c-qld__label">{tile.heading}</dt>
+      <dd class="c-qld__body">
+        <Figure column={tile.column} figure={tile.figure} />
+      </dd>
+    </div>
+  ))}
+</dl>
+
+<style>
+  @layer components {
+    .c-qld {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: var(--space-3);
+      margin: 0 0 var(--space-4);
+    }
+
+    .c-qld__tile {
+      min-width: 0;
+      padding: var(--space-3) var(--space-4) var(--space-4);
+      background: var(--card);
+      border: 1px solid var(--hairline);
+      border-block-start: var(--space-1) solid var(--accent);
+      border-radius: var(--radius-md);
+    }
+
+    .c-qld__label {
+      font-size: var(--fs-small);
+      font-weight: 700;
+      line-height: 1.3;
+      color: var(--muted);
+    }
+
+    .c-qld__body {
+      margin: var(--space-2) 0 0;
+    }
+  }
+</style>
