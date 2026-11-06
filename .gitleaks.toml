@@ -1,0 +1,5 @@
+# The Secret scan workflow runs gitleaks over every ref's history with the default rules.
+title = "surgerywaits.au gitleaks config"
+
+[extend]
+useDefault = true
