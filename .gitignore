@@ -8,3 +8,4 @@ coverage/
 .ruff_cache/
 .wrangler/
 .DS_Store
+.downloads/

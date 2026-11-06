@@ -1,0 +1,114 @@
+{
+  "datasets": [
+    {
+      "slug": "abs-suburbs-localities-2021",
+      "version": "2021-09-15",
+      "release": null,
+      "as_at": null,
+      "licence": "CC-BY-4.0",
+      "attribution": "Australian Bureau of Statistics, Australian Statistical Geography Standard (ASGS) Edition 3, SAL_2021_AUST_GDA2020_SHP.zip, sourced 1 October 2026, https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs/edition-3-july-2021-june-2026/access-and-downloads/digital-boundary-files, licensed under CC BY 4.0.",
+      "citation": "Australian Bureau of Statistics, Australian Statistical Geography Standard (ASGS) Edition 3, SAL_2021_AUST_GDA2020_SHP.zip, sourced 1 October 2026, https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs/edition-3-july-2021-june-2026/access-and-downloads/digital-boundary-files, licensed under CC BY 4.0. Serialised and versioned by National Digital at publicdata.au, https://publicdata.au/d/abs-suburbs-localities-2021/v/2021-09-15/",
+      "url": "https://publicdata.au/d/abs-suburbs-localities-2021/v/2021-09-15/data.parquet",
+      "sha256": "205b656d62bbce93e56fc8e6f71ba2a1f4393c62f99c60483fadea073b9f3c3c"
+    },
+    {
+      "slug": "au-elective-surgery-waiting-times",
+      "version": "2026-10-03",
+      "release": "2026081901",
+      "as_at": "2026-08-19",
+      "licence": "CC-BY-4.0",
+      "attribution": "Based on Australian Institute of Health and Welfare material. Australian Institute of Health and Welfare, Australian Government, MyHospitals Data API, elective surgery waiting times data extract, sourced 3 October 2026, https://myhospitalsapi.aihw.gov.au/, licensed under CC BY 4.0.",
+      "citation": "Based on Australian Institute of Health and Welfare material. Australian Institute of Health and Welfare, Australian Government, MyHospitals Data API, elective surgery waiting times data extract, sourced 3 October 2026, https://myhospitalsapi.aihw.gov.au/, licensed under CC BY 4.0. Serialised and versioned by National Digital at publicdata.au, https://publicdata.au/d/au-elective-surgery-waiting-times/v/2026-10-03/",
+      "url": "https://publicdata.au/d/au-elective-surgery-waiting-times/v/2026-10-03/data.parquet",
+      "sha256": "ac8b7dfa068b6a71d342b168c5c5408b119370d0d0e0d43085adda6952362c23"
+    },
+    {
+      "slug": "au-elective-surgery-waiting-times-by-procedure",
+      "version": "2026-10-20",
+      "release": "2026081901",
+      "as_at": "2026-08-19",
+      "licence": "CC-BY-4.0",
+      "attribution": "Based on Australian Institute of Health and Welfare material. Australian Institute of Health and Welfare, Australian Government, MyHospitals Data API, elective surgery waiting times data extract, sourced 19 October 2026, https://myhospitalsapi.aihw.gov.au/, licensed under CC BY 4.0.",
+      "citation": "Based on Australian Institute of Health and Welfare material. Australian Institute of Health and Welfare, Australian Government, MyHospitals Data API, elective surgery waiting times data extract, sourced 19 October 2026, https://myhospitalsapi.aihw.gov.au/, licensed under CC BY 4.0. Serialised and versioned by National Digital at publicdata.au, https://publicdata.au/d/au-elective-surgery-waiting-times-by-procedure/v/2026-10-20/",
+      "url": "https://publicdata.au/d/au-elective-surgery-waiting-times-by-procedure/v/2026-10-20/data.parquet",
+      "sha256": "45019b324496c56a2141c83a25ebf1611a5531788be7107ae773895d47fa9495"
+    },
+    {
+      "slug": "au-elective-surgery-waiting-times-by-specialty",
+      "version": "2026-10-20",
+      "release": "2026081901",
+      "as_at": "2026-08-19",
+      "licence": "CC-BY-4.0",
+      "attribution": "Based on Australian Institute of Health and Welfare material. Australian Institute of Health and Welfare, Australian Government, MyHospitals Data API, elective surgery waiting times data extract, sourced 19 October 2026, https://myhospitalsapi.aihw.gov.au/, licensed under CC BY 4.0.",
+      "citation": "Based on Australian Institute of Health and Welfare material. Australian Institute of Health and Welfare, Australian Government, MyHospitals Data API, elective surgery waiting times data extract, sourced 19 October 2026, https://myhospitalsapi.aihw.gov.au/, licensed under CC BY 4.0. Serialised and versioned by National Digital at publicdata.au, https://publicdata.au/d/au-elective-surgery-waiting-times-by-specialty/v/2026-10-20/",
+      "url": "https://publicdata.au/d/au-elective-surgery-waiting-times-by-specialty/v/2026-10-20/data.parquet",
+      "sha256": "de1c6bdcc27d350e339c2282aab5185478a26ad2900d95b5e1aeeb4206c663e7"
+    },
+    {
+      "slug": "au-hospitals-myhospitals",
+      "version": "2026-10-03",
+      "release": "2026081901",
+      "as_at": "2026-08-19",
+      "licence": "CC-BY-4.0",
+      "attribution": "Based on Australian Institute of Health and Welfare material. Australian Institute of Health and Welfare, Australian Government, MyHospitals Data API, mapping details extract, sourced 3 October 2026, https://myhospitalsapi.aihw.gov.au/, licensed under CC BY 4.0.",
+      "citation": "Based on Australian Institute of Health and Welfare material. Australian Institute of Health and Welfare, Australian Government, MyHospitals Data API, mapping details extract, sourced 3 October 2026, https://myhospitalsapi.aihw.gov.au/, licensed under CC BY 4.0. Serialised and versioned by National Digital at publicdata.au, https://publicdata.au/d/au-hospitals-myhospitals/v/2026-10-03/",
+      "url": "https://publicdata.au/d/au-hospitals-myhospitals/v/2026-10-03/data.parquet",
+      "sha256": "a67b84758db11dbe250bde88c1e3b0a27a86d9342734b087d6a96560673eda84"
+    },
+    {
+      "slug": "au-myhospitals-reported-measures",
+      "version": "2026-10-27",
+      "release": null,
+      "as_at": null,
+      "licence": "CC-BY-4.0",
+      "attribution": "Based on Australian Institute of Health and Welfare material. Australian Institute of Health and Welfare, Australian Government, MyHospitals Data API, reported measures, sourced 26 October 2026, https://myhospitalsapi.aihw.gov.au/, licensed under CC BY 4.0.",
+      "citation": "Based on Australian Institute of Health and Welfare material. Australian Institute of Health and Welfare, Australian Government, MyHospitals Data API, reported measures, sourced 26 October 2026, https://myhospitalsapi.aihw.gov.au/, licensed under CC BY 4.0. Serialised and versioned by National Digital at publicdata.au, https://publicdata.au/d/au-myhospitals-reported-measures/v/2026-10-27/",
+      "url": "https://publicdata.au/d/au-myhospitals-reported-measures/v/2026-10-27/data.parquet",
+      "sha256": "fb1ae169a15a52bb89b8a6baa8943bf69165867e9d7145e8284a4f3ebc367208"
+    },
+    {
+      "slug": "au-myhospitals-reporting-unit-mappings",
+      "version": "2026-10-27",
+      "release": null,
+      "as_at": null,
+      "licence": "CC-BY-4.0",
+      "attribution": "Based on Australian Institute of Health and Welfare material. Australian Institute of Health and Welfare, Australian Government, MyHospitals Data API, reporting units, sourced 26 October 2026, https://myhospitalsapi.aihw.gov.au/, licensed under CC BY 4.0.",
+      "citation": "Based on Australian Institute of Health and Welfare material. Australian Institute of Health and Welfare, Australian Government, MyHospitals Data API, reporting units, sourced 26 October 2026, https://myhospitalsapi.aihw.gov.au/, licensed under CC BY 4.0. Serialised and versioned by National Digital at publicdata.au, https://publicdata.au/d/au-myhospitals-reporting-unit-mappings/v/2026-10-27/",
+      "url": "https://publicdata.au/d/au-myhospitals-reporting-unit-mappings/v/2026-10-27/data.parquet",
+      "sha256": "88df3dd729f9d063646d68ac9a1b1936297d0ea08f1d307fb0f4a30ca9ec7d23"
+    },
+    {
+      "slug": "au-myhospitals-reporting-units",
+      "version": "2026-10-27",
+      "release": null,
+      "as_at": null,
+      "licence": "CC-BY-4.0",
+      "attribution": "Based on Australian Institute of Health and Welfare material. Australian Institute of Health and Welfare, Australian Government, MyHospitals Data API, reporting units, sourced 26 October 2026, https://myhospitalsapi.aihw.gov.au/, licensed under CC BY 4.0.",
+      "citation": "Based on Australian Institute of Health and Welfare material. Australian Institute of Health and Welfare, Australian Government, MyHospitals Data API, reporting units, sourced 26 October 2026, https://myhospitalsapi.aihw.gov.au/, licensed under CC BY 4.0. Serialised and versioned by National Digital at publicdata.au, https://publicdata.au/d/au-myhospitals-reporting-units/v/2026-10-27/",
+      "url": "https://publicdata.au/d/au-myhospitals-reporting-units/v/2026-10-27/data.parquet",
+      "sha256": "7d37d10276caa0d4b76a42ecfb7f19caf16b0b0d92095da7a945f0254b45149e"
+    },
+    {
+      "slug": "qld-elective-surgery-by-category",
+      "version": "2025-12-10",
+      "release": null,
+      "as_at": null,
+      "licence": "CC-BY-4.0",
+      "attribution": "Queensland Health, Queensland Government, Elective surgery, sourced 3 October 2026, https://www.data.qld.gov.au/dataset/elective-surgery, licensed under CC BY 4.0.",
+      "citation": "Queensland Health, Queensland Government, Elective surgery, sourced 3 October 2026, https://www.data.qld.gov.au/dataset/elective-surgery, licensed under CC BY 4.0. Serialised and versioned by National Digital at publicdata.au, https://publicdata.au/d/qld-elective-surgery-by-category/v/2025-12-10/",
+      "url": "https://publicdata.au/d/qld-elective-surgery-by-category/v/2025-12-10/data.parquet",
+      "sha256": "763f5f6d6fab34f6c6ed66a8e9bb02fe86ba59c1cc0058d697913f06f35cc400"
+    },
+    {
+      "slug": "qld-elective-surgery-by-specialty",
+      "version": "2025-12-10",
+      "release": null,
+      "as_at": null,
+      "licence": "CC-BY-4.0",
+      "attribution": "Queensland Health, Queensland Government, Elective surgery, sourced 3 October 2026, https://www.data.qld.gov.au/dataset/elective-surgery, licensed under CC BY 4.0.",
+      "citation": "Queensland Health, Queensland Government, Elective surgery, sourced 3 October 2026, https://www.data.qld.gov.au/dataset/elective-surgery, licensed under CC BY 4.0. Serialised and versioned by National Digital at publicdata.au, https://publicdata.au/d/qld-elective-surgery-by-specialty/v/2025-12-10/",
+      "url": "https://publicdata.au/d/qld-elective-surgery-by-specialty/v/2025-12-10/data.parquet",
+      "sha256": "188759c778549fc38c1dd21e6287892056430c05babab4df4976f53c7db67d88"
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Data manifest",
+  "description": "Each publicdata.au dated version the pipeline reads, pinned by sha256.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["datasets"],
+  "properties": {
+    "datasets": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/entry" }
+    }
+  },
+  "$defs": {
+    "date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])(?![\\s\\S])$"
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "slug",
+        "version",
+        "release",
+        "as_at",
+        "licence",
+        "attribution",
+        "citation",
+        "url",
+        "sha256"
+      ],
+      "properties": {
+        "slug": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*(?![\\s\\S])$" },
+        "version": { "$ref": "#/$defs/date" },
+        "release": { "type": ["string", "null"], "minLength": 1 },
+        "as_at": {
+          "oneOf": [{ "$ref": "#/$defs/date" }, { "type": "null" }]
+        },
+        "licence": { "enum": ["CC-BY-4.0", "CC-BY-3.0-AU"] },
+        "attribution": { "type": "string", "minLength": 1 },
+        "citation": { "type": "string", "minLength": 1 },
+        "url": {
+          "type": "string",
+          "pattern": "^https://publicdata\\.au/d/[a-z0-9]+(-[a-z0-9]+)*/v/[0-9]{4}-[0-9]{2}-[0-9]{2}/data\\.parquet(?![\\s\\S])$"
+        },
+        "sha256": {
+          "type": "string",
+          "minLength": 64,
+          "maxLength": 64,
+          "pattern": "^[0-9a-f]{64}(?![\\s\\S])$"
+        }
+      }
+    }
+  }
+}
