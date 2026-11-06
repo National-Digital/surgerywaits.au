@@ -27,7 +27,7 @@ if [ -n "$(git diff --cached --name-only -- .github)" ]; then
     if command -v "$tool" >/dev/null 2>&1; then
       check_version "$tool" "$pin"
     else
-      echo "pre-commit: $tool not found; install it to lint workflows (see docs/TOOLCHAIN.md)"
+      echo "pre-commit: $tool not found; install it to lint workflows (see CONTRIBUTING.md)"
       tree=missing
       failed=1
     fi
@@ -120,7 +120,7 @@ if [ -n "$sh_files" ]; then
     done
     unset IFS
   else
-    echo "pre-commit: shellcheck not found; install it to lint shell files (see docs/TOOLCHAIN.md)"
+    echo "pre-commit: shellcheck not found; install it to lint shell files (see CONTRIBUTING.md)"
     failed=1
   fi
 fi

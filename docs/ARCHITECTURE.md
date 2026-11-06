@@ -27,7 +27,9 @@ Cloudflare Worker    serves the static assets (planned)
   pinned in a manifest. A refresh finds new versions through the service's versions endpoint at
   `/api/v1/datasets/<slug>/versions`. Suppressed and empty cells arrive as nulls, and a
   `markers` column keeps the publisher's code for each emptied cell. That code gives the reason the
-  site shows. The credit line uses the citation that
+  site shows: "<5" means too few patients, "-" means no patients reported, and "NP" means AIHW did
+  not publish. "Not peered" appears only in place of the peer-group columns and the site shows it
+  as "not published: no peer group comparison". The credit line uses the citation that
   publicdata.au publishes with each version.
 - **`pipeline/` (planned).** A Python 3.13 package built with uv, and checked with ruff, pyright in
   strict mode and pytest. It turns the pinned files into the output files.
@@ -39,49 +41,30 @@ Cloudflare Worker    serves the static assets (planned)
 
 ## Rules that decide the code
 
-[ADR 0001](adr/0001-architecture-decision-register.md) records the decisions behind the shape and
-the rules, and why each was made.
+[ADR 0001](adr/0001-architecture-decision-register.md) records why each rule exists. Each rule is
+one line and ends with what enforces it. A reference has one of three forms: a pytest function,
+`` `path::test_name` ``; a vitest test, `` `path` › "title" ``; or a CI job, ``CI job `Name` ``. A
+reference to a test that does not exist yet, a vitest `it.todo` or a skipped pytest, ends with
+"(planned)", and the marker is dropped when the test becomes real. `pipeline/tests/test_docs.py`
+fails when a reference is malformed, names a test, title or job that does not exist, or has a
+planned marker that does not match the test.
 
-Checks will enforce each rule as the build lands, and until then reviewers apply them. Each check
-is listed in [CONTRIBUTING.md](../CONTRIBUTING.md#checks-on-each-pull-request) when it starts to
-run. The planned checks are listed as pending tests in
-[`site/src/contracts/gates.test.ts`](../site/src/contracts/gates.test.ts) and
-[`pipeline/tests/test_contracts.py`](../pipeline/tests/test_contracts.py). Each becomes a real test
-when its part lands.
+- **Two halves, one boundary.** `pipeline/` (Python) builds the data, `site/` (TypeScript) is the front end, and the site reads only the pipeline's dist output, validated against `contract/`. — enforced by `site/src/contracts/gates.test.ts` › "validate against their JSON Schemas in contract/" (planned); `site/src/contracts/gates.test.ts` › "the site reads only the pipeline's dist output" (planned).
+- **Determinism.** Nothing in dist holds a wall-clock value, a random value or unordered iteration, and two builds are byte-identical. — enforced by `pipeline/tests/test_contracts.py::test_building_twice_gives_byte_identical_dist` (planned); `pipeline/tests/test_contracts.py::test_no_wall_clock_values_in_dist` (planned); `site/src/contracts/gates.test.ts` › "building the site twice gives byte-identical output" (planned).
+- **One source.** Data comes only from publicdata.au's pinned dated versions, each verified by sha256, with no fallback. — enforced by `pipeline/tests/test_contracts.py::test_manifest_entry_pins_slug_version_and_sha256` (planned); `pipeline/tests/test_contracts.py::test_download_with_wrong_digest_fails_closed` (planned).
+- **Suppressed values.** A suppressed cell renders "not published" with the publisher's reason, never 0, blank or a rank. The three reasons apply to a hospital's own figures: "<5" means too few patients, "-" means no patients reported and "NP" means AIHW did not publish. — enforced by `pipeline/tests/test_contracts.py::test_every_null_has_a_publisher_marker_or_is_reported` (planned); `pipeline/tests/test_contracts.py::test_every_marker_maps_to_a_known_reason` (planned); `site/src/contracts/gates.test.ts` › "render 'not published' with the reason taken from the publisher's marker (<5, -, NP); an unknown marker fails the build" (planned); `site/src/contracts/gates.test.ts` › "a suppressed cell is never rendered blank or as 0" (planned).
+- **Not peered.** "Not peered" appears only in place of the peer-group columns, AIHW does not define it, and the site shows it as "not published: no peer group comparison" with no other meaning. — enforced by `site/src/contracts/gates.test.ts` › "'not peered' shows as 'not published: no peer group comparison' and only in place of the peer-group columns" (planned).
+- **Reference period and release date.** Every rendered figure carries both, or it does not ship. — enforced by `site/src/contracts/gates.test.ts` › "every rendered figure shows its reference period and the data release date" (planned).
+- **Terminology.** "Planned surgery" names the category, copy and URLs say "surgery", and "elective" appears only where the methodology quotes a source. — enforced by `site/src/contracts/gates.test.ts` › "'elective' appears only where the methodology quotes a source" (planned).
+- **Ordering.** Hospitals are ordered by measured numbers only, never on suppressed or stale figures, with no "best hospital" language and no practitioner promotion. — enforced by `site/src/contracts/gates.test.ts` › "a hospital with suppressed or stale figures is never ranked" (planned); `site/src/contracts/gates.test.ts` › "no 'best hospital' or practitioner-promotion language appears" (planned).
+- **Private hospitals.** Private hospitals are excluded and each page says so. — enforced by `pipeline/tests/test_contracts.py::test_private_sector_is_excluded` (planned); `site/src/contracts/gates.test.ts` › "private hospitals are excluded and the page states the exclusion" (planned).
+- **Privacy.** The compare tool is stateless: no cookies, no localStorage or sessionStorage, no search state in the URL or history, and nothing a person enters is sent anywhere. The page-view count with Cloudflare Web Analytics sets no cookie. — enforced by `site/src/contracts/gates.test.ts` › "the site sets no cookies and uses no localStorage or sessionStorage" (planned); `site/src/contracts/gates.test.ts` › "the compare tool puts no search state in the URL or history" (planned); `site/src/contracts/gates.test.ts` › "the page-view count sets no cookie and sends nothing a person enters" (planned); `site/src/contracts/gates.test.ts` › "the privacy check allows exactly the Web Analytics beacon and report hosts" (planned).
+- **Accessibility.** WCAG 2.2 AA is the floor and the checks aim at AAA, and colour never carries meaning alone ([`ACCESSIBILITY.md`](ACCESSIBILITY.md)). — enforced by `site/src/contracts/gates.test.ts` › "axe passes at WCAG 2.2 AAA in light mode" (planned); `site/src/contracts/gates.test.ts` › "colour is never the only carrier of meaning" (planned).
+- **Progressive enhancement.** Pages are HTML-first, static pages ship no JavaScript, and the compare tool enhances a page that already works without script. — enforced by `site/src/contracts/gates.test.ts` › "static pages ship zero JavaScript" (planned); `site/src/contracts/gates.test.ts` › "every hospital's figures are reachable without script" (planned).
+- **Valid HTML.** Every page passes the W3C Nu Html Checker with warnings as errors. — enforced by `site/src/contracts/gates.test.ts` › "the W3C Nu Html Checker passes with --Werror" (planned).
+- **Separate licences.** The data licences stay apart from the code licence, and no data snapshot enters git. — enforced by `site/src/contracts/gates.test.ts` › "the data licence stays in its own file, apart from the code licence" (planned); `site/src/contracts/gates.test.ts` › "no data snapshot is committed to git" (planned).
+- **Typed content.** Copy and labels live in typed content files, never in components. — enforced by `site/src/contracts/gates.test.ts` › "copy lives in typed content files" (planned); `site/src/contracts/gates.test.ts` › "no literal user-visible text appears in components; copy lives in YAML under content/" (planned).
+- **Pinned workflows.** Actions are pinned to a commit SHA, each workflow declares permissions, and no pull request workflow runs Lighthouse. — enforced by `pipeline/tests/test_repo.py::test_every_action_is_pinned_to_a_commit_with_a_version_comment`; `pipeline/tests/test_repo.py::test_every_workflow_declares_top_level_permissions`; `pipeline/tests/test_repo.py::test_measurement_runs_only_in_dispatch_only_workflows`.
+- **Documents match the repository.** Document links, paths, npm scripts, CI job names and rule references all resolve, and a rule marks a pending test as planned. — enforced by `pipeline/tests/test_docs.py::test_every_rule_in_the_architecture_names_a_test_that_exists`; CI job `Repository tests`.
 
-1. **Two halves with one boundary.** `pipeline/` (Python) is the data build and `site/`
-   (TypeScript) is the front end. The site consumes only the pipeline's output, and that output is
-   validated against `contract/` before the site reads it.
-2. **Determinism.** Nothing that lands in the output contains a wall-clock timestamp, a random
-   value or the result of unordered iteration. Building twice gives byte-identical output.
-3. **One source.** Data comes only from publicdata.au's pinned dated versions, each verified by
-   sha256. The build never reads another source and has no fallback to one.
-4. **Suppressed values.** A suppressed value renders as "not published" with the reason. It is
-   never shown as 0, never left blank and never ranked. The three reasons apply to a hospital's
-   own figures:
-   - "<5": too few patients.
-   - "-": no patients reported.
-   - "NP": not published by AIHW.
-
-   "Not peered" appears only in place of the peer-group columns. AIHW does not define it. The
-   site shows it as "not published: no peer group comparison" and gives it no other meaning.
-
-5. **Reference period and release date.** Every rendered figure carries its reference period and
-   the data release date. A figure that cannot state both does not ship.
-6. **Terminology.** "Planned surgery" names the category. Copy and URLs use plain "surgery".
-   "Elective" appears only where the methodology quotes a source.
-7. **Ordering.** Hospitals are ordered by measured numbers only. The site uses no "best hospital"
-   language and promotes no practitioner. Private hospitals are excluded, and each page says so. A
-   hospital is never ranked on suppressed or stale data.
-8. **Privacy.** The compare tool is stateless. The site sets no cookies and uses no localStorage
-   or sessionStorage. Search state never appears in the URL or the browser history. Nothing a
-   person enters is sent anywhere. The site counts page views with Cloudflare Web Analytics.
-   The count sets no cookie and sends nothing a person enters.
-9. **Accessibility.** WCAG 2.2 AA is the floor and the checks aim at AAA, as on publicdata.au.
-   Pages are HTML-first. Static pages work with zero JavaScript, and the compare tool is
-   progressive enhancement. Colour is never the only carrier of meaning. Copy is written for a
-   reading age of 12 to 14. [`ACCESSIBILITY.md`](ACCESSIBILITY.md) has the detail.
-10. **Separate licences.** The data licences stay separate from the code licence. Data snapshots
-    never enter git.
-11. **Typed content.** The project's own content, such as copy and labels, lives in typed content
-    files and never in components.
+Copy is written for a reading age of 12 to 14. No test enforces this yet, and reviewers apply it.

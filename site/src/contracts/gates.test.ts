@@ -11,14 +11,19 @@ describe('Suppressed values', () => {
   );
 });
 
+describe('Suppressed cells', () => {
+  it.todo('a suppressed cell is never rendered blank or as 0');
+  it.todo(
+    "'not peered' shows as 'not published: no peer group comparison' and only in place of the peer-group columns",
+  );
+});
+
 describe('Reference period and release date', () => {
   it.todo('every rendered figure shows its reference period and the data release date');
 });
 
 describe('Ranking', () => {
-  it.todo(
-    'no ranking uses suppressed or stale rows; stale rows, as defined when the ranking code lands',
-  );
+  it.todo('a hospital with suppressed or stale figures is never ranked');
 });
 
 describe('Private hospitals', () => {
@@ -37,6 +42,7 @@ describe('Static pages', () => {
 describe('Privacy', () => {
   it.todo('the site sets no cookies and uses no localStorage or sessionStorage');
   it.todo('the compare tool puts no search state in the URL or history');
+  it.todo('the page-view count sets no cookie and sends nothing a person enters');
   it.todo('the privacy check allows exactly the Web Analytics beacon and report hosts');
 });
 
@@ -79,6 +85,7 @@ describe('Copy', () => {
 
 describe('Repository', () => {
   it.todo('no data snapshot is committed to git');
+  it.todo('the data licence stays in its own file, apart from the code licence');
 });
 
 describe('OpenAPI', () => {
