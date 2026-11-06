@@ -67,6 +67,20 @@ description. Ruff selects every rule and ignores only the few listed with a reas
 `xfail_strict`. The `Workflow lint` job also runs shellcheck over `.githooks/*` and every `*.sh`
 file.
 
+### Pulling the pinned data
+
+`data/manifest.json` pins each publicdata.au dated version by sha256, and `contract/manifest.schema.json`
+defines it. To download and verify every file by hand, run this from `pipeline/`:
+
+```
+uv run python -m surgerywaits.pull
+```
+
+Each file lands in `pipeline/.downloads/<sha256>`, which git ignores. A file already there with the
+right hash is not fetched again. The pull retries transport errors and 5xx responses a few times,
+then stops. It stops at once on a 4xx or a hash that differs from the pin, and it keeps nothing
+from a failed download. The tests never use the network.
+
 ### Git hooks
 
 `git config core.hooksPath .githooks` turns on three hooks.

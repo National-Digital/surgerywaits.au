@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Builds the surgerywaits.au data from publicdata.au's pinned versions."
 requires-python = "==3.13.*"
 license = "AGPL-3.0-or-later"
-dependencies = []
+dependencies = ["jsonschema==4.26.0"]
 
 [dependency-groups]
 dev = [
@@ -14,6 +14,7 @@ dev = [
   "ruff==0.17.4",
   "pyright==1.1.414",
   "pyarrow==26.0.1",
+  "types-jsonschema==4.26.0.20261006",
 ]
 
 [build-system]

@@ -1,14 +1,28 @@
+import json
+from pathlib import Path
+
 import pytest
 
+from fakes import FakeOpener, FakeResponse, Sleeps, make_entry
+from surgerywaits.manifest import ManifestError, load
+from surgerywaits.pull import PullError, pull
 
-@pytest.mark.skip(reason="planned: each manifest entry pins a publicdata slug, version and sha256")
+ROOT = Path(__file__).resolve().parents[2]
+
+
 def test_manifest_entry_pins_slug_version_and_sha256() -> None:
-    raise NotImplementedError
+    entries = load()
+    assert entries
+    for e in entries:
+        assert e.url == f"https://publicdata.au/d/{e.slug}/v/{e.version}/data.parquet"
+        assert len(e.sha256) == 64  # noqa: PLR2004
+        assert int(e.sha256, 16) >= 0
 
 
-@pytest.mark.skip(reason="planned: a download whose digest does not match fails closed")
-def test_download_with_wrong_digest_fails_closed() -> None:
-    raise NotImplementedError
+def test_download_with_wrong_digest_fails_closed(tmp_path: Path) -> None:
+    with pytest.raises(PullError):
+        pull((make_entry(),), tmp_path, FakeOpener(FakeResponse(b"wrong")), Sleeps())
+    assert list(tmp_path.iterdir()) == []
 
 
 @pytest.mark.skip(reason="planned: every null carries a publisher marker or is reported")
@@ -26,9 +40,14 @@ def test_unmatched_or_ambiguous_hospital_join_fails() -> None:
     raise NotImplementedError
 
 
-@pytest.mark.skip(reason="planned: every source licence is on the allow-list")
-def test_licence_is_on_the_allow_list() -> None:
-    raise NotImplementedError
+def test_licence_is_on_the_allow_list(tmp_path: Path) -> None:
+    assert {e.licence for e in load()} <= {"CC-BY-4.0", "CC-BY-3.0-AU"}
+    path = tmp_path / "manifest.json"
+    data = json.loads((ROOT / "data" / "manifest.json").read_text(encoding="utf-8"))
+    data["datasets"][0]["licence"] = "All-rights-reserved"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    with pytest.raises(ManifestError):
+        load(path)
 
 
 @pytest.mark.skip(reason="planned: building the pipeline twice gives byte-identical dist")
@@ -51,6 +70,6 @@ def test_coordinates_fall_within_australia() -> None:
     raise NotImplementedError
 
 
-@pytest.mark.skip(reason="planned: slugs are unique")
 def test_slugs_are_unique() -> None:
-    raise NotImplementedError
+    slugs = [e.slug for e in load()]
+    assert len(slugs) == len(set(slugs))
