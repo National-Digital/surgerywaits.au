@@ -1,3 +1,4 @@
+import { recommended as comments } from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
@@ -7,6 +8,7 @@ export default tseslint.config(
   js.configs.recommended,
   tseslint.configs.strictTypeChecked,
   tseslint.configs.stylisticTypeChecked,
+  comments,
   {
     linterOptions: {
       reportUnusedDisableDirectives: 'error',
@@ -16,6 +18,7 @@ export default tseslint.config(
       parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
     },
     rules: {
+      '@eslint-community/eslint-comments/require-description': 'error',
       curly: ['error', 'all'],
       eqeqeq: ['error', 'always'],
       'no-console': 'error',
@@ -28,7 +31,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['**/*.mjs'],
+    files: ['**/*.mjs', 'eslint.config.ts'],
     extends: [tseslint.configs.disableTypeChecked],
     languageOptions: { globals: globals.node },
   },

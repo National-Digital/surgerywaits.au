@@ -1,8 +1,9 @@
 #!/bin/sh
 # Lints and format-checks the staged files, reading the staged content so an unstaged fix cannot
-# hide a fault: ESLint and Prettier for the site, ruff for pipeline/, and actionlint, zizmor
-# and the shell linter for .github/. A missing tool fails the commit with a message.
-# Every check runs before the commit fails. Skip once with git commit --no-verify.
+# hide a fault: ESLint and Prettier for the site, ruff for pipeline/, actionlint, zizmor and the
+# shell linter for .github/, and shellcheck for staged hooks and *.sh files.
+# A missing tool fails the commit with a message. Every check runs before the commit fails.
+# Skip once with git commit --no-verify.
 
 failed=0
 
@@ -102,6 +103,25 @@ if [ -n "$py" ]; then
     done
     unset IFS
     cd "$top" || exit 1
+  fi
+fi
+
+sh_files=$(git -c core.quotePath=false diff --cached --name-only --diff-filter=ACMR -- '.githooks/*' '*.sh')
+if [ -n "$sh_files" ]; then
+  if command -v shellcheck >/dev/null 2>&1; then
+    IFS='
+'
+    for f in $sh_files; do
+      # The shebang in the staged content picks the dialect.
+      git show ":$f" | shellcheck - || {
+        echo "$f: shellcheck found problems"
+        failed=1
+      }
+    done
+    unset IFS
+  else
+    echo "pre-commit: shellcheck not found; install it to lint shell files (see docs/TOOLCHAIN.md)"
+    failed=1
   fi
 fi
 
