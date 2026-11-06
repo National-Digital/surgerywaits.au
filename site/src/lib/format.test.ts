@@ -336,6 +336,27 @@ describe('formatFigure', () => {
     expect(format.formatFigure('volume', notReported)).toBe('not reported');
   });
 
+  it('says whether a figure carries a number', () => {
+    expect(format.isPublished(published)).toBe(true);
+    expect(format.isPublished(notPublished)).toBe(false);
+    expect(format.isPublished(notReported)).toBe(false);
+  });
+
+  it('splits a published figure into its number and unit, and leaves words whole', () => {
+    expect(format.formatFigureParts('median_wait', published)).toEqual({
+      amount: '13',
+      unit: 'days',
+    });
+    expect(format.formatFigureParts('on_time', { ...published, value: 0.97 })).toEqual({
+      amount: '97%',
+      unit: null,
+    });
+    expect(format.formatFigureParts('volume', notPublished)).toEqual({
+      amount: 'not published: AIHW did not publish a figure',
+      unit: null,
+    });
+  });
+
   it('writes the period and the release of any figure', () => {
     expect(format.formatStamp(published)).toBe('2024–25, released 19 August 2026');
     expect(format.formatStamp(notPublished)).toBe('2024–25, released 19 August 2026');
@@ -366,6 +387,8 @@ describe('every export', () => {
     formatMeasure: () => format.formatMeasure('volume', 0),
     formatChange: () => format.formatChange('volume', 0),
     formatFigure: () => format.formatFigure('volume', notReported),
+    isPublished: () => String(format.isPublished(published)),
+    formatFigureParts: () => format.formatFigureParts('volume', published).amount,
     formatStamp: () => format.formatStamp(published),
     formatTrendPoint: () =>
       format.formatTrendPoint('volume', [2015, null, null, 'not_reported:not_reported_by_source']),

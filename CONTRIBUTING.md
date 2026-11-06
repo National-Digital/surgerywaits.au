@@ -40,8 +40,10 @@ npm run typecheck       # astro check on the site, tsc on the Worker, the script
 npm run knip            # unused files, exports and dependencies
 npm test                # vitest, without the browser proofs
 A11Y_TEST=1 npx vitest run scripts/a11y.test.ts   # the accessibility proofs, which need Chromium
-npm run build           # astro build
+npm run build           # astro build; needs no dist while no page reads figures
+npm run build:preview   # the same build plus the /dev/primitives/ page, written to site/dist-preview
 npm run a11y            # accessibility checks on their fixture pages (npx playwright install chromium first)
+npm run a11y -- site/dist-preview /dev/primitives/   # the same checks on the preview page, after build:preview
 npm run worker:types:check   # fails when worker/worker-configuration.d.ts is stale
 npm run worker:dry-run -- /tmp/worker-out   # wrangler deploy --dry-run, no credentials
 ```
@@ -66,6 +68,38 @@ description. Ruff selects every rule and ignores only the few listed with a reas
 `pipeline/pyproject.toml`. Pytest runs with `--strict-markers`, `--strict-config`, `-W error` and
 `xfail_strict`. The `Workflow lint` job also runs shellcheck over `.githooks/*` and every `*.sh`
 file.
+
+### The dist the site reads
+
+The site reads the pipeline's dist through `site/src/lib/dist.ts`. The variable `SURGERYWAITS_DIST`
+names the directory, as an absolute path. It has no default, so a published build cannot read a
+fixture dist by accident. Every file the site loads is validated against its schema in `contract/`
+with Ajv, which is pinned exactly, and a file that breaks its schema or sits where the contract
+describes nothing stops the build. The pipeline has already checked each file, so the site's check
+is the second proof that both halves agree.
+
+The site's tests and the preview page use a small dist built from the pipeline's fixtures. It has
+about 190 files and builds in seconds, the same bytes every time, and it is never committed. From
+`pipeline/`:
+
+```
+uv run python tests/fixture_dist.py dist-fixture
+export SURGERYWAITS_DIST="$PWD/dist-fixture"
+```
+
+`npm test` falls back to that folder when the variable is unset, so a bare run works after the
+first command. To read the real dist instead, run `uv run python -m surgerywaits.pull` and
+`uv run python -m surgerywaits.build` from `pipeline/`, then point the variable at the `dist` folder in `pipeline/`.
+CI does not build the site from the real dist yet, because no page reads figures and the build
+takes the pinned downloads. The `Data checks` job should do it once a page does.
+
+The `/dev/primitives/` page renders each state of the figure and the stat tile from the fixture
+dist. `npm run build:preview` adds it through an Astro integration and writes the result to its own
+folder, so the published build holds no `dev/` route, and `built-pages.test.ts` checks that. The
+page is marked noindex. Component tests render through Astro's container API
+([reference](https://docs.astro.build/en/reference/container-reference/)), and Vitest runs them with
+Astro's Vite config. A test stand-in for `astro:content` serves the same YAML files, because Astro
+fills its content store only during a build.
 
 ### Styles and the font
 
@@ -202,22 +236,22 @@ refuses a remote connection, send or lookup.
 
 ## Checks on each pull request
 
-| Check                           | What it does                                                                                                  |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Check sign-off                  | Confirms every commit has a `Signed-off-by` line.                                                             |
-| Check title                     | Confirms the pull request title is a Conventional Commit.                                                     |
-| Secret scan (gitleaks)          | Scans the full history for credentials.                                                                       |
-| Workflow lint                   | Lints the workflow files under `.github/workflows/` and every shell file.                                     |
-| Review dependency changes       | Fails on a new dependency with a known high or critical vulnerability.                                        |
-| Analyze (actions)               | Runs CodeQL static analysis on the workflows.                                                                 |
-| Analyze (javascript-typescript) | Runs CodeQL static analysis on the TypeScript and JavaScript.                                                 |
-| Analyze (python)                | Runs CodeQL static analysis on the Python.                                                                    |
-| Site checks                     | Runs ESLint, Prettier, `astro check` and the TypeScript compiler, knip and vitest.                            |
-| Worker build                    | Builds the site, checks the generated Worker types are current and runs `wrangler deploy --dry-run`.          |
-| Pipeline checks                 | Runs ruff, pyright and pytest on the pipeline.                                                                |
-| Data checks                     | Pulls the pinned publicdata.au files and runs the whole pipeline suite, with no unplanned skips.              |
-| Accessibility                   | Proves each accessibility check fires on a page built to fail it, at two widths in light and dark.            |
-| Repository tests                | Checks every workflow against the repository's rules, such as pinned actions and least-privilege permissions. |
+| Check                           | What it does                                                                                                     |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Check sign-off                  | Confirms every commit has a `Signed-off-by` line.                                                                |
+| Check title                     | Confirms the pull request title is a Conventional Commit.                                                        |
+| Secret scan (gitleaks)          | Scans the full history for credentials.                                                                          |
+| Workflow lint                   | Lints the workflow files under `.github/workflows/` and every shell file.                                        |
+| Review dependency changes       | Fails on a new dependency with a known high or critical vulnerability.                                           |
+| Analyze (actions)               | Runs CodeQL static analysis on the workflows.                                                                    |
+| Analyze (javascript-typescript) | Runs CodeQL static analysis on the TypeScript and JavaScript.                                                    |
+| Analyze (python)                | Runs CodeQL static analysis on the Python.                                                                       |
+| Site checks                     | Runs ESLint, Prettier, `astro check` and the TypeScript compiler, knip and vitest on the fixture dist.           |
+| Worker build                    | Builds the site, checks the generated Worker types are current and runs `wrangler deploy --dry-run`.             |
+| Pipeline checks                 | Runs ruff, pyright and pytest on the pipeline.                                                                   |
+| Data checks                     | Pulls the pinned publicdata.au files and runs the whole pipeline suite, with no unplanned skips.                 |
+| Accessibility                   | Proves each check fires on a page built to fail it, then audits the preview page, at two widths, light and dark. |
+| Repository tests                | Checks every workflow against the repository's rules, such as pinned actions and least-privilege permissions.    |
 
 More checks will join this list as the pipeline and the site are built, and each is added here
 when it starts to run.
@@ -227,7 +261,8 @@ when it starts to run.
 `.github/workflows/ci.yml` runs on every pull request and on pushes to `main` with six jobs
 whose names are stable enough to require as status checks.
 
-- `Site checks` runs `npm ci`, then lint, format check, typecheck, knip and vitest.
+- `Site checks` runs `npm ci`, then lint, format check, typecheck and knip. It builds the fixture dist
+  with `uv`, sets `SURGERYWAITS_DIST` to it and runs vitest.
 - `Worker build` runs `npm ci`, `astro build`, the `wrangler types --check` freshness check and
   `wrangler deploy --dry-run` into a temporary directory. It uses no Cloudflare credential or
   account identifier, and nothing is deployed.
@@ -242,7 +277,8 @@ whose names are stable enough to require as status checks.
   same variable locally after a pull to see the same result.
 - `Accessibility` installs Chromium with `npx playwright install --with-deps chromium`, then runs
   `npm run a11y` and the tests in `scripts/a11y.test.ts`. The first proves each accessibility
-  check fires on its fixture page in `scripts/a11y-fixtures/`. See
+  check fires on its fixture page in `scripts/a11y-fixtures/`. The job also builds the fixture dist
+  and the preview build, and holds the `/dev/primitives/` page to the same checks. See
   [`ACCESSIBILITY.md`](docs/ACCESSIBILITY.md).
 - `Repository tests` runs `pipeline/tests/test_repo.py`, `pipeline/tests/test_docs.py` and
   `pipeline/tests/test_testing_rules.py`. The first reads every workflow and checks

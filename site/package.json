@@ -5,12 +5,14 @@
   "version": "0.0.0",
   "dependencies": {
     "@astrojs/check": "0.9.12",
+    "ajv": "8.20.0",
     "astro": "7.4.7"
   },
   "scripts": {
     "sync": "ASTRO_TELEMETRY_DISABLED=1 astro sync",
     "check": "ASTRO_TELEMETRY_DISABLED=1 astro check",
-    "build": "ASTRO_TELEMETRY_DISABLED=1 astro build"
+    "build": "ASTRO_TELEMETRY_DISABLED=1 astro build",
+    "build:preview": "SURGERYWAITS_PREVIEW=1 SURGERYWAITS_PREVIEW_SCRIPT=1 ASTRO_TELEMETRY_DISABLED=1 astro build"
   },
   "devDependencies": {
     "entities": "4.5.0",

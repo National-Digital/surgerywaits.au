@@ -22,6 +22,7 @@ export default defineConfig(
   {
     ignores: [
       '**/dist/',
+      '**/dist-preview/',
       '**/.astro/',
       '**/coverage/',
       '**/node_modules/',

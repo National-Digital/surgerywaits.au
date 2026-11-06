@@ -1,0 +1,90 @@
+---
+import Figure from '../components/Figure.astro';
+import StatTile from '../components/StatTile.astro';
+import StatTiles from '../components/StatTiles.astro';
+import Base from '../layouts/Base.astro';
+import { label } from '../lib/content';
+import type { QueenslandColumn } from '../lib/format';
+import { sampleFigures, sampleQueensland, sampleTiles, withheldFigures } from './preview';
+
+const roleLabel = {
+  median_wait: label('role_median_wait'),
+  volume: label('role_volume'),
+  long_wait: label('role_long_wait'),
+  on_time: label('role_on_time'),
+};
+const queenslandLabel: Partial<Record<QueenslandColumn, string>> = {
+  treated: label('qld_treated'),
+  percent_treated_in_time: label('qld_percent_treated_in_time'),
+  percent_change_treated_on_prior_year: label('qld_percent_change_treated_on_prior_year'),
+};
+
+const figures = sampleFigures();
+const tiles = sampleTiles();
+const queensland = sampleQueensland();
+const [first] = figures;
+const withheld = first
+  ? withheldFigures({ period: first.figure.period, release: first.figure.release })
+  : [];
+---
+
+<Base title={label('title_primitives')} noindex>
+  <h1>{label('preview_heading')}</h1>
+  <p>{label('preview_intro')}</p>
+
+  <h2>{label('preview_figures')}</h2>
+  <dl>
+    {figures.map((sample) => (
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+      <>
+        <dt>{roleLabel[sample.role]}</dt>
+        <dd>
+          <Figure role={sample.role} figure={sample.figure} />
+          <p>{sample.hospital}</p>
+        </dd>
+      </>
+    ))}
+  </dl>
+
+  <h2>{label('preview_tiles')}</h2>
+  <StatTiles>
+    {tiles.map((tile) => (
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+      <StatTile
+        heading={roleLabel[tile.role]}
+        role={tile.role}
+        figure={tile.figure}
+        stale={tile.stale}
+        {...(tile.rank ? { rank: tile.rank } : {})}
+        change={tile.change ?? null}
+      />
+    ))}
+  </StatTiles>
+
+  <h2>{label('preview_withheld')}</h2>
+  <dl>
+    {withheld.map((figure) => (
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+      <>
+        <dt>{roleLabel.median_wait}</dt>
+        <dd>
+          <Figure role="median_wait" {figure} />
+        </dd>
+      </>
+    ))}
+  </dl>
+
+  <h2>{label('preview_queensland')}</h2>
+  <dl>
+    {queensland.map((sample) => (
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+      <>
+        <dt>{queenslandLabel[sample.column] ?? sample.facility}</dt>
+        <dd>
+          <Figure column={sample.column} figure={sample.figure} />
+          <p>{sample.facility}</p>
+        </dd>
+      </>
+    ))}
+  </dl>
+</Base>

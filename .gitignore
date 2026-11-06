@@ -9,3 +9,5 @@ coverage/
 .wrangler/
 .DS_Store
 .downloads/
+dist-preview/
+dist-fixture/

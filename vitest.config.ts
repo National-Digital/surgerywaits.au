@@ -1,4 +1,5 @@
-import { configDefaults, defineConfig } from 'vitest/config';
+import { getViteConfig } from 'astro/config';
+import { configDefaults } from 'vitest/config';
 
 // The browser proofs need Chromium, so only the Accessibility job runs them, with A11Y_TEST=1.
 // The built-CSS proof needs a build, so only the build job runs it, with BUILT_CSS=1.
@@ -14,4 +15,24 @@ if (process.env['BUILT_PAGES'] !== '1') {
   exclude.push('site/src/contracts/built-pages.test.ts');
 }
 
-export default defineConfig({ test: { exclude } });
+// Astro's own Vite config lets Vitest compile .astro files for the container API.
+export default getViteConfig(
+  {
+    root: import.meta.dirname,
+    resolve: {
+      alias: {
+        'astro:content': new URL('./site/src/lib/test-content.ts', import.meta.url).pathname,
+      },
+    },
+    test: {
+      exclude,
+      // A bare `npm test` reads the fixture dist at its usual place; CI sets the variable itself.
+      env: {
+        SURGERYWAITS_DIST:
+          process.env['SURGERYWAITS_DIST'] ??
+          new URL('./pipeline/dist-fixture/', import.meta.url).pathname.replace(/\/$/, ''),
+      },
+    },
+  },
+  { root: './site' },
+);

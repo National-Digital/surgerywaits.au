@@ -275,6 +275,20 @@ export function formatFigure(role: Role, figure: Figure): string {
   }
 }
 
+export function isPublished(figure: Figure | QueenslandFigure): boolean {
+  return figure.state === 'published';
+}
+
+// The unit comes apart from the number so a page can set it smaller; a percentage keeps its sign.
+export function formatFigureParts(
+  role: Role,
+  figure: Figure,
+): { amount: string; unit: string | null } {
+  const text = formatFigure(role, figure);
+  const split = figure.state === 'published' ? /^(\S+) (\D.*)$/.exec(text) : null;
+  return split ? { amount: split[1] ?? '', unit: split[2] ?? '' } : { amount: text, unit: null };
+}
+
 export function formatStamp(figure: Figure | QueenslandFigure): string {
   const quarter = figure.period.trim();
   if (quarter === '') {

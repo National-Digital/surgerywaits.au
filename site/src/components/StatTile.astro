@@ -1,0 +1,86 @@
+---
+import Figure from './Figure.astro';
+import { label } from '../lib/content';
+import { formatChange, formatRank, isPublished } from '../lib/format';
+import { assertCurrent } from '../lib/tile';
+import type { Figure as FigureData, Role } from '../lib/format';
+
+interface Props {
+  heading: string;
+  role: Role;
+  figure: FigureData;
+  stale?: boolean;
+  rank?: { position: number; of: number };
+  change?: number | null;
+}
+
+const { heading, role, figure, stale = false, rank, change = null } = Astro.props;
+assertCurrent(isPublished(figure) && !stale, rank !== undefined || change !== null);
+---
+
+<div class:list={['c-tiles__tile', { 'c-tiles__earlier': stale }]}>
+  <dt class="c-tiles__label">{heading}</dt>
+  <dd class="c-tiles__body">
+    <Figure {role} {figure} />
+    {stale && <p class="c-tiles__note">{label('earlier_period_note')}</p>}
+    {rank && (
+      <p class="c-tiles__line">
+        <span>{label('rank_caption')}</span>
+        <strong>{formatRank(rank.position, rank.of)}</strong>
+      </p>
+    )}
+    {change !== null && (
+      <p class="c-tiles__line">
+        <span>{label('change_caption')}</span>
+        <strong>{formatChange(role, change)}</strong>
+      </p>
+    )}
+  </dd>
+</div>
+
+<style>
+  @layer components {
+    .c-tiles__tile {
+      min-width: 0;
+      padding: var(--space-3) var(--space-4) var(--space-4);
+      background: var(--card);
+      border: 1px solid var(--hairline);
+      border-block-start: var(--space-1) solid var(--accent);
+      border-radius: var(--radius-md);
+      box-shadow: var(--lift);
+    }
+
+    .c-tiles__tile.c-tiles__earlier {
+      border-block-start-color: var(--muted);
+    }
+
+    .c-tiles__label {
+      font-size: var(--fs-small);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      line-height: 1.3;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .c-tiles__body {
+      margin: var(--space-2) 0 0;
+    }
+
+    .c-tiles__note {
+      margin: var(--space-2) 0 0;
+      font-size: var(--fs-small);
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .c-tiles__line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-1) var(--space-2);
+      margin: var(--space-2) 0 0;
+      font-size: var(--fs-small);
+      color: var(--ink-2);
+    }
+  }
+</style>

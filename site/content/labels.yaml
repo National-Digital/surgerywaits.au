@@ -2,3 +2,20 @@ skip_link: Skip to content
 title_home: Surgery Waits
 title_not_found: 'Page not found: Surgery Waits'
 go_home: Go to the home page
+earlier_period_note: This hospital last reported this figure in an earlier period. It is not the latest figure.
+rank_caption: Rank
+change_caption: Change on the year before
+role_median_wait: Median wait
+role_volume: Patients treated
+role_long_wait: Waiting more than 365 days
+role_on_time: Treated within the recommended time
+qld_treated: Patients treated
+qld_percent_treated_in_time: Treated within the recommended time
+qld_percent_change_treated_on_prior_year: Change in patients treated on the year before
+title_primitives: Figure and tile preview
+preview_heading: Figure and tile preview
+preview_intro: This page shows each state of the figure and the stat tile, using the fixture data. It is a development preview and is not part of the published site.
+preview_figures: Figures
+preview_tiles: Stat tiles
+preview_withheld: Figures the source withheld
+preview_queensland: Queensland figures
