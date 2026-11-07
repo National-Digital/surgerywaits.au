@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { cacheControl, SECURITY_HEADERS } from './headers';
+import { cacheControl, SECURITY_HEADERS, withHeaders } from './headers';
 import { handle } from './index';
 import { redirectFor } from './redirects';
 
@@ -72,33 +72,55 @@ describe('worker responses', () => {
 });
 
 describe('cookies', () => {
-  it('sends no Set-Cookie on a page, a redirect, a 404, a refused method or an error', async () => {
-    const cookie = { 'Set-Cookie': 'id=1; Path=/', 'Content-Type': 'text/html' };
-    const bait = {
-      ASSETS: { fetch: () => Promise.resolve(new Response('x', { headers: cookie })) },
-    } as unknown as Env;
-    const request = (path: string, method = 'GET'): Request =>
-      new Request(`https://example.test${path}`, { method });
-    const answers = [
-      await handle(request('/state/nsw/'), bait, table),
-      await handle(request('/old/'), bait, table),
-      await handle(request('/missing/'), env, table),
-      await send('/state/nsw/', 'POST'),
-      await handle(request('/data-api/x.json', 'OPTIONS'), bait, table),
-      await handle(
-        request('/x/'),
-        {
-          ASSETS: { fetch: () => Promise.reject(new Error('down')) },
-        } as unknown as Env,
-        table,
-      ),
+  const cookies = { 'Set-Cookie': 'id=1; Path=/', 'Content-Type': 'text/html' };
+  // An assets binding that tries to set a cookie on every answer, by status and method.
+  const bait = (status = 200): Env =>
+    ({
+      ASSETS: {
+        fetch: (request: Request): Promise<Response> =>
+          Promise.resolve(
+            new Response(request.method === 'HEAD' ? null : 'x', { status, headers: cookies }),
+          ),
+      },
+    }) as unknown as Env;
+  const request = (path: string, method = 'GET'): Request =>
+    new Request(`https://example.test${path}`, { method });
+  const down = { ASSETS: { fetch: () => Promise.reject(new Error('down')) } } as unknown as Env;
+
+  it('sends no Set-Cookie on a page, an asset, a data file, a HEAD, a redirect, a 404, a refused method, a preflight or an error', async () => {
+    const answers: [string, number, Response][] = [
+      ['page', 200, await handle(request('/state/nsw/'), bait(), table)],
+      ['asset', 200, await handle(request('/_astro/a.css'), bait(), table)],
+      ['asset 404', 404, await handle(request('/missing/'), bait(404), table)],
+      ['data file', 200, await handle(request('/data-api/x.json'), bait(), table)],
+      ['data file 404', 404, await handle(request('/data-api/x.json'), bait(404), table)],
+      ['head', 200, await handle(request('/state/nsw/', 'HEAD'), bait(), table)],
+      ['redirect', 301, await handle(request('/old/'), bait(), table)],
+      ['refused method', 405, await handle(request('/state/nsw/', 'POST'), bait(), table)],
+      ['preflight', 204, await handle(request('/data-api/x.json', 'OPTIONS'), bait(), table)],
+      ['error', 500, await handle(request('/x/'), down, table)],
     ];
-    for (const response of answers) {
-      expect(response.headers.has('Set-Cookie')).toBe(false);
+    for (const [name, status, response] of answers) {
+      expect([name, response.status], name).toEqual([name, status]);
+      expect([name, response.headers.has('Set-Cookie')], name).toEqual([name, false]);
+      expect(response.headers.getSetCookie(), name).toEqual([]);
     }
-    expect((await handle(request('/state/nsw/'), bait, table)).headers.has('Set-Cookie')).toBe(
-      false,
-    );
+  });
+
+  it('drops a Set-Cookie that arrives on a redirect, a 405 or a preflight answer', () => {
+    const arriving: [string, number][] = [
+      ['/old/', 301],
+      ['/state/nsw/', 405],
+      ['/data-api/x.json', 204],
+    ];
+    for (const [path, status] of arriving) {
+      const headers = new Headers({ Location: '/new/', Allow: 'GET, HEAD' });
+      headers.append('Set-Cookie', 'a=1');
+      headers.append('Set-Cookie', 'b=2');
+      const response = withHeaders(new Response(null, { status, headers }), path);
+      expect([path, response.headers.getSetCookie()]).toEqual([path, []]);
+      expect(response.status).toBe(status);
+    }
   });
 });
 

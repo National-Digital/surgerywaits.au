@@ -15,10 +15,14 @@ export const SEL = {
 export const LOAD = { idle: 'idle', loading: 'loading', done: 'done', failed: 'failed' } as const;
 export type Load = (typeof LOAD)[keyof typeof LOAD];
 
+// The only requests the tool makes, each for one of its own files.
+export const FILES = {
+  index: (): Promise<Response> => fetch('/tool/index.json'),
+  places: (): Promise<Response> => fetch('/tool/places.json'),
+  figures: (): Promise<Response> => fetch('/tool/figures.json'),
+};
+
 export const ATTR = {
-  src: 'data-src',
-  places: 'data-places',
-  figures: 'data-figures',
   failed: 'data-failed',
 } as const;
 export const attr = (node: Element, name: string): string => node.getAttribute(name) ?? '';

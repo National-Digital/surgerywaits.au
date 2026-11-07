@@ -48,7 +48,7 @@ import {
   nearPath,
   refOf,
 } from '../lib/surgery-page';
-import { historyUses, pageProblems, sendingUses, storageUses } from '../lib/privacy';
+import { fetchProblems, historyUses, pageProblems, sendingUses, storageUses } from '../lib/privacy';
 import { fill } from '../lib/slots';
 import { elementsOf, plain, textsOf } from '../lib/test-render';
 import type { Found } from '../lib/test-render';
@@ -337,7 +337,10 @@ describe('Built pages and privacy', () => {
           [],
       ).toEqual([]);
       expect(sendingUses(text)).toEqual([]);
+      expect(fetchProblems(text)).toEqual([]);
     }
+    const all = bundles().map((f) => read(`_astro/${f}`));
+    expect(all.some((text) => /fetch\(.\/tool\//u.test(text))).toBe(true);
   });
 });
 

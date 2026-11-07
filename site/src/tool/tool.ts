@@ -1,7 +1,7 @@
 import { combo } from './combo';
 import type { Combo, Option } from './combo';
 import type { PlaceRow, ToolFigures, ToolIndex, ToolPlaces } from './data';
-import { ATTR, EVENT, LOAD, SEL, attr } from './dom';
+import { ATTR, EVENT, FILES, LOAD, SEL, attr } from './dom';
 import type { Load } from './dom';
 import { normalise, rank, rankPlaces } from './match';
 import type { Candidate, Place } from './match';
@@ -17,9 +17,9 @@ interface Entry<T> extends Candidate {
   value: T;
 }
 
-// A file of the site, fetched once; a failure is told to the caller.
-async function load<T>(address: string): Promise<T> {
-  const response = await fetch(address);
+// A file of the site, read from a request the caller makes; a failure is told to the caller.
+async function load<T>(request: Promise<Response>): Promise<T> {
+  const response = await request;
   if (!response.ok) {
     throw new Error(String(response.status));
   }
@@ -89,7 +89,7 @@ function wire(root: HTMLElement, data: ToolIndex): void {
       return;
     }
     placesState = LOAD.loading;
-    load<ToolPlaces>(attr(root, ATTR.places)).then(
+    load<ToolPlaces>(FILES.places()).then(
       (file) => {
         spots = file.places;
         places = spots.map((p, i) => ({
@@ -115,7 +115,7 @@ function wire(root: HTMLElement, data: ToolIndex): void {
       return figures;
     }
     figuresFailed = false;
-    const next = load<ToolFigures>(attr(root, ATTR.figures));
+    const next = load<ToolFigures>(FILES.figures());
     next.then(recovered, () => {
       figuresFailed = true;
     });
@@ -246,7 +246,7 @@ function wire(root: HTMLElement, data: ToolIndex): void {
 
 async function start(root: HTMLElement): Promise<void> {
   try {
-    wire(root, await load<ToolIndex>(attr(root, ATTR.src)));
+    wire(root, await load<ToolIndex>(FILES.index()));
   } catch {
     const message = root.querySelector<HTMLElement>(SEL.message);
     if (message !== null) {

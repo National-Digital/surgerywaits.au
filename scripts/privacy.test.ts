@@ -68,6 +68,8 @@ interface Seen {
   local: number;
   session: number;
   databases: string[];
+  caches: string[];
+  workers: number;
   moved: string[];
   historyGrew: number;
   calls: string[];
@@ -91,6 +93,8 @@ async function watch(
       local: localStorage.length,
       session: sessionStorage.length,
       databases: databases.map((d) => d.name ?? ''),
+      caches: await caches.keys(),
+      workers: (await navigator.serviceWorker.getRegistrations()).length,
       historyGrew: history.length - length,
       href: location.href,
       calls: (window as unknown as { __privacy: string[] }).__privacy,
@@ -110,6 +114,8 @@ const clean: Seen = {
   local: 0,
   session: 0,
   databases: [],
+  caches: [],
+  workers: 0,
   moved: [],
   historyGrew: 0,
   calls: [],
@@ -179,7 +185,7 @@ browsers('Privacy in the browser', () => {
   );
 
   it(
-    'catches a cookie, a storage write, a database, a history call and an address change',
+    'catches a cookie, a storage write, a database, a cache, a service worker, a history call and an address change',
     { timeout: T },
     async () => {
       const base = up(fixtures).base;
@@ -200,6 +206,27 @@ browsers('Privacy in the browser', () => {
       expect((await run(`${base}/local-storage.html`)).local).toBe(1);
       expect((await run(`${base}/session-storage.html`)).session).toBe(1);
       expect((await run(`${base}/indexed-db.html`)).databases).toEqual(['a']);
+      const wait =
+        (condition: () => Promise<boolean>) =>
+        async (page: Page): Promise<void> => {
+          await page.waitForFunction(condition, undefined, { timeout: 10_000 });
+        };
+      const cached = await run(
+        `${base}/cache-api.html`,
+        wait(async () => (await caches.keys()).length > 0),
+      );
+      expect(cached.caches).toEqual(['a']);
+      const script = async (context: BrowserContext): Promise<void> => {
+        await context.route('**/sw.js', (route) =>
+          route.fulfill({ contentType: 'text/javascript', body: 'self.oninstall = () => {};' }),
+        );
+      };
+      const worker = await run(
+        `${base}/service-worker.html`,
+        wait(async () => (await navigator.serviceWorker.getRegistrations()).length > 0),
+        script,
+      );
+      expect(worker.workers).toBe(1);
       expect((await run(`${base}/push-state.html`)).calls).toEqual(['pushState']);
       expect((await run(`${base}/replace-state.html`)).calls).toEqual(['replaceState']);
       expect((await run(`${base}/hash.html`)).calls).toContain('hashchange');

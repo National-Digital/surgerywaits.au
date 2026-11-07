@@ -69,9 +69,10 @@ import type { NotPublishedReason, Role } from '../lib/format';
 import { nearRoutes, stateRoutes, surgeryRefs } from '../lib/surgery-page';
 import { cleanUpCopies, withNearbyPair } from '../lib/test-dist';
 import {
+  fetchProblems,
   historyUses,
   pageProblems,
-  policyHosts,
+  policySources,
   policyProblems,
   sendingUses,
   storageUses,
@@ -468,6 +469,11 @@ describe('Privacy', () => {
       "window['sessionStorage'].clear(); sessionStorage.length;",
       "indexedDB.open('a');",
       "headers.set('Set-Cookie', 'a=1');",
+      "document['cookie'] = 'a=1';",
+      "await caches.open('a');",
+      "caches['default'].put(r, s);",
+      "navigator.serviceWorker.register('/sw.js');",
+      'cookieStore.set("a", "1");',
     ]) {
       expect(storageUses(fixture), fixture).not.toEqual([]);
     }
@@ -487,16 +493,46 @@ describe('Privacy', () => {
       "location.href = '/compare/?q=1';",
       "location.assign('/x');",
       "addEventListener('hashchange', f);",
+      "const h = history; h.pushState({}, '', '?q=1');",
+      "const r = window.history; r.replaceState(null, '', '#a');",
+      "window['history'].go(1);",
+      'x.pushState(1);',
     ]) {
       expect(historyUses(fixture), fixture).not.toEqual([]);
     }
     expect(historyUses('const history = chart(row); const x = location.origin;')).toEqual([]);
   });
 
+  it('the compare tool fetches only its own /tool/ files', () => {
+    const sources = toolSources();
+    expect(
+      sources.some(({ text }) => text.includes('fetch(')),
+      'the scan finds the tool fetch',
+    ).toBe(true);
+    expect(
+      sources.flatMap(({ file, text }) => fetchProblems(text).map((u) => `${file}: ${u}`)),
+    ).toEqual([]);
+    expect(fetchProblems("fetch('/tool/index.json'); fetch(`/tool/a-b.json`, { x: 1 });")).toEqual(
+      [],
+    );
+    for (const fixture of [
+      'fetch(address);',
+      "fetch('https://stats.example/a.json');",
+      "fetch('//stats.example/tool/a.json');",
+      "fetch('/tool/a.json?q=' + name);",
+      "fetch('/other/a.json');",
+      "const f = fetch; f('/tool/a.json');",
+      "window.fetch('/x');",
+    ]) {
+      expect(fetchProblems(fixture), fixture).not.toEqual([]);
+    }
+  });
+
   it('the page-view count sets no cookie and sends nothing a person enters', () => {
     expect(policyProblems(policy)).toEqual([]);
-    expect(policyHosts(policy)).toEqual([
+    expect(policySources(policy)).toEqual([
       'connect-src https://cloudflareinsights.com',
+      'img-src data:',
       'script-src https://static.cloudflareinsights.com',
     ]);
     expect(policy).toContain("form-action 'none'");
@@ -536,7 +572,32 @@ describe('Privacy', () => {
     );
     const wild = policy.replace("font-src 'self'", "font-src 'self' *");
     const missing = policy.replace(' https://cloudflareinsights.com', '');
+    const loosened = policy.replace("default-src 'none'", "default-src 'self'");
+    const repeated = `${policy}; script-src 'self'`;
+    const scheme = (directive: string, source: string): string =>
+      policy.replace(`${directive} 'self'`, `${directive} 'self' ${source}`);
     for (const [name, fixture, expected] of [
+      ['default-src loosened', loosened, "default-src: 'self'"],
+      ['a repeated directive', repeated, 'duplicate: script-src'],
+      ['https: alone', scheme('style-src', 'https:'), 'extra: style-src https:'],
+      ['http: alone', scheme('style-src', 'http:'), 'extra: style-src http:'],
+      ['ws: alone', scheme('connect-src', 'ws:'), 'extra: connect-src ws:'],
+      ['wss: alone', scheme('connect-src', 'wss:'), 'extra: connect-src wss:'],
+      ['blob:', scheme('img-src', 'blob:'), 'extra: img-src blob:'],
+      ['data: in a script', scheme('script-src', 'data:'), 'extra: script-src data:'],
+      ['a bare host', scheme('font-src', 'cdn.example'), 'extra: font-src cdn.example'],
+      [
+        'a bare host with a port',
+        scheme('font-src', 'cdn.example:443'),
+        'extra: font-src cdn.example:443',
+      ],
+      ['a host wildcard', scheme('font-src', '*.example.com'), 'extra: font-src *.example.com'],
+      ['a lone wildcard', scheme('font-src', '*'), 'extra: font-src *'],
+      [
+        'an inline allowance',
+        scheme('style-src', "'unsafe-inline'"),
+        "keyword: style-src 'unsafe-inline'",
+      ],
       ['an image host', third, 'extra: img-src https://pixel.example'],
       ['a script host', script, 'extra: script-src https://cdn.example'],
       ['a report host', report, 'extra: connect-src https://stats.example'],
