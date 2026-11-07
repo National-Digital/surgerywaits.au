@@ -77,8 +77,10 @@ describe('the sitemaps', () => {
 
   it('lists no page that is marked noindex and no page that was not built', () => {
     for (const url of sitemapFiles().flatMap((f) => rows(f, 'urlset', 'url'))) {
-      expect(url.startsWith(ORIGIN), url).toBe(true);
-      expect(built.get(url.slice(ORIGIN.length)), url).toBe(false);
+      const parsed = new URL(url);
+      expect(parsed.origin, url).toBe(ORIGIN);
+      expect(`${parsed.origin}${parsed.pathname}`, url).toBe(url);
+      expect(built.get(parsed.pathname), url).toBe(false);
     }
   });
 
