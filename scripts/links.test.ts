@@ -112,10 +112,22 @@ describe('the link check', () => {
       '<noscript><a href="/n/"></a></noscript>' +
         '<meta http-equiv="Refresh" content="0; url=/r/">' +
         '<meta http-equiv="refresh" content="5">' +
+        '<meta http-equiv="refresh" content="0; /bare/">' +
+        `<meta http-equiv="refresh" content="0; URL='/single/'">` +
+        '<meta http-equiv="refresh" content=\'0;url="/double/"\'>' +
         '<input type="image" src="/i.png">' +
         '<style>a{background:url(/s.png)}</style><p style="background:url(\'/t.png\')"></p>',
     );
-    expect(page.urls).toEqual(['/n/', '/r/', '/i.png', '/s.png', '/t.png']);
+    expect(page.urls).toEqual([
+      '/n/',
+      '/r/',
+      '/bare/',
+      '/single/',
+      '/double/',
+      '/i.png',
+      '/s.png',
+      '/t.png',
+    ]);
     expect(page.base).toBe(false);
     expect(scan('<base href="/x/">').base).toBe(true);
   });

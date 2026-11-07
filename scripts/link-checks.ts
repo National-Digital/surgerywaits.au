@@ -100,7 +100,7 @@ export function scan(html: string): Page {
     if (el.tagName === 'meta' && attr('http-equiv')?.trim().toLowerCase() === 'refresh') {
       const m = REFRESH.exec(attr('content') ?? '');
       const target = (m?.[1] ?? m?.[2] ?? m?.[3] ?? '').trim();
-      if (target !== '' && /url\s*=/i.test(attr('content') ?? '')) {
+      if (target !== '') {
         urls.push(target);
       }
     }
