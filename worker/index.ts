@@ -1,4 +1,5 @@
 import { ALLOWED_DATA_API, isDataApi, withHeaders } from './headers';
+import { handleCard, handleMcp, MCP_CARD_PATH, MCP_PATH } from './mcp';
 import { redirectFor, redirects } from './redirects';
 import type { RedirectTable } from './redirects';
 
@@ -52,6 +53,11 @@ async function route(
   table: RedirectTable = redirects,
 ): Promise<Response> {
   const url = new URL(request.url);
+  if (url.pathname === MCP_PATH || url.pathname === MCP_CARD_PATH) {
+    const answer =
+      url.pathname === MCP_PATH ? await handleMcp(request, env) : await handleCard(request);
+    return withHeaders(answer, url.pathname, request.method);
+  }
   if (request.method === 'OPTIONS' && isDataApi(url.pathname)) {
     return preflight(url.pathname);
   }
@@ -90,7 +96,7 @@ export async function handle(
   return response;
 }
 
-// Content negotiation and the MCP route join here (ADR D7).
+// Content negotiation joins here (ADR D7).
 export default {
   fetch: (request, env): Promise<Response> => handle(request, env),
 } satisfies ExportedHandler<Env>;

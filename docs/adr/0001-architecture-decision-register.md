@@ -133,7 +133,8 @@ the Privacy rule in `docs/ARCHITECTURE.md` sets out.
 ### D9: MCP is a route in the same Worker
 
 The MCP server is the `/mcp` route of the Worker in [D7][d7]. It reads the built JSON through the
-Worker's assets binding and keeps the tool names that clients already use. The route is planned.
+Worker's assets binding and keeps the tool names that clients already use. The route is built and
+speaks the 2026-07-28 revision of the protocol.
 
 Why: one deploy carries the site and the MCP server, so the two cannot show different data. Reading
 built files means the route runs no query engine and has nothing to keep in step with the pipeline.

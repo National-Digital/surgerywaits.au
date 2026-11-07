@@ -74,7 +74,7 @@ jobs:
       - run: npx vitest run site/src/styles/built-css.test.ts
         env:
           BUILT_CSS: '1'
-      - run: npx vitest run site/src/contracts/built-pages.test.ts site/src/contracts/sitemaps.test.ts site/src/contracts/redirects.test.ts site/src/contracts/data-api.test.ts site/src/contracts/surfaces.test.ts site/src/contracts/json-ld.test.ts
+      - run: npx vitest run site/src/contracts/built-pages.test.ts site/src/contracts/sitemaps.test.ts site/src/contracts/redirects.test.ts site/src/contracts/data-api.test.ts site/src/contracts/surfaces.test.ts site/src/contracts/json-ld.test.ts site/src/contracts/mcp-built.test.ts
         env:
           BUILT_PAGES: '1'
       - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0

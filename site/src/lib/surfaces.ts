@@ -112,6 +112,13 @@ export const SURFACES: readonly Surface[] = [
     expected: () => [SECURITY_TXT_PATH],
     check: securityProblem,
   },
+  {
+    id: 'mcp-server-card',
+    pattern: /^\/mcp\/server-card$/u,
+    mediaType: 'application/json',
+    purpose: 'The MCP server card, served by the Worker, so no build file carries it.',
+    expected: () => [],
+  },
 ];
 
 // The surface that serves a path, if one does.
