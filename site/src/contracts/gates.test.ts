@@ -554,6 +554,12 @@ describe('Privacy', () => {
       'script: //x.example/a.js',
     ]);
     expect(pageProblems('<SCRIPT>track()</script >')).toEqual(['script: inline']);
+    expect(
+      pageProblems('<template><script src="https://x.example/a.js"></script></template>'),
+    ).toEqual(['script: https://x.example/a.js']);
+    expect(pageProblems('<head><noscript><script>x()</script></noscript></head>')).toEqual([
+      'script: inline',
+    ]);
     expect(pageProblems('<p>hi</p><script\nsrc=https://x.example/a.js></script\t>')).toEqual([
       'script: https://x.example/a.js',
     ]);

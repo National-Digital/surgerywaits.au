@@ -89,13 +89,15 @@ function scripts(node: DefaultTreeAdapterTypes.ParentNode): DefaultTreeAdapterTy
   return node.childNodes.flatMap((child) => [
     ...('tagName' in child && child.tagName === 'script' ? [child] : []),
     ...('childNodes' in child ? scripts(child) : []),
+    ...('content' in child ? scripts(child.content) : []),
   ]);
 }
 
 // What a built page loads from elsewhere, or runs inline, or names as the beacon.
 export function pageProblems(html: string): string[] {
   const problems: string[] = [];
-  for (const script of scripts(parse(html))) {
+  // With scripting off, noscript content parses as elements too.
+  for (const script of scripts(parse(html, { scriptingEnabled: false }))) {
     const src = script.attrs.find((a) => a.name === 'src')?.value.trim();
     const text = script.childNodes.map((c) => ('value' in c ? c.value : '')).join('');
     if (src === undefined ? text.trim() !== '' : !/^\/(?!\/)/.test(src)) {
