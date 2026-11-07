@@ -1,9 +1,8 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { parse } from 'parse5';
-import type { DefaultTreeAdapterTypes } from 'parse5';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { readDist } from '../lib/dist';
+import { hasNoindex } from '../lib/noindex';
 import { indexablePairPaths, pairRoutes } from '../lib/pair-page';
 import { MAX_BYTES, MAX_URLS, releaseDate } from '../lib/sitemap';
 
@@ -16,19 +15,6 @@ const onRealDist = pairRoutes().length > 1000;
 const text = (file: string): string => readFileSync(new URL(file, dist), 'utf8');
 
 const built = new Map<string, boolean>();
-const noindexOf = (html: string): boolean => {
-  const walk = (node: DefaultTreeAdapterTypes.ParentNode): boolean =>
-    node.childNodes.some(
-      (child) =>
-        (child.nodeName === 'meta' &&
-          'attrs' in child &&
-          child.attrs.some((a) => a.name === 'name' && a.value === 'robots') &&
-          child.attrs.some((a) => a.name === 'content' && a.value.includes('noindex'))) ||
-        ('childNodes' in child && walk(child)),
-    );
-  return walk(parse(html));
-};
-
 const URL_ROW = /^ {2}<url><loc>([^<>]+)<\/loc>(<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>)?<\/url>$/u;
 const HEADER = '<?xml version="1.0" encoding="UTF-8"?>';
 
@@ -58,7 +44,7 @@ const sitemapFiles = (): string[] =>
 beforeAll(() => {
   for (const file of readdirSync(dist, { recursive: true, encoding: 'utf8' })) {
     if (file === 'index.html' || file.endsWith('/index.html')) {
-      built.set(`/${file.slice(0, -'index.html'.length)}`, noindexOf(text(file)));
+      built.set(`/${file.slice(0, -'index.html'.length)}`, hasNoindex(text(file)));
     }
   }
 }, 120_000);

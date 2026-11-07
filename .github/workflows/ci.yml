@@ -74,7 +74,7 @@ jobs:
       - run: npx vitest run site/src/styles/built-css.test.ts
         env:
           BUILT_CSS: '1'
-      - run: npx vitest run site/src/contracts/built-pages.test.ts
+      - run: npx vitest run site/src/contracts/built-pages.test.ts site/src/contracts/sitemaps.test.ts site/src/contracts/redirects.test.ts
         env:
           BUILT_PAGES: '1'
       # Builds the site a second time and compares the checksum of every file.
@@ -202,7 +202,7 @@ jobs:
         env:
           ASTRO_TELEMETRY_DISABLED: '1'
           SURGERYWAITS_DIST: ${{ github.workspace }}/pipeline/dist
-      - run: npx vitest run site/src/contracts/built-pages.test.ts
+      - run: npx vitest run site/src/contracts/built-pages.test.ts site/src/contracts/sitemaps.test.ts site/src/contracts/redirects.test.ts
         working-directory: .
         env:
           BUILT_PAGES: '1'

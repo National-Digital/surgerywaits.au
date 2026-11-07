@@ -1,6 +1,5 @@
 // Fonts and bundled assets carry a content hash in their name, so they never change at an address.
 const IMMUTABLE = /^\/(_astro|fonts)\//u;
-const CRAWLER_FILES = /^\/(robots\.txt|sitemap[^/]*\.xml)$/u;
 
 // The page loads its own script, style, font and image only, and the page-view beacon's two hosts.
 const CONTENT_SECURITY_POLICY = [
@@ -35,9 +34,10 @@ export function cacheControl(pathname: string, status: number): string | undefin
   if (IMMUTABLE.test(pathname)) {
     return 'public, max-age=31536000, immutable';
   }
-  return CRAWLER_FILES.test(pathname)
-    ? 'public, max-age=3600'
-    : 'public, max-age=0, must-revalidate';
+  if (pathname === '/robots.txt') {
+    return 'public, max-age=14400';
+  }
+  return 'public, max-age=0, must-revalidate';
 }
 
 // A copy with the headers set, because a response from the assets binding is immutable.

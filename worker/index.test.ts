@@ -70,9 +70,9 @@ describe('caching', () => {
     expect(cacheControl('/hospital/x/', 200)).toBe('public, max-age=0, must-revalidate');
     expect(cacheControl('/_astro/style.abc.css', 200)).toBe('public, max-age=31536000, immutable');
     expect(cacheControl('/fonts/a.woff2', 304)).toBe('public, max-age=31536000, immutable');
-    expect(cacheControl('/sitemap.xml', 200)).toBe('public, max-age=3600');
-    expect(cacheControl('/sitemap-pairs-1.xml', 200)).toBe('public, max-age=3600');
-    expect(cacheControl('/robots.txt', 200)).toBe('public, max-age=3600');
+    expect(cacheControl('/sitemap.xml', 200)).toBe('public, max-age=0, must-revalidate');
+    expect(cacheControl('/sitemap-pairs-1.xml', 200)).toBe('public, max-age=0, must-revalidate');
+    expect(cacheControl('/robots.txt', 200)).toBe('public, max-age=14400');
   });
 
   it('never stores a 404 and leaves other statuses to the assets binding', () => {
@@ -97,6 +97,24 @@ describe('redirects', () => {
   it('finds a listed path given without its slash, in one hop', async () => {
     expect(redirectFor('/old', table)).toBe('/new/');
     expect((await get('/old')).headers.get('Location')).toBe('https://example.test/new/');
+  });
+
+  it('finds a path in another case, with escaped letters, or without its slash', async () => {
+    const wanted = 'https://example.test/new/';
+    for (const path of ['/OLD/', '/Old', '/%6Fld/', '/%4fld', '/o%6c%64']) {
+      const response = await get(path);
+      expect(response.status, path).toBe(301);
+      expect(response.headers.get('Location'), path).toBe(wanted);
+    }
+  });
+
+  it('leaves reserved escapes and foreign hosts out of the lookup', async () => {
+    const slashed = new Map([['/a/b/', '/c/']]);
+    expect(redirectFor('/a%2Fb/', slashed)).toBeUndefined();
+    expect(redirectFor('//a/b/', slashed)).toBeUndefined();
+    expect(redirectFor('/a/b/%2e%2e/', slashed)).toBeUndefined();
+    const response = await get('/old/?next=https://elsewhere.test/');
+    expect(new URL(response.headers.get('Location') ?? '').origin).toBe('https://example.test');
   });
 
   it('serves every other path from the assets', async () => {

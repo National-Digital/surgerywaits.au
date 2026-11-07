@@ -1,3 +1,5 @@
+# https://surgerywaits.au: public hospital waiting times for planned surgery in Australia.
+
 User-agent: *
 Content-Signal: search=yes, ai-input=yes, ai-train=no
 Allow: /

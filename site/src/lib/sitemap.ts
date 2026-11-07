@@ -1,12 +1,12 @@
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { hasNoindex } from './noindex';
+
 // The sitemap protocol allows 50,000 URLs and 50 MB a file; pairs are cut well below that.
 export const MAX_URLS = 50_000;
 export const MAX_BYTES = 50 * 1024 * 1024;
 export const PAIRS_PER_FILE = 5000;
-
-const NOINDEX = /<meta\s+name="robots"\s+content="[^"]*\bnoindex\b[^"]*"/u;
 
 export interface BuiltPage {
   path: string;
@@ -19,7 +19,7 @@ export function builtPages(dist: string): BuiltPage[] {
     .filter((file) => file === 'index.html' || file.endsWith('/index.html'))
     .map((file) => ({
       path: `/${file.slice(0, -'index.html'.length)}`,
-      noindex: NOINDEX.test(readFileSync(join(dist, file), 'utf8')),
+      noindex: hasNoindex(readFileSync(join(dist, file), 'utf8')),
     }))
     .sort((a, b) => (a.path < b.path ? -1 : 1));
 }
