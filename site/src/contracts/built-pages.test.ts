@@ -711,8 +711,17 @@ describe('Built longest-waits pages', () => {
       expect([path, html.includes('c-table__rank')]).toEqual([path, false]);
       expect([path, /<script|\son[a-z]+=/i.test(html)]).toEqual([path, false]);
     }
-    const tables = mine().filter(({ html }) => html.includes('<table'));
-    expect(tables.length).toBe(4);
+    // A page with no rows says so; the sample data has no cross-border pair.
+    const nones = [
+      longest.index_none,
+      longest.by_surgery_none,
+      longest.border_none,
+      longest.changes_none,
+    ].map((t) => t.split('{')[0] ?? t);
+    for (const { path, html } of mine().filter(({ html }) => !html.includes('<table'))) {
+      expect([path, nones.some((t) => html.includes(t))]).toEqual([path, true]);
+    }
+    expect(mine().some(({ html }) => html.includes('<table'))).toBe(true);
   });
 
   it('link only to pages that are built', () => {
