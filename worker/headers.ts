@@ -24,6 +24,14 @@ export const SECURITY_HEADERS: Readonly<Record<string, string>> = {
   'Permissions-Policy': 'geolocation=(), camera=(), microphone=(), payment=(), usb=()',
 };
 
+export const isDataApi = (pathname: string): boolean => pathname.startsWith('/data-api/');
+
+// Any site may read the data files from a page, so every answer under /data-api/ allows it.
+const CORS_HEADERS: Readonly<Record<string, string>> = {
+  'Access-Control-Allow-Origin': '*',
+  'X-Robots-Tag': 'noindex',
+};
+
 export function cacheControl(pathname: string, status: number): string | undefined {
   if (status === 404) {
     return 'no-store';
@@ -34,17 +42,38 @@ export function cacheControl(pathname: string, status: number): string | undefin
   if (IMMUTABLE.test(pathname)) {
     return 'public, max-age=31536000, immutable';
   }
+  if (isDataApi(pathname)) {
+    return 'public, max-age=3600';
+  }
   if (pathname === '/robots.txt') {
     return 'public, max-age=14400';
   }
   return 'public, max-age=0, must-revalidate';
 }
 
+// A JSON client that asks for a missing data file gets JSON back, not the site's HTML page.
+function dataApiNotFound(method: string): Response {
+  return new Response(method === 'HEAD' ? null : '{"error":"not found"}', {
+    status: 404,
+    headers: { 'Content-Type': 'application/json; charset=utf-8' },
+  });
+}
+
 // A copy with the headers set, because a response from the assets binding is immutable.
-export function withHeaders(response: Response, pathname: string): Response {
-  const copy = new Response(response.body, response);
+export function withHeaders(response: Response, pathname: string, method = 'GET'): Response {
+  const source =
+    isDataApi(pathname) && response.status === 404 ? dataApiNotFound(method) : response;
+  const copy = new Response(source.body, source);
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     copy.headers.set(name, value);
+  }
+  if (isDataApi(pathname)) {
+    for (const [name, value] of Object.entries(CORS_HEADERS)) {
+      copy.headers.set(name, value);
+    }
+    if (response.status === 200 && pathname.endsWith('.json')) {
+      copy.headers.set('Content-Type', 'application/json; charset=utf-8');
+    }
   }
   const cache = cacheControl(pathname, response.status);
   if (cache !== undefined) {

@@ -12,7 +12,7 @@ const env = {
       seen.push(new URL(request.url).pathname);
       const { pathname } = new URL(request.url);
       return Promise.resolve(
-        pathname === '/missing/'
+        pathname === '/missing/' || pathname.endsWith('missing.json') || pathname.includes('%2f')
           ? new Response('gone', { status: 404 })
           : new Response(request.method === 'HEAD' ? null : '<p>page</p>', {
               status: 200,
@@ -188,4 +188,111 @@ describe('methods and failures', () => {
       failAssets = false;
     }
   });
+});
+
+describe('the data files', () => {
+  it('lets any site read them and keeps them out of search', async () => {
+    for (const path of [
+      '/data-api/index.json',
+      '/data-api/hospitals/x.json',
+      '/data-api/missing.json',
+    ]) {
+      const response = await get(path);
+      expect(response.headers.get('Access-Control-Allow-Origin'), path).toBe('*');
+      expect(response.headers.get('X-Robots-Tag'), path).toBe('noindex');
+      expect(response.headers.get('Content-Security-Policy'), path).toBe(
+        SECURITY_HEADERS['Content-Security-Policy'],
+      );
+    }
+  });
+
+  it('names JSON as the type and caches a found file for an hour', async () => {
+    const response = await get('/data-api/index.json');
+    expect(response.headers.get('Content-Type')).toBe('application/json; charset=utf-8');
+    expect(response.headers.get('Cache-Control')).toBe('public, max-age=3600');
+    expect(cacheControl('/data-api/index.json', 200)).toBe('public, max-age=3600');
+    expect(cacheControl('/data-api/gone.json', 404)).toBe('no-store');
+    const page = await get('/state/nsw/');
+    expect(page.headers.get('Content-Type')).toBe('text/html; charset=utf-8');
+    expect(page.headers.get('Access-Control-Allow-Origin')).toBeNull();
+    expect(page.headers.get('X-Robots-Tag')).toBeNull();
+  });
+
+  it('answers a preflight under /data-api/ with the methods and no body', async () => {
+    seen.length = 0;
+    const response = await send('/data-api/trends/x.json', 'OPTIONS');
+    expect(response.status).toBe(204);
+    expect(response.body).toBeNull();
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
+    expect(response.headers.get('Access-Control-Allow-Methods')).toBe('GET, HEAD, OPTIONS');
+    expect(response.headers.get('Access-Control-Max-Age')).toBe('86400');
+    expect(response.headers.get('Content-Security-Policy')).toBe(
+      SECURITY_HEADERS['Content-Security-Policy'],
+    );
+    expect(seen).toEqual([]);
+  });
+
+  it('refuses a write under /data-api/ and still refuses OPTIONS elsewhere', async () => {
+    const write = await send('/data-api/index.json', 'POST');
+    expect(write.status).toBe(405);
+    expect(write.headers.get('Allow')).toBe('GET, HEAD, OPTIONS');
+    expect(write.headers.get('Access-Control-Allow-Origin')).toBe('*');
+    for (const path of ['/', '/data/', '/data-api', '/charts/x.svg']) {
+      const response = await send(path, 'OPTIONS');
+      expect(response.status, path).toBe(405);
+      expect(response.headers.get('Allow'), path).toBe('GET, HEAD');
+    }
+  });
+
+  it.each([
+    ['GET', '/data-api/missing.json'],
+    ['HEAD', '/data-api/missing.json'],
+    ['GET', '/data-api/%2f..'],
+    ['GET', '/data-api/a%2fmissing.json'],
+  ])('answers %s %s with a small JSON 404 that any site may read', async (method, path) => {
+    const response = await send(path, method);
+    expect(response.status).toBe(404);
+    expect(response.headers.get('Content-Type')).toBe('application/json; charset=utf-8');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
+    expect(response.headers.get('X-Robots-Tag')).toBe('noindex');
+    expect(await response.text()).toBe(method === 'HEAD' ? '' : '{"error":"not found"}');
+  });
+
+  it('leaves the HTML 404 for a page', async () => {
+    const response = await get('/missing/');
+    expect(response.status).toBe(404);
+    expect(await response.text()).toBe('gone');
+  });
+
+  it('answers HEAD on a data file with its headers and no body', async () => {
+    const response = await send('/data-api/index.json', 'HEAD');
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Content-Type')).toBe('application/json; charset=utf-8');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
+    expect(response.headers.get('Cache-Control')).toBe('public, max-age=3600');
+    expect(await response.text()).toBe('');
+  });
+
+  it('passes an encoded path to the assets as sent', async () => {
+    seen.length = 0;
+    await get('/data-api/%2f..');
+    expect(seen).toEqual(['/data-api/%2f..']);
+  });
+
+  it('gives the path without its slash no data headers and refuses its preflight', async () => {
+    const response = await get('/data-api');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();
+    expect((await send('/data-api', 'OPTIONS')).status).toBe(405);
+  });
+
+  it.each(['/data-api/missing.json', '/data-api/%2f..'])(
+    'answers a preflight on the missing path %s like any other',
+    async (path) => {
+      const response = await send(path, 'OPTIONS');
+      expect(response.status).toBe(204);
+      expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
+      expect(response.headers.get('Access-Control-Allow-Methods')).toBe('GET, HEAD, OPTIONS');
+    },
+  );
 });

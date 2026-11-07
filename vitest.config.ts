@@ -14,7 +14,11 @@ if (process.env['BUILT_CSS'] !== '1') {
   exclude.push('site/src/styles/built-css.test.ts');
 }
 if (process.env['BUILT_PAGES'] !== '1') {
-  exclude.push('site/src/contracts/built-pages.test.ts', 'site/src/contracts/sitemaps.test.ts');
+  exclude.push(
+    'site/src/contracts/built-pages.test.ts',
+    'site/src/contracts/sitemaps.test.ts',
+    'site/src/contracts/data-api.test.ts',
+  );
 }
 if (process.env['HTML_TEST'] !== '1') {
   exclude.push('scripts/html.test.ts');
