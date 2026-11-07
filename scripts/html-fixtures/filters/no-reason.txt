@@ -1,0 +1,4 @@
+# A reason for the first pattern.
+^The first pattern$
+
+^A pattern with no comment above it$

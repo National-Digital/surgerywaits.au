@@ -1,0 +1,4 @@
+# Why the first pattern is needed.
+^The first pattern$
+# Why the second is needed.
+^The second pattern$
