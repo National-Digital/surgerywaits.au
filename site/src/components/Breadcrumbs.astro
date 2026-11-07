@@ -1,38 +1,33 @@
 ---
-import JsonLd from './JsonLd.astro';
-import { getSite, label } from '../lib/content';
-import { breadcrumbList } from '../lib/json-ld';
+import { label } from '../lib/content';
+import type { Crumb } from '../lib/json-ld';
 
 interface Props {
   // The last item is the current page, so it takes no link.
-  items: { label: string; href?: string | undefined }[];
+  items: Crumb[];
 }
 
 const { items } = Astro.props;
 const last = items.length - 1;
-const trail = breadcrumbList(getSite(), Astro.url.pathname, items);
 ---
 
 {items.length > 1 && (
-  <>
-    <JsonLd nodes={[trail]} />
-    <nav class="c-breadcrumbs" aria-label={label('nav_breadcrumb')}>
-      <ol class="c-breadcrumbs__list">
-        {items.map((item, index) => (
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
-          <li class="c-breadcrumbs__item">
-            {index === last || item.href === undefined ? (
-              <span aria-current={index === last ? 'page' : undefined}>{item.label}</span>
-            ) : (
-              <a class="c-breadcrumbs__link" href={item.href}>
-                {item.label}
-              </a>
-            )}
-          </li>
-        ))}
-      </ol>
-    </nav>
-  </>
+  <nav class="c-breadcrumbs" aria-label={label('nav_breadcrumb')}>
+    <ol class="c-breadcrumbs__list">
+      {items.map((item, index) => (
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+        <li class="c-breadcrumbs__item">
+          {index === last || item.href === undefined ? (
+            <span aria-current={index === last ? 'page' : undefined}>{item.label}</span>
+          ) : (
+            <a class="c-breadcrumbs__link" href={item.href}>
+              {item.label}
+            </a>
+          )}
+        </li>
+      ))}
+    </ol>
+  </nav>
 )}
 
 <style>

@@ -49,8 +49,6 @@ export interface PageFacts {
   path: string;
   title: string;
   description?: string | undefined;
-  // An ISO date, set only where the page states the data release it was built from.
-  released?: string | undefined;
   medical?: boolean | undefined;
   about?: string | undefined;
 }
@@ -63,7 +61,6 @@ export function webPage(site: Site, page: PageFacts): JsonLdNode {
     name: page.title,
     ...(page.description === undefined ? {} : { description: page.description }),
     inLanguage: 'en-AU',
-    ...(page.released === undefined ? {} : { dateModified: page.released }),
     ...(page.about === undefined ? {} : { about: { '@id': page.about } }),
     isPartOf: { '@id': websiteId(site) },
     publisher: { '@id': publisherId(site) },
@@ -112,11 +109,12 @@ const licences = (credits: readonly Credit[]): string | string[] => {
 };
 
 // One node for each dataset the page credits, as publicdata.au describes it.
-export function sourceDataset(credit: Credit): JsonLdNode {
+export function sourceDataset(credit: Credit, description: string): JsonLdNode {
   return {
     '@type': 'Dataset',
     '@id': credit.dataset_url,
     name: credit.title,
+    description,
     url: credit.dataset_url,
     version: credit.version,
     creator: publisherOf(credit),
@@ -139,6 +137,7 @@ export interface FileDataset {
   // The page's data file, as a path on this site.
   file: string;
   period: string;
+  // The release date of the data the file holds, which is when that data last changed.
   release: string;
   credits: readonly Credit[];
 }
@@ -156,10 +155,15 @@ export function fileDataset(site: Site, facts: FileDataset): JsonLdNode {
     isAccessibleForFree: true,
     license: licences(facts.credits),
     citation: facts.credits.map((c) => c.citation),
-    isBasedOn: facts.credits.map((c) => ({ '@id': c.dataset_url })),
+    isBasedOn: facts.credits.map((c) => ({
+      '@type': 'Dataset',
+      '@id': c.dataset_url,
+      url: c.dataset_url,
+      name: c.title,
+    })),
     publisher: { '@id': publisherId(site) },
     ...(coverage === undefined ? {} : { temporalCoverage: coverage }),
-    datePublished: facts.release,
+    dateModified: facts.release,
     distribution: {
       '@type': 'DataDownload',
       contentUrl: new URL(facts.file, site.url).href,

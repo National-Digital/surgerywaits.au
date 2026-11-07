@@ -22,6 +22,7 @@ const crumbs = [{ label: getHospitalTemplate().crumb_home, href: '/' }, { label:
 ---
 
 <Base
+  {crumbs}
   title={fill(t.title, { site: getSite().name })}
   description={t.description}
   canonicalPath={HOSPITALS_PATH}

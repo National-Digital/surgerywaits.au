@@ -7,6 +7,7 @@ import {
   fileDataset,
   hospital,
   serialise,
+  sourceDataset,
   webPage,
 } from './json-ld';
 
@@ -53,14 +54,35 @@ describe('json-ld', () => {
     ]);
   });
 
-  it('dates a page only when it was given a release', () => {
+  it('gives a page no date and a medical page its own type', () => {
     const base = { path: '/p/', title: 'T' };
     expect(webPage(site, base)).not.toHaveProperty('dateModified');
-    expect(webPage(site, { ...base, released: '2026-01-02' })).toHaveProperty(
-      'dateModified',
-      '2026-01-02',
-    );
+    expect(webPage(site, base)).not.toHaveProperty('datePublished');
     expect(webPage(site, { ...base, medical: true })['@type']).toBe('MedicalWebPage');
+  });
+
+  it('dates a page dataset by when its data last changed and names each source inline', () => {
+    const facts = {
+      path: '/p/',
+      name: 'N',
+      description: 'D',
+      file: '/data-api/x.json',
+      period: '2024–25',
+      release: '2026-01-02',
+      credits: [credit],
+    };
+    const node = fileDataset(site, facts);
+    expect(node).toHaveProperty('dateModified', '2026-01-02');
+    expect(node).not.toHaveProperty('datePublished');
+    expect(node['isBasedOn']).toEqual([
+      { '@type': 'Dataset', '@id': credit.dataset_url, url: credit.dataset_url, name: 'Dataset A' },
+    ]);
+  });
+
+  it('describes a source dataset and gives the release of the publisher as its publication date', () => {
+    const node = sourceDataset(credit, 'About A');
+    expect(node).toHaveProperty('description', 'About A');
+    expect(node).toHaveProperty('datePublished', '2026-01-02');
   });
 
   it('leaves out the position of a hospital with no coordinates', () => {

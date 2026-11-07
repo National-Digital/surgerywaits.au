@@ -45,7 +45,7 @@ const crumbs = [{ label: crumbHome, href: '/' }, ...(trail ?? []), { label: crum
 const all = [...sections, ...(after ?? [])];
 ---
 
-<Base {title} {description} canonicalPath={path} {medical} {jsonLd}>
+<Base {crumbs} {title} {description} canonicalPath={path} {medical} {jsonLd}>
   <div class="o-columns">
     <Breadcrumbs items={crumbs} />
     <h1>{heading}</h1>

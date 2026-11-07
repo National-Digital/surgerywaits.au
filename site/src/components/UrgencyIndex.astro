@@ -42,15 +42,17 @@ const cats = categories().map((category) => {
     },
   };
 });
+const crumbs = [{ label: t.crumb_home, href: '/' }, { label: t.crumb_urgency }];
 ---
 
 <Base
+  {crumbs}
   title={fill(t.index_title, { site })}
   description={t.index_description}
   canonicalPath={URGENCY_PATH}
 >
   <div class="o-columns">
-    <Breadcrumbs items={[{ label: t.crumb_home, href: '/' }, { label: t.crumb_urgency }]} />
+    <Breadcrumbs items={crumbs} />
     <h1>{t.index_heading}</h1>
     <p>{t.index_lede}</p>
     <p>{fill(t.index_stamp, urgencyStamp())}</p>

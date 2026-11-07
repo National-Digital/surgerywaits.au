@@ -25,6 +25,8 @@ index_urgency_heading: Urgency categories
 index_urgency_intro: Your treating specialist gives you an urgency category. You do not choose it. Category 1 is recommended within 30 days, category 2 within 90 days and category 3 within 365 days.
 title: '{surgery} waiting times at public hospitals: {site}'
 description: '{surgery}: planned surgery waiting times at public hospitals in Australia, with the shortest median wait first. The latest figures cover {period}.'
+dataset_name: 'Planned surgery waiting times at public hospitals: {surgery}'
+dataset_description: 'Planned surgery waiting times at public hospitals in Australia for {surgery}, for {period}. The figures come from datasets published by {publishers}. The data was released on {release}.'
 lede: '{surgery} waiting times for planned surgery. Public hospitals that published a median wait in {period}: {count}.'
 renamed_note: 'The source publishes this surgery as "{source}".'
 specialty_note: A specialty covers many operations. Its figures describe all the patients treated under the specialty, and say nothing about one operation.

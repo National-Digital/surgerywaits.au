@@ -73,6 +73,7 @@ const linkedState = statesWithRows(surgery).includes(hospital.state);
 ---
 
 <Base
+  {crumbs}
   title={fill(t.title, { ...names, site })}
   description={fill(t.description, { ...names, state, period: surgery.period })}
   canonicalPath={path}

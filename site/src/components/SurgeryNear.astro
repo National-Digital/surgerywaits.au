@@ -62,9 +62,16 @@ const others = areas
     label: fill(t.near_link, { surgery: ref.name, place: a.prose }),
     href: nearPath(ref, a.slug),
   }));
+const crumbs = [
+  { label: t.crumb_home, href: '/' },
+  { label: t.crumb_surgery, href: SURGERY_PATH },
+  { label: ref.name, href: surgeryPath(ref) },
+  { label: fill(t.near_link, { surgery: ref.name, place: area.prose }) },
+];
 ---
 
 <Base
+  {crumbs}
   title={fill(t.near_title, { surgery: ref.name, place: area.prose, site })}
   description={fill(t.near_description, {
     surgery: ref.name,
@@ -74,14 +81,7 @@ const others = areas
   canonicalPath={nearPath(ref, area.slug)}
 >
   <div class="o-columns">
-    <Breadcrumbs
-      items={[
-        { label: t.crumb_home, href: '/' },
-        { label: t.crumb_surgery, href: SURGERY_PATH },
-        { label: ref.name, href: surgeryPath(ref) },
-        { label: fill(t.near_link, { surgery: ref.name, place: area.prose }) },
-      ]}
-    />
+    <Breadcrumbs items={crumbs} />
     <h1>{fill(t.near_link, { surgery: ref.name, place: area.prose })}</h1>
     <p>
       {fill(t.near_lede, { surgery: ref.name, place: area.prose, period: surgery.period, count })}

@@ -10,10 +10,10 @@ import StatTile from './StatTile.astro';
 import StatTiles from './StatTiles.astro';
 import TrendChart from './TrendChart.astro';
 import { getHospitalTemplate, getSite, getSurgeryTemplate, label } from '../lib/content';
-import { creditsFor, readCredits } from '../lib/credits';
+import { creditsFor, readCredits, publisherList } from '../lib/credits';
 import { readSurgery } from '../lib/dist';
 import type { Kind } from '../lib/dist';
-import { formatCount } from '../lib/format';
+import { formatCount, formatDate } from '../lib/format';
 import { fileDataset } from '../lib/json-ld';
 import { TABLE_ROLES } from '../lib/hospital-page';
 import { fill } from '../lib/slots';
@@ -51,6 +51,13 @@ const surgery = readSurgery(ref.kind, ref.slug);
 const roles = roleLabels(label);
 const title = fill(t.title, { surgery: ref.name, site });
 const description = fill(t.description, { surgery: ref.name, period: surgery.period });
+const credits = creditsFor(surgery.sources, readCredits());
+const datasetDescription = fill(t.dataset_description, {
+  surgery: ref.name,
+  period: surgery.period,
+  release: formatDate(surgery.release),
+  publishers: publisherList(credits),
+});
 
 const rows = listable(surgery);
 const table = hospitalRows(surgery, rows);
@@ -71,33 +78,32 @@ const nearLinks = near.map((area) => ({
   label: fill(t.near_link, { surgery: ref.name, place: area.prose }),
   href: nearPath(ref, area.slug),
 }));
+const crumbs = [
+  { label: t.crumb_home, href: '/' },
+  { label: t.crumb_surgery, href: SURGERY_PATH },
+  { label: ref.name },
+];
 ---
 
 <Base
+  {crumbs}
   title={title}
   description={description}
   canonicalPath={surgeryPath(ref)}
-  released={surgery.release}
   jsonLd={[
     fileDataset(getSite(), {
       path: surgeryPath(ref),
-      name: ref.name,
-      description,
+      name: fill(t.dataset_name, { surgery: ref.name }),
+      description: datasetDescription,
       file: surgeryDataPath(ref),
       period: surgery.period,
       release: surgery.release,
-      credits: creditsFor(surgery.sources, readCredits()),
+      credits,
     }),
   ]}
 >
   <div class="o-columns">
-    <Breadcrumbs
-      items={[
-        { label: t.crumb_home, href: '/' },
-        { label: t.crumb_surgery, href: SURGERY_PATH },
-        { label: ref.name },
-      ]}
-    />
+    <Breadcrumbs items={crumbs} />
     <h1>{ref.name}</h1>
     <p>{fill(t.lede, { surgery: ref.name, period: surgery.period, count })}</p>
     {ref.renamed && <p>{fill(t.renamed_note, { source: ref.source })}</p>}

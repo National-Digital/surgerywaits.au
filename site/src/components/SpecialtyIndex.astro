@@ -15,15 +15,17 @@ const t = getSurgeryTemplate();
 const site = getSite().name;
 const items = indexGroups().find((group) => group.kind === KINDS.specialty)?.items ?? [];
 const sources = readSurgeryIndexSources();
+const crumbs = [{ label: t.crumb_home, href: '/' }, { label: t.crumb_specialty }];
 ---
 
 <Base
+  {crumbs}
   title={fill(t.specialty_index_title, { site })}
   description={t.specialty_index_description}
   canonicalPath={SPECIALTY_PATH}
 >
   <div class="o-columns">
-    <Breadcrumbs items={[{ label: t.crumb_home, href: '/' }, { label: t.crumb_specialty }]} />
+    <Breadcrumbs items={crumbs} />
     <h1>{t.specialty_index_heading}</h1>
     <p>{t.specialty_index_lede}</p>
     <LinkList links={[{ label: t.specialty_index_back, href: SURGERY_PATH }]} />

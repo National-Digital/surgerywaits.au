@@ -134,7 +134,7 @@ function analyse(path: string, html: string, bytes: number, skipped: boolean): P
           src?: string;
         },
     )
-    .filter((t) => t.type !== 'application/ld+json');
+    .filter((t) => !(t.type === 'application/ld+json' && t.src === undefined));
   const count = (name: string): number => tags.filter((t) => t.tagName === name).length;
   const footer = tags.find((t) => t.tagName === 'footer');
   const main = tags.find((t) => t.tagName === 'main');
@@ -158,7 +158,7 @@ function analyse(path: string, html: string, bytes: number, skipped: boolean): P
     navLabels: tags
       .filter((t) => t.tagName === 'nav')
       .map((t) => t.attrs.find((a) => a.name === 'aria-label')?.value),
-    // JSON-LD is data and never runs, so only a script of another type counts.
+    // JSON-LD inline is data and never runs, so only a script of another kind, or one with a src, counts.
     scripts: scriptTags.length,
     scriptTags,
     handlers: tags.flatMap((t) => t.attrs).filter((a) => /^on/i.test(a.name)).length,

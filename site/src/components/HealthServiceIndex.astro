@@ -28,15 +28,17 @@ function hospitalsNote(n: { hospitals: number; spansStates: boolean }, state: st
   }
   return n.hospitals === 1 ? t.hospitals_one : fill(t.hospitals_many, { count });
 }
+const crumbs = [{ label: t.crumb_home, href: '/' }, { label: t.crumb_index }];
 ---
 
 <Base
+  {crumbs}
   title={fill(t.index_title, { site: getSite().name })}
   description={t.index_description}
   canonicalPath={HEALTH_SERVICES_PATH}
 >
   <div class="o-columns">
-    <Breadcrumbs items={[{ label: t.crumb_home, href: '/' }, { label: t.crumb_index }]} />
+    <Breadcrumbs items={crumbs} />
     <h1>{t.index_heading}</h1>
     <p>{fill(t.index_lede, { count: formatCount(networks) })}</p>
     <p>{fill(t.index_stamp, hospitalStamp())}</p>

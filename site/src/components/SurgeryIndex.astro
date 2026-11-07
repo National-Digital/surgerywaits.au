@@ -32,15 +32,17 @@ const count = (hospitals: number): string =>
     ? t.index_hospitals_one
     : fill(t.index_hospitals_many, { count: formatCount(hospitals) });
 const sources = readSurgeryIndexSources();
+const crumbs = [{ label: t.crumb_home, href: '/' }, { label: t.crumb_surgery }];
 ---
 
 <Base
+  {crumbs}
   title={fill(t.index_title, { site })}
   description={t.index_description}
   canonicalPath={SURGERY_PATH}
 >
   <div class="o-columns">
-    <Breadcrumbs items={[{ label: t.crumb_home, href: '/' }, { label: t.crumb_surgery }]} />
+    <Breadcrumbs items={crumbs} />
     <h1>{t.index_heading}</h1>
     <p>{t.index_lede}</p>
     <p>{fill(t.index_stamp, stamp)}</p>

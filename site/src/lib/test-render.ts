@@ -1,5 +1,5 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { parseFragment } from 'parse5';
+import { parseFragment, serialize } from 'parse5';
 import type { DefaultTreeAdapterTypes } from 'parse5';
 import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
 
@@ -97,6 +97,22 @@ export function elementsOf(html: Source, className: string): Found[] {
   return found;
 }
 
-// JSON-LD is data, so a check that bans scripts reads the page without it.
-export const withoutJsonLd = (html: string): string =>
-  html.replace(/<script type="application\/ld\+json">.*?<\/script>/gsu, '');
+// JSON-LD with no src is data, so a check that bans scripts reads the page without it.
+export function withoutJsonLd(html: string): string {
+  const root = parseFragment(html);
+  const strip = (node: Node): void => {
+    if ('childNodes' in node) {
+      node.childNodes = node.childNodes.filter(
+        (child) =>
+          !(
+            child.nodeName === 'script' &&
+            child.attrs.some((a) => a.name === 'type' && a.value === 'application/ld+json') &&
+            !child.attrs.some((a) => a.name === 'src')
+          ),
+      );
+      node.childNodes.forEach(strip);
+    }
+  };
+  strip(root);
+  return serialize(root);
+}

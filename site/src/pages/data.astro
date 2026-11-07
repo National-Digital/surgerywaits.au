@@ -1,7 +1,7 @@
 ---
 import ArticlePage from '../components/ArticlePage.astro';
 import DataPassport from '../components/DataPassport.astro';
-import { getDataPage, getSite } from '../lib/content';
+import { getDataPage, getSite, label } from '../lib/content';
 import { readCredits } from '../lib/credits';
 import { sourceDataset } from '../lib/json-ld';
 import { formatCount } from '../lib/format';
@@ -33,7 +33,16 @@ const credits = readCredits();
   ]}
   sections={fillSections(t.sections, facts)}
   after={fillSections(t.after, facts)}
-  jsonLd={credits.map((credit) => sourceDataset(credit))}
+  jsonLd={credits.map((credit) =>
+    sourceDataset(
+      credit,
+      fill(label('dataset_source_description'), {
+        title: credit.title,
+        publisher: credit.publisher.name,
+        version: credit.version,
+      }),
+    ),
+  )}
 >
   <DataPassport sources={credits.map((credit) => credit.slug)} />
 </ArticlePage>

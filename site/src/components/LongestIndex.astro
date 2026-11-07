@@ -26,15 +26,17 @@ const ledeText =
         hospital: first.row.name,
         state: stateName(first.row.state),
       });
+const crumbs = [{ label: t.crumb_home, href: '/' }, { label: t.crumb_longest }];
 ---
 
 <Base
+  {crumbs}
   title={fill(t.index_title, { count, period: stamp.period, site: getSite().name })}
   description={fill(t.index_description, { count, period: stamp.period })}
   canonicalPath={LONGEST_PATH}
 >
   <div class="o-columns">
-    <Breadcrumbs items={[{ label: t.crumb_home, href: '/' }, { label: t.crumb_longest }]} />
+    <Breadcrumbs items={crumbs} />
     <h1>{fill(t.index_heading, { count })}</h1>
     <p>{ledeText}</p>
     <p>{fill(t.stamp, { period: stamp.period, release: stamp.release })}</p>

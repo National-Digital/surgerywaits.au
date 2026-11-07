@@ -36,9 +36,15 @@ const ledeText =
         distance: formatKilometres(Math.round(first.km)),
         to_state: stateName(first.to.row.state),
       });
+const crumbs = [
+  { label: t.crumb_home, href: '/' },
+  { label: t.crumb_longest, href: LONGEST_PATH },
+  { label: t.crumb_border },
+];
 ---
 
 <Base
+  {crumbs}
   title={fill(t.border_title, { period: stamp.period, site: getSite().name })}
   description={fill(t.border_description, {
     count: formatCount(pairs.length),
@@ -48,13 +54,7 @@ const ledeText =
   canonicalPath={BORDER_PATH}
 >
   <div class="o-columns">
-    <Breadcrumbs
-      items={[
-        { label: t.crumb_home, href: '/' },
-        { label: t.crumb_longest, href: LONGEST_PATH },
-        { label: t.crumb_border },
-      ]}
-    />
+    <Breadcrumbs items={crumbs} />
     <h1>{t.border_heading}</h1>
     <p>{ledeText}</p>
     <p>{fill(t.stamp, { period: stamp.period, release: stamp.release })}</p>
