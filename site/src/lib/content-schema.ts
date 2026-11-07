@@ -765,6 +765,28 @@ export const dataPageSchema = z.strictObject({
 
 export const aboutSchema = z.strictObject(article);
 
+// An example is a file or page that must exist in the build.
+const examplePath = z.string().regex(/^\/[a-z0-9./-]+$/, 'an address inside the site');
+
+export const agentsSchema = z.strictObject({
+  ...article,
+  examples_heading: text,
+  examples_intro: text,
+  examples: z.array(z.strictObject({ path: examplePath, note: text })).min(1),
+  llms: z.strictObject({
+    summary: text,
+    full_summary: text,
+    heading_pages: text,
+    heading_guides: text,
+    heading_about: text,
+    heading_data: text,
+    heading_schemas: text,
+    heading_site: text,
+    // One line for each file the router lists, keyed by the id the surfaces registry gives it.
+    notes: z.record(z.string().regex(/^[a-z0-9.-]+$/), text),
+  }),
+});
+
 export const gpSchema = z.strictObject({ ...article, stamp: slotted('period', 'release') });
 
 const slug = z.string().regex(/^[a-z]+(?:-[a-z]+)*$/, 'lower-case words joined by hyphens');

@@ -1,0 +1,29 @@
+---
+import ArticlePage from '../components/ArticlePage.astro';
+import IndexList from '../components/IndexList.astro';
+import { getAgents, getSite } from '../lib/content';
+import { fillSections } from '../lib/article-pages';
+import { agentFacts, AGENTS_PATH } from '../lib/llms';
+import { fill } from '../lib/slots';
+
+const t = getAgents();
+const facts = agentFacts();
+const items = t.examples.map((e) => ({ name: e.path, href: e.path, notes: [e.note] }));
+---
+
+<ArticlePage
+  title={fill(t.title, { site: getSite().name })}
+  description={t.description}
+  path={AGENTS_PATH}
+  crumbHome={t.crumb_home}
+  crumb={t.crumb}
+  heading={t.heading}
+  intro={[t.lede]}
+  sections={fillSections(t.sections, facts)}
+>
+  <section id="examples" aria-labelledby="examples-heading">
+    <h2 id="examples-heading">{t.examples_heading}</h2>
+    <p>{t.examples_intro}</p>
+    <IndexList {items} />
+  </section>
+</ArticlePage>

@@ -3,7 +3,15 @@ import { describe, expect, it } from 'vitest';
 
 import { redirectFor } from '../../../worker/redirects';
 import { handle } from '../../../worker/index';
-import { readDist } from '../lib/dist';
+import { MODERN_VERSION, serverCard } from '../../../worker/mcp';
+import { termsSchema } from '../lib/content-schema';
+import { readContent, replacedTerms } from '../lib/content-files';
+import { getMethodology, label } from '../lib/content';
+import { readDist, readSurgery } from '../lib/dist';
+import { formatLicence } from '../lib/format';
+import { agentFacts } from '../lib/llms';
+import { surgeryRefs } from '../lib/surgery-page';
+import { textsOf } from '../lib/test-render';
 import { EXPIRES } from '../lib/security-txt';
 import { isBuildAsset, SURFACES, surfaceBodyProblem, surfaceOf } from '../lib/surfaces';
 
@@ -21,6 +29,7 @@ const built = readdirSync(dist, { recursive: true, encoding: 'utf8' })
 
 // The type the static assets binding gives a file from its extension.
 const PLATFORM_TYPES: Readonly<Record<string, string>> = {
+  html: 'text/html',
   json: 'application/json',
   svg: 'image/svg+xml',
   xml: 'application/xml',
@@ -29,7 +38,8 @@ const PLATFORM_TYPES: Readonly<Record<string, string>> = {
 const env = {
   ASSETS: {
     fetch: (request: Request): Promise<Response> => {
-      const { pathname } = new URL(request.url);
+      const { pathname: asked } = new URL(request.url);
+      const pathname = asked.endsWith('/') ? `${asked}index.html` : asked;
       const type = PLATFORM_TYPES[pathname.slice(pathname.lastIndexOf('.') + 1)];
       return Promise.resolve(
         type === undefined || !existsSync(new URL(`.${pathname}`, dist))
@@ -79,6 +89,17 @@ describe('the built surfaces', () => {
     }
   });
 
+  it('builds a chart for each procedure that has a state figure, and a procedure for each chart', () => {
+    const withStates = surgeryRefs()
+      .filter((ref) => ref.kind === 'procedure')
+      .filter((ref) => readSurgery('procedure', ref.slug).benchmarks.states.length > 0)
+      .map((ref) => `/charts/${ref.urlSlug}.svg`)
+      .sort();
+    const charts = built.filter((path) => path.startsWith('/charts/'));
+    expect(withStates.length).toBeGreaterThan(0);
+    expect(charts).toEqual(withStates);
+  });
+
   it('leaves each built surface address clear of the Worker redirect table', () => {
     for (const path of built) {
       expect(redirectFor(path), path).toBeUndefined();
@@ -92,6 +113,270 @@ describe('the built surfaces', () => {
       expect(response.status, path).toBe(200);
       expect(response.headers.get('Content-Type')?.split(';')[0], path).toBe(surface?.mediaType);
       expect(surfaceBodyProblem(path, await response.text()), path).toBeUndefined();
+    }
+  });
+});
+
+const ORIGIN = 'https://surgerywaits.au';
+// The Worker serves these two addresses, so the build writes no file for them.
+const WORKER_ADDRESSES = ['/mcp', '/mcp/server-card'];
+// A page address is a folder with an index file; any other address is a file.
+const exists = (path: string): boolean =>
+  existsSync(new URL(`.${path.endsWith('/') ? `${path}index.html` : path}`, dist));
+const linkLine = /^- \[[^\]]+\]\((https:\/\/surgerywaits\.au\/\S*)\)(: .+)?$/u;
+const terms = termsSchema.parse(readContent().find(({ path }) => path === 'terms.yaml')?.data);
+
+describe('llms.txt and llms-full.txt', () => {
+  const llms = read('/llms.txt');
+  const full = read('/llms-full.txt');
+  const lines = llms.split('\n');
+
+  it('follow the llms.txt format: an H1, a blockquote, then H2 sections of links', () => {
+    expect(lines[0]).toBe('# Surgery Waits');
+    expect(lines[2]).toMatch(/^> \S/u);
+    expect(lines.filter((line) => line.startsWith('# '))).toHaveLength(1);
+    expect(lines.filter((line) => line.startsWith('## ')).length).toBeGreaterThanOrEqual(5);
+    for (const line of lines.filter((l) => l.startsWith('- '))) {
+      expect(line).toMatch(linkLine);
+    }
+    expect(llms).toMatch(/[^\n]\n$/u);
+    expect(full).toMatch(/[^\n]\n$/u);
+    expect(full.split('\n').filter((line) => line.startsWith('# '))).toEqual(['# Surgery Waits']);
+  });
+
+  it('link only to pages and files that the build wrote', () => {
+    const urls = [...llms.matchAll(/\]\((\S+?)\)/gu)].map((m) => m[1] ?? '');
+    expect(urls.length).toBeGreaterThan(20);
+    for (const url of urls) {
+      expect(url.startsWith(ORIGIN), url).toBe(true);
+      const path = url.slice(ORIGIN.length);
+      expect(WORKER_ADDRESSES.includes(path) || exists(path), url).toBe(true);
+    }
+    for (const url of [...full.matchAll(/\]\((https:\/\/surgerywaits\.au\S*?)\)/gu)]) {
+      expect(exists((url[1] ?? '').slice(ORIGIN.length)), url[1]).toBe(true);
+    }
+  });
+
+  it('list the key pages, the data files, the schemas and each other', () => {
+    for (const path of ['/', '/guides/', '/methodology/', '/data/', '/compare/', '/agents/']) {
+      expect(llms, path).toContain(`](${ORIGIN}${path})`);
+    }
+    for (const surface of SURFACES.filter((s) => s.listed !== undefined)) {
+      for (const { path } of surface.listed?.() ?? []) {
+        expect(llms, path).toContain(`](${ORIGIN}${path})`);
+      }
+    }
+    expect(llms).toContain(`](${ORIGIN}/llms-full.txt)`);
+  });
+
+  it('say every credited dataset once, with its licence', () => {
+    const { sources } = readDist('credits.json') as {
+      sources: { title: string; licence: string; dataset_url: string }[];
+    };
+    for (const source of sources) {
+      expect(full, source.title).toContain(source.title);
+      expect(full, source.dataset_url).toContain(source.dataset_url);
+      expect(full, source.licence).toContain(formatLicence(source.licence));
+    }
+  });
+
+  it('use no term the terms file replaces, apart from the quotes listed for llms-full', () => {
+    expect(replacedTerms('llms', [llms], terms)).toEqual([]);
+    expect(replacedTerms('llms-full', [full], terms)).toEqual([]);
+    expect(replacedTerms('llms', [full], terms).length).toBeGreaterThan(0);
+  });
+
+  it('keep the word elective to the methodology section and the credit lines', () => {
+    const credits = full.indexOf(`### ${label('passport_heading')}`);
+    const methodology = full.indexOf(`## ${getMethodology().heading}\n`);
+    const nextSection = full.indexOf('\n## ', methodology + 1);
+    expect(credits).toBeGreaterThan(0);
+    expect(methodology).toBeGreaterThan(0);
+    expect(nextSection).toBeGreaterThan(methodology);
+    const outside = full.slice(0, methodology) + full.slice(nextSection, credits);
+    expect(outside).not.toMatch(/elective/iu);
+    expect(full.slice(methodology, nextSection)).toMatch(/elective/iu);
+    for (const line of full.slice(credits).split('\n').slice(1)) {
+      expect(line === '' || /^( {2})?- /u.test(line), line).toBe(true);
+    }
+  });
+
+  it('stay within a size an agent can fetch in one read', () => {
+    expect(Buffer.byteLength(llms)).toBeLessThan(10_000);
+    expect(Buffer.byteLength(full)).toBeLessThan(60_000);
+  });
+});
+
+// The folders the agents page names; the copy calls each one a folder, and none has a page.
+const NAMED_FOLDERS = ['/data-api/', '/contract/', '/charts/'];
+const textOf = (html: string): string => textsOf(html, 'main')[0] ?? '';
+// Every address inside the site that a text names, with the sentence's closing stop left off.
+const addressesIn = (text: string): string[] =>
+  [...text.matchAll(/(?<![\w:/.-])\/[A-Za-z0-9][A-Za-z0-9._/-]*/gu)].map((m) =>
+    m[0].replace(/[.,;:]+$/u, ''),
+  );
+const sentencesWith = (text: string, phrase: string): string[] =>
+  text.split(/(?<=\.)\s+(?=[A-Z])/u).filter((sentence) => sentence.includes(phrase));
+
+describe('the agents page', () => {
+  const html = read('/agents/index.html');
+  const text = textOf(html);
+
+  it('names the signal robots.txt carries and the headers the Worker sets', () => {
+    expect(html).toContain(/^Content-Signal: .+$/mu.exec(read('/robots.txt'))?.[0] ?? '?');
+    expect(html).toContain('public, max-age=3600');
+  });
+
+  it('gives only example addresses that the build wrote', () => {
+    const examples = [
+      ...html.matchAll(/<a class=\x22c-index-list__name\x22 href=\x22([^\x22]+)\x22/gu),
+    ].map((m) => m[1] ?? '');
+    expect(examples.length).toBeGreaterThanOrEqual(5);
+    for (const path of examples) {
+      expect(exists(path), path).toBe(true);
+    }
+  });
+
+  it('names each protocol revision and tool that the Worker gives', async () => {
+    const remotes = serverCard()['remotes'] as { supportedProtocolVersions: string[] }[];
+    for (const version of remotes[0]?.supportedProtocolVersions ?? ['?']) {
+      expect(text, version).toContain(version);
+    }
+    const meta = {
+      'io.modelcontextprotocol/protocolVersion': MODERN_VERSION,
+      'io.modelcontextprotocol/clientCapabilities': {},
+    };
+    const response = await handle(
+      new Request(`${ORIGIN}/mcp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json, text/event-stream',
+          'MCP-Protocol-Version': MODERN_VERSION,
+          'Mcp-Method': 'tools/list',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/list',
+          params: { _meta: meta },
+        }),
+      }),
+      {},
+    );
+    const { result } = (await response.json()) as { result: { tools: { name: string }[] } };
+    expect(result.tools.length).toBeGreaterThan(0);
+    for (const { name } of result.tools) {
+      expect(text, name).toContain(name);
+    }
+    expect(text).toContain('/mcp/server-card');
+  });
+
+  it('names an address only when it is a built file or page or a folder the copy calls a folder', async () => {
+    const named = addressesIn(text);
+    expect(named.length).toBeGreaterThan(15);
+    for (const address of new Set(named)) {
+      if (WORKER_ADDRESSES.includes(address)) {
+        const answer = await handle(new Request(`${ORIGIN}${address}`), env);
+        expect(answer.status, address).not.toBe(404);
+      } else if (NAMED_FOLDERS.includes(address)) {
+        expect(text, address).toContain(`folder ${address}`);
+        expect(exists(address), `${address} has a page`).toBe(false);
+        expect(
+          built.some((path) => path.startsWith(address)),
+          `${address} holds no file`,
+        ).toBe(true);
+      } else {
+        expect(exists(address), address).toBe(true);
+      }
+    }
+  });
+});
+
+describe('the Worker behaviour the agents page describes', () => {
+  const call = (path: string, method: string, origin?: string): Promise<Response> =>
+    handle(
+      new Request(`${ORIGIN}${path}`, {
+        method,
+        ...(origin === undefined ? {} : { headers: { Origin: origin } }),
+        ...(method === 'POST' ? { body: '{}' } : {}),
+      }),
+      env,
+    );
+  const FOREIGN = 'https://evil.example';
+
+  it('refuses a foreign Origin at /mcp with 403 for any method', async () => {
+    for (const method of ['POST', 'GET', 'OPTIONS']) {
+      expect((await call('/mcp', method, FOREIGN)).status, method).toBe(403);
+    }
+  });
+
+  it('answers another method at /mcp with 405 when the Origin is absent or accepted', async () => {
+    for (const origin of [undefined, ORIGIN]) {
+      const response = await call('/mcp', 'GET', origin);
+      expect(response.status).toBe(405);
+      expect(response.headers.get('Allow')).toBe('POST, OPTIONS');
+    }
+  });
+
+  it('accepts a POST at /mcp with no Origin', async () => {
+    const response = await call('/mcp', 'POST');
+    expect([403, 405]).not.toContain(response.status);
+  });
+
+  it('answers OPTIONS at /mcp with 204, and at the card with 204', async () => {
+    expect((await call('/mcp', 'OPTIONS')).status).toBe(204);
+    expect((await call('/mcp/server-card', 'OPTIONS')).status).toBe(204);
+  });
+
+  it('answers a method other than GET and HEAD on a page with 405', async () => {
+    expect((await call('/', 'DELETE')).status).toBe(405);
+  });
+
+  it('gives the cache headers that the copy states', async () => {
+    const facts = agentFacts();
+    const pairs = [
+      ['/', 'page_cache'],
+      ['/robots.txt', 'robots_cache'],
+      ['/data-api/index.json', 'data_cache'],
+    ] as const;
+    for (const [path, key] of pairs) {
+      const response = await call(path, 'GET');
+      expect(response.headers.get('Cache-Control'), path).toBe(facts[key]);
+    }
+  });
+});
+
+describe('the sentences about the data files', () => {
+  const dataFiles = built.filter((path) => path.startsWith('/data-api/') && path.endsWith('.json'));
+  // The files that carry no sources entry, read from the build so the sentence cannot go stale.
+  const withoutSources = dataFiles
+    .filter((path) => {
+      const document = JSON.parse(read(path)) as Record<string, unknown>;
+      return !('sources' in document);
+    })
+    .sort();
+
+  it('say which files have no sources entry, and name exactly those', () => {
+    expect(withoutSources).toContain('/data-api/rules.json');
+    expect(withoutSources).toContain('/data-api/openapi.json');
+    for (const page of ['/agents/index.html', '/data/index.html']) {
+      const sentences = sentencesWith(textOf(read(page)), 'sources entry');
+      expect(sentences, page).toHaveLength(1);
+      const named = addressesIn(sentences[0] ?? '')
+        .filter((address) => address.endsWith('.json'))
+        .sort();
+      expect(named, page).toEqual(withoutSources);
+    }
+  });
+
+  it('tell the withheld states apart on the agents and data pages', () => {
+    for (const page of ['/agents/index.html', '/data/index.html']) {
+      const text = textOf(read(page));
+      expect(text, page).toContain(
+        'the state not_published when the publisher gives a code or a withheld mark instead of a number',
+      );
+      expect(text, page).toContain('the state not_reported when the source leaves it empty');
     }
   });
 });

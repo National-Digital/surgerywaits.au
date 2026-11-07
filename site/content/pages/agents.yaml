@@ -1,0 +1,95 @@
+title: 'Guide for people building agents: {site}'
+description: Which files an agent should read on Surgery Waits, their licences, the content signal in robots.txt, how the site serves and caches files, and how to cite a figure.
+crumb_home: Home
+crumb: For agents
+heading: Guide for people building agents
+lede: This page names the files an agent can read on Surgery Waits and the terms under which it can use them. Each page and file that this page names by its address exists on the site. A folder that it names, such as /data-api/, holds files and has no page of its own.
+sections:
+  - id: files
+    heading: Which files to read
+    paragraphs:
+      - Read /llms.txt first. It links to the key pages, the guides, the main data files, the OpenAPI description and the schemas, then to the sitemap, robots.txt, llms-full.txt and the MCP server card.
+    items:
+      - /llms-full.txt holds the text of the about, methodology and data pages and the credit for each dataset in one plain-text file.
+      - The folder /data-api/ holds the figures behind the pages as JSON files. The file /data-api/index.json gives the counts and the scope of the data.
+      - The file /data-api/openapi.json is an OpenAPI 3.1 description of the data files, which lists each path with its parameters, responses and headers.
+      - The folder /contract/ holds JSON Schema files. Each file under /data-api/ except /data-api/openapi.json follows its schema in /contract/, and /data-api/openapi.json follows the OpenAPI 3.1 schema.
+      - The folder /charts/ holds an SVG chart of the median wait in each state for each procedure that has a state figure.
+      - The file /sitemap.xml is a sitemap index that links the sitemap files.
+    links:
+      - label: Data and attribution
+        href: /data/
+      - label: Methodology
+        href: /methodology/
+  - id: licences
+    heading: Licences
+    paragraphs:
+      - Each dataset keeps its publisher's licence. Every file under /data-api/ lists its sources in a sources entry, except /data-api/openapi.json and /data-api/rules.json. The file /data-api/credits.json gives the publisher, licence, version and citation for each source.
+      - A person who reuses a file credits the publisher it names, under the licence it names. The publishers do not endorse this site and have no involvement in it.
+  - id: signal
+    heading: The content signal in robots.txt
+    paragraphs:
+      - 'The file /robots.txt carries the line "{content_signal}" in each of its groups. It sets search to yes, ai-input to yes and ai-train to no. The file has one group for all other crawlers (User-agent: *) and one group for each of these named crawlers: {crawlers}.'
+      - Every group allows every path, and the file has no Disallow line. A comment at the top of the file points to this page and to /llms.txt.
+  - id: serving
+    heading: Methods and cache headers
+    paragraphs:
+      - 'The site answers GET and HEAD requests. It also answers OPTIONS requests under /data-api/ for a browser that asks before a cross-origin read. The route {mcp_path} answers POST and OPTIONS requests, and its server card at {mcp_card} answers OPTIONS requests. On every other path, any other method receives status 405.'
+      - 'Files under /data-api/ carry the header Cache-Control: {data_cache}, so a client may keep a file for an hour. They also carry Access-Control-Allow-Origin: *, so a web page on any site may read them. A missing data file returns status 404 with a JSON body.'
+      - 'Pages carry the header Cache-Control: {page_cache}, and /robots.txt carries Cache-Control: {robots_cache}.'
+  - id: mcp
+    heading: The MCP server
+    paragraphs:
+      - 'The Worker serves a Model Context Protocol server at {mcp_path}. Its server card is at {mcp_card}. The server answers these protocol revisions: {mcp_versions}.'
+      - 'The server has these read-only tools: {mcp_tools}. They read the published figures on this site.'
+      - 'The route {mcp_path} takes POST requests for JSON-RPC and OPTIONS requests for a browser that asks before a cross-origin call. A request from a browser is accepted when its Origin is one of {mcp_origins}, or the origin of the address it calls. Any other Origin receives status 403 with every method. A request with no Origin header is not a browser request and is accepted. A request with an accepted Origin or no Origin that uses any other method receives status 405.'
+  - id: cite
+    heading: How to cite
+    paragraphs:
+      - Link the page or file that you used, and name {site} as the place that you read the figure.
+      - Credit the publisher that the file names, under the licence it names, and use the citation in /data-api/credits.json. Give the reference period and the release date that the page or file states with each figure.
+      - A figure has the state not_published when the publisher gives a code or a withheld mark instead of a number, and the state not_reported when the source leaves it empty and gives neither a publisher code nor a withheld mark. Each has a reason and no value. Report the first as not published and the second as not reported. Neither is ever a zero, and neither has a rank.
+examples_heading: Example addresses
+examples_intro: Each address below is a file or page on this site.
+examples:
+  - path: /llms.txt
+    note: The list of key pages and files.
+  - path: /llms-full.txt
+    note: The text of the about, methodology and data pages and the credits.
+  - path: /data-api/index.json
+    note: The counts and the scope of the data.
+  - path: /data-api/credits.json
+    note: The publisher, licence, version and citation of each source.
+  - path: /data-api/rules.json
+    note: The rules that the site applies to the data.
+  - path: /data-api/openapi.json
+    note: The OpenAPI 3.1 description of the data files.
+  - path: /sitemap.xml
+    note: The sitemap index, which links the sitemap files.
+  - path: /robots.txt
+    note: The crawl rules and the content signal.
+  - path: /methodology/
+    note: How the site produces its figures.
+  - path: /data/
+    note: The datasets, with their licences and citations.
+llms:
+  summary: Surgery Waits shows how long patients waited for planned surgery at public hospitals in Australia, by hospital, surgery, state and urgency category. Every figure comes from a dataset that publicdata.au serves, and /data-api/credits.json names each one.
+  full_summary: This file holds the text of the about, methodology and data pages, and the credit for each dataset, in plain text.
+  heading_pages: Key pages
+  heading_guides: Guides
+  heading_about: About, data and agents
+  heading_data: Data files
+  heading_schemas: Schemas
+  heading_site: Crawling and plain text
+  notes:
+    data-files.index: The counts and the scope of the data.
+    data-files.credits: The publisher, licence, version and citation of each source.
+    data-files.rules: The rules that the site applies to the data.
+    data-files.surgeries: Each surgery category that has a page, with its slug.
+    data-files.hospitals: Each hospital that has a page, with its slug.
+    data-files.health-services: Each health service that has a page, with its slug.
+    openapi: The OpenAPI 3.1 description of the data files.
+    sitemaps: The sitemap index, which links the sitemap files.
+    mcp-server-card: The card for the MCP server at /mcp, served by the Worker.
+    robots: The crawl rules and the content signals.
+    llms-full: The text of the about, methodology and data pages and the credits.

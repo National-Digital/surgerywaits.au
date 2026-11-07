@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { CONTENT_SIGNAL, NAMED_CRAWLERS, robotsTxt, SITEMAP_URL } from './robots';
+import { CONTENT_SIGNAL, NAMED_CRAWLERS, robotsTxt, SITE, SITEMAP_URL } from './robots';
 
 const body = robotsTxt();
 
@@ -20,6 +20,10 @@ describe('robots.txt', () => {
   it('keeps the sitemap line', () => {
     expect(SITEMAP_URL).toBe('https://surgerywaits.au/sitemap.xml');
     expect(body.trimEnd().endsWith(`Sitemap: ${SITEMAP_URL}`)).toBe(true);
+  });
+
+  it('points agents to the guide and to llms.txt in a comment', () => {
+    expect(body).toContain(`# For AI agents: ${SITE}/agents/ and ${SITE}/llms.txt\n`);
   });
 
   it('blocks nothing', () => {
