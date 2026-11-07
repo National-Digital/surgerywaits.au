@@ -4,6 +4,8 @@ interface Props {
   caption: string;
   // The one period and release every figure in the table shares, in words.
   stamp: string;
+  // Notes that explain a column, shown with the caption.
+  notes?: string[];
   rowHeading: string;
   headings: string[];
   rows: {
@@ -13,7 +15,7 @@ interface Props {
   }[];
 }
 
-const { id, caption, stamp, rowHeading, headings, rows } = Astro.props;
+const { id, caption, stamp, notes = [], rowHeading, headings, rows } = Astro.props;
 ---
 
 <div class="o-table-scroll" role="region" aria-labelledby={`${id}-caption`} tabindex="0">
@@ -21,6 +23,10 @@ const { id, caption, stamp, rowHeading, headings, rows } = Astro.props;
     <caption class="c-plain-table__caption" id={`${id}-caption`}>
       {caption}
       <small class="c-plain-table__stamp">{stamp}</small>
+      {notes.map((note) => (
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+        <small class="c-plain-table__note">{note}</small>
+      ))}
     </caption>
     <thead>
       <tr>
@@ -63,7 +69,8 @@ const { id, caption, stamp, rowHeading, headings, rows } = Astro.props;
       color: var(--ink-2);
     }
 
-    .c-plain-table__stamp {
+    .c-plain-table__stamp,
+    .c-plain-table__note {
       display: block;
       margin-block-start: var(--space-1);
       font-size: var(--fs-small);

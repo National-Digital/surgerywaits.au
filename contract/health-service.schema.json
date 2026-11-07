@@ -53,32 +53,19 @@
             "type": "boolean"
           },
           "surgeries": {
-            "description": "How many categories the hospital has a published figure for in the newest period of their table, and the period and release of each table in which it has at least one, in the order urgency, procedure, specialty.",
+            "description": "How many categories of each kind the hospital reported in the newest period of that kind's table, with the period and release of that table. A category counts when the hospital has an observation for it in the newest period, whether or not every figure of it is published. A count of 0 means the hospital reported none of that kind in the newest period.",
             "type": "object",
             "additionalProperties": false,
-            "required": ["count", "current"],
+            "required": ["urgency", "procedures", "specialties"],
             "properties": {
-              "count": {
-                "$ref": "common.schema.json#/$defs/count"
+              "urgency": {
+                "$ref": "#/$defs/kindCount"
               },
-              "current": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": ["kind", "period", "release"],
-                  "properties": {
-                    "kind": {
-                      "$ref": "common.schema.json#/$defs/kind"
-                    },
-                    "period": {
-                      "$ref": "common.schema.json#/$defs/period"
-                    },
-                    "release": {
-                      "$ref": "common.schema.json#/$defs/date"
-                    }
-                  }
-                }
+              "procedures": {
+                "$ref": "#/$defs/kindCount"
+              },
+              "specialties": {
+                "$ref": "#/$defs/kindCount"
               }
             }
           },
@@ -107,7 +94,23 @@
               {
                 "properties": {
                   "status": {
-                    "enum": ["published", "not_published", "not_reported", "stale"]
+                    "const": "stale"
+                  },
+                  "figure": {
+                    "type": "null"
+                  },
+                  "period": {
+                    "$ref": "common.schema.json#/$defs/period"
+                  },
+                  "release": {
+                    "$ref": "common.schema.json#/$defs/date"
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "status": {
+                    "enum": ["published", "not_published", "not_reported"]
                   },
                   "period": {
                     "$ref": "common.schema.json#/$defs/period"
@@ -146,6 +149,24 @@
     },
     "sources": {
       "$ref": "common.schema.json#/$defs/sources"
+    }
+  },
+  "$defs": {
+    "kindCount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "period", "release"],
+      "properties": {
+        "count": {
+          "$ref": "common.schema.json#/$defs/count"
+        },
+        "period": {
+          "$ref": "common.schema.json#/$defs/period"
+        },
+        "release": {
+          "$ref": "common.schema.json#/$defs/date"
+        }
+      }
     }
   }
 }

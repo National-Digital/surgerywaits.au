@@ -21,7 +21,7 @@ describe('the primitives preview page', () => {
     for (const words of [
       'not published: too few patients',
       'not published: no patients reported',
-      'not published: AIHW did not publish a figure',
+      'not published: the Australian Institute of Health and Welfare did not publish a figure',
       'not published: no peer group comparison',
       'not published: Queensland Health gave no figure',
       'not reported',

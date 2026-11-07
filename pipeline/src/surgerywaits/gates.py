@@ -33,7 +33,8 @@ RELEASE_DAY = re.compile(r"(\d{4})(\d{2})(\d{2})\d*")
 
 
 URGENT_SLUG = "urgent-elective-surgery"
-KIND_ORDER = {"urgency": 0, "procedure": 1, "specialty": 2}
+# The member field for each kind of category in a network file.
+MEMBER_KINDS = {"urgency": "urgency", "procedures": "procedure", "specialties": "specialty"}
 
 
 class GateError(Exception):
@@ -190,17 +191,14 @@ def _check_network_slugs(docs: Mapping[str, tuple[str, dict[str, Any]]]) -> None
     _check_network_members(docs)
 
 
-def _expected_member(hospital: dict[str, Any]) -> dict[str, Any]:
+def _expected_member(
+    hospital: dict[str, Any], stamps: Mapping[str, tuple[str, str]]
+) -> dict[str, Any]:
     """What a network file must say about a hospital, worked out from its hospital file."""
-    stamps: dict[str, tuple[str, str]] = {}
-    count = 0
+    counts = dict.fromkeys(MEMBER_KINDS.values(), 0)
     for s in hospital["surgeries"]:
-        published = [
-            m["figure"] for m in s["measures"].values() if m["figure"]["state"] == "published"
-        ]
-        if not s["stale"] and published:
-            count += 1
-            stamps[s["kind"]] = (published[0]["period"], published[0]["release"])
+        if not s["stale"]:
+            counts[s["kind"]] += 1
     urgent = next(
         (s for s in hospital["surgeries"] if s["kind"] == "urgency" and s["slug"] == URGENT_SLUG),
         None,
@@ -220,11 +218,10 @@ def _expected_member(hospital: dict[str, Any]) -> dict[str, Any]:
         "name": hospital["name"],
         "state": hospital["state"],
         "closed": hospital["closed"],
-        "count": count,
-        "current": [
-            {"kind": k, "period": p, "release": r}
-            for k, (p, r) in sorted(stamps.items(), key=lambda kv: KIND_ORDER[kv[0]])
-        ],
+        "counts": {
+            name: {"count": counts[kind], "period": stamps[kind][0], "release": stamps[kind][1]}
+            for name, kind in MEMBER_KINDS.items()
+        },
         "status": status,
         "figure": figure,
         "period": period,
@@ -248,10 +245,27 @@ def _check_network_headers(
         raise GateError(msg)
 
 
+def _current_stamps(hospitals: Iterable[dict[str, Any]]) -> dict[str, tuple[str, str]]:
+    """The one period and release of the current figures of each kind of category."""
+    found: dict[str, set[tuple[str, str]]] = {k: set() for k in MEMBER_KINDS.values()}
+    for h in hospitals:
+        for s in h["surgeries"]:
+            if not s["stale"]:
+                found[s["kind"]].update(
+                    (m["figure"]["period"], m["figure"]["release"]) for m in s["measures"].values()
+                )
+    for kind, stamps in found.items():
+        if len(stamps) != 1:
+            msg = f"the current {kind} figures do not share one period and release"
+            raise GateError(msg)
+    return {k: next(iter(v)) for k, v in found.items()}
+
+
 def _check_network_members(docs: Mapping[str, tuple[str, dict[str, Any]]]) -> None:
     """Every member of a network file agrees with its own hospital file."""
     hospitals = {d["slug"]: d for _, (k, d) in sorted(docs.items()) if k == "hospital"}
     rows = {r["code"]: r for r in docs["health-services.json"][1]["networks"]}
+    stamps = _current_stamps(hospitals.values())
     for path, (kind, n) in sorted(docs.items()):
         if kind != "health-service":
             continue
@@ -262,11 +276,10 @@ def _check_network_members(docs: Mapping[str, tuple[str, dict[str, Any]]]) -> No
                 raise GateError(msg)
             found = {
                 **{k: m[k] for k in ("code", "slug", "name", "state", "closed")},
-                "count": m["surgeries"]["count"],
-                "current": m["surgeries"]["current"],
+                "counts": m["surgeries"],
                 **{k: m["urgent_on_time"][k] for k in ("status", "figure", "period", "release")},
             }
-            if found != _expected_member(h):
+            if found != _expected_member(h, stamps):
                 msg = f"{path} disagrees with the hospital file for {m['slug']}"
                 raise GateError(msg)
         _check_network_headers(path, n, rows[n["code"]], hospitals)

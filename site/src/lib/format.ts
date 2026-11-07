@@ -63,7 +63,7 @@ export type TrendPoint =
 const REASON_WORDS: Record<NotPublishedReason, string> = {
   too_few_patients: 'too few patients',
   no_patients_reported: 'no patients reported',
-  not_published_by_aihw: 'AIHW did not publish a figure',
+  not_published_by_aihw: 'the Australian Institute of Health and Welfare did not publish a figure',
   no_peer_group_comparison: 'no peer group comparison',
   not_given_by_queensland_health: 'Queensland Health gave no figure',
 };

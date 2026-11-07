@@ -147,17 +147,20 @@ export interface HospitalIndexRow {
   latest_period: string;
 }
 
+interface KindCount {
+  count: number;
+  period: string;
+  release: string;
+}
+
 interface HealthServiceMember {
   code: string;
   slug: string;
   name: string;
   state: State;
   closed: boolean;
-  // Categories with a published figure in the newest period, and the period and release of each table that has one.
-  surgeries: {
-    count: number;
-    current: { kind: HospitalSurgery['kind']; period: string; release: string }[];
-  };
+  // Categories of each kind the hospital reported in the newest period of that kind's table.
+  surgeries: Record<'urgency' | 'procedures' | 'specialties', KindCount>;
   urgent_on_time: {
     status: 'published' | 'not_published' | 'not_reported' | 'stale' | 'missing';
     figure: Figure | null;
@@ -173,6 +176,7 @@ export interface HealthService {
   name: string;
   display_name: string;
   states: State[];
+  scope: Hospital['scope'];
   hospitals: HealthServiceMember[];
   sources: string[];
 }
@@ -309,6 +313,10 @@ export function readHealthService(slug: string): HealthService {
 
 export function readHealthServiceIndex(): HealthServiceIndexRow[] {
   return (readDist('health-services.json') as { networks: HealthServiceIndexRow[] }).networks;
+}
+
+export function readHealthServiceIndexSources(): string[] {
+  return (readDist('health-services.json') as { sources: string[] }).sources;
 }
 
 export function readTrend(slug: string): Trend {

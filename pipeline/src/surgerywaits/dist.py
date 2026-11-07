@@ -464,6 +464,13 @@ def urgent_on_time(ctx: _Ctx, o: DerivedObservation | None) -> Doc:
     return {"status": figure["state"], "figure": figure, "period": o.period, "release": release}
 
 
+KIND_FIELDS = {
+    "urgency": Table.URGENCY,
+    "procedures": Table.PROCEDURE,
+    "specialties": Table.SPECIALTY,
+}
+
+
 def network_docs(ctx: _Ctx) -> dict[str, tuple[str, Doc]]:
     """One file for each network with a hospital that has a page, and an index of them."""
     members: dict[str, list[Hospital]] = defaultdict(list)
@@ -471,19 +478,22 @@ def network_docs(ctx: _Ctx) -> dict[str, tuple[str, Doc]]:
         h = ctx.hospitals[code]
         if h.network_status == "mapped" and h.network_code is not None:
             members[h.network_code].append(h)
-    current: dict[str, dict[Table, int]] = defaultdict(lambda: defaultdict(int))
+    reported: dict[str, dict[Table, int]] = defaultdict(lambda: defaultdict(int))
     for (code, table, _), o in ctx.latest.items():
-        if o.period == ctx.newest[table] and any(
-            f.figure.state is FigureState.PUBLISHED for f in o.figures
-        ):
-            current[code][table] += 1
+        if o.period == ctx.newest[table]:
+            reported[code][table] += 1
     urgent = _urgent_lookup(ctx)
 
-    def stamps(code: str) -> list[Doc]:
-        return [
-            {"kind": t.value, "period": ctx.newest[t], "release": ctx.release_of[t]}
-            for t in sorted(current[code], key=lambda t: SCOPE_ORDER[t.value])
-        ]
+    def counts(code: str) -> Doc:
+        """Categories reported in the newest period of each table, under that table's stamp."""
+        return {
+            name: {
+                "count": reported[code][t],
+                "period": ctx.newest[t],
+                "release": ctx.release_of[t],
+            }
+            for name, t in KIND_FIELDS.items()
+        }
 
     docs: dict[str, tuple[str, Doc]] = {}
     rows: list[Doc] = []
@@ -509,10 +519,7 @@ def network_docs(ctx: _Ctx) -> dict[str, tuple[str, Doc]]:
                         "name": h.name,
                         "state": h.state,
                         "closed": h.closed,
-                        "surgeries": {
-                            "count": sum(current[h.code].values()),
-                            "current": stamps(h.code),
-                        },
+                        "surgeries": counts(h.code),
                         "urgent_on_time": urgent_on_time(ctx, urgent.get(h.code)),
                     }
                     for h in sorted(hospitals, key=lambda h: (h.name, h.code))

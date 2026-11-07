@@ -16,6 +16,7 @@ from surgerywaits.gates import (
     ALLOWED_LICENCES,
     MAX_PERIOD_AGE_YEARS,
     MAX_QLD_LAG_DAYS,
+    MEMBER_KINDS,
     URGENT_SLUG,
     GateError,
     check_docs,
@@ -27,7 +28,6 @@ from test_dist import overlay_dates, scan_for_clock
 
 DASH = chr(0x2013)
 ENTRIES = load()
-KINDS = ("urgency", "procedure", "specialty")
 TABLES = tuple(TABLE_SOURCES.values())
 URGENCY = TABLE_SOURCES[next(iter(TABLE_SOURCES))]
 
@@ -376,7 +376,7 @@ def test_a_member_that_differs_from_its_hospital_file_fails(field: str, value: o
 def test_a_member_with_altered_figures_fails() -> None:
     docs = _docs()
     _, member = _member(docs)
-    member["surgeries"]["count"] += 1
+    member["surgeries"]["procedures"]["count"] += 1
     with pytest.raises(GateError, match="disagrees with the hospital file"):
         check_docs(ENTRIES, docs)
     docs = _docs()
@@ -423,32 +423,60 @@ def _member_of(docs: dict[str, tuple[str, Doc]], hospital: Doc) -> Doc:
     return next(m for m in network["hospitals"] if m["slug"] == hospital["slug"])
 
 
-def test_a_member_stamped_with_another_period_fails() -> None:
+@pytest.mark.parametrize("field", ["urgency", "procedures", "specialties"])
+def test_a_member_with_another_count_or_stamp_for_any_kind_fails(field: str) -> None:
+    for key, value in (("count", 999), ("period", "1999" + DASH + "00"), ("release", "1999-01-01")):
+        docs = _docs()
+        _, member = _member(docs)
+        member["surgeries"][field][key] = value
+        with pytest.raises(GateError, match="disagrees with the hospital file"):
+            check_docs(ENTRIES, docs)
+
+
+def test_every_member_count_is_recomputed_from_its_hospital_file() -> None:
     docs = _docs()
-    _, member = _member(docs)
-    assert member["surgeries"]["current"]
-    member["surgeries"]["current"][0]["period"] = "1999\u201300"
+    checked = 0
+    for network in _networks(docs):
+        for m in network["hospitals"]:
+            h = _hospital_of(docs, m["slug"])
+            for name, kind in MEMBER_KINDS.items():
+                reported = sum(1 for s in h["surgeries"] if s["kind"] == kind and not s["stale"])
+                assert m["surgeries"][name]["count"] == reported
+                checked += 1
+    assert checked
+
+
+def test_the_members_include_a_zero_count_and_a_positive_one() -> None:
+    counts = [m["surgeries"][f]["count"] for m in _members(_docs()) for f in MEMBER_KINDS]
+    assert 0 in counts
+    assert any(c > 0 for c in counts)
+
+
+def test_a_count_that_includes_a_stale_category_fails() -> None:
+    docs = _docs()
+    hospital = next(
+        d
+        for _, (k, d) in sorted(docs.items())
+        if k == "hospital" and d["network"] and any(s["stale"] for s in d["surgeries"])
+    )
+    stale = next(s for s in hospital["surgeries"] if s["stale"])
+    member = _member_of(docs, hospital)
+    name = next(n for n, k in MEMBER_KINDS.items() if k == stale["kind"])
+    member["surgeries"][name]["count"] += 1
     with pytest.raises(GateError, match="disagrees with the hospital file"):
         check_docs(ENTRIES, docs)
 
 
-def test_a_member_lists_only_the_tables_where_it_has_a_current_figure() -> None:
-    members = [m for n in _networks(_docs()) for m in n["hospitals"]]
-    assert len({len(m["surgeries"]["current"]) for m in members}) > 1
-    for m in members:
-        assert (m["surgeries"]["count"] == 0) == (not m["surgeries"]["current"])
-        assert len(m["surgeries"]["current"]) <= m["surgeries"]["count"]
-
-
-def test_a_member_that_lists_a_table_it_has_no_current_figure_in_fails() -> None:
+def test_the_current_figures_of_a_kind_must_share_one_period() -> None:
     docs = _docs()
-    members = [m for n in _networks(docs) for m in n["hospitals"]]
-    stamp = next(m["surgeries"]["current"][0] for m in members if m["surgeries"]["current"])
-    short = next(m for m in members if len(m["surgeries"]["current"]) < len(KINDS))
-    listed = {c["kind"] for c in short["surgeries"]["current"]}
-    spare = next(k for k in KINDS if k not in listed)
-    short["surgeries"]["current"].append({**stamp, "kind": spare})
-    with pytest.raises(GateError, match="disagrees with the hospital file"):
+    hospital = next(
+        d
+        for _, (k, d) in sorted(docs.items())
+        if k == "hospital" and d["network"] and d["surgeries"]
+    )
+    current = next(s for s in hospital["surgeries"] if not s["stale"])
+    next(iter(current["measures"].values()))["figure"]["period"] = "1999" + DASH + "00"
+    with pytest.raises(GateError, match="share one period"):
         check_docs(ENTRIES, docs)
 
 
@@ -474,6 +502,7 @@ def test_a_missing_urgent_figure_carries_no_period_or_release() -> None:
     hospital = _hospital_with_urgent(docs, stale=False, published=False)
     hospital["surgeries"] = [s for s in hospital["surgeries"] if s["slug"] != URGENT_SLUG]
     member = _member_of(docs, hospital)
+    member["surgeries"]["urgency"]["count"] -= 1
     member["urgent_on_time"] = {
         "status": "missing",
         "figure": None,
@@ -487,9 +516,7 @@ def test_a_missing_urgent_figure_carries_no_period_or_release() -> None:
 
 
 def _any_period(docs: dict[str, tuple[str, Doc]]) -> str:
-    return next(
-        m["surgeries"]["current"][0]["period"] for m in _members(docs) if m["surgeries"]["current"]
-    )
+    return next(m["surgeries"]["procedures"]["period"] for m in _members(docs))
 
 
 def _members(docs: dict[str, tuple[str, Doc]]) -> list[Doc]:

@@ -1,0 +1,49 @@
+crumb_home: Home
+crumb_index: Health services
+title: '{network} planned surgery waiting times: {site}'
+description: 'This page lists the public hospitals of {network} in {states} that report planned surgery waiting times. It shows how many surgery types each hospital reported and how often it treated urgent patients on time.'
+heading: '{network} surgery waiting times'
+lede: 'This page lists the public hospitals that report planned surgery waiting times under {network} in {states}.'
+count_one: '1 public hospital reports under {network}.'
+count_many: '{count} public hospitals report under {network}.'
+grouping_heading: How hospitals are grouped
+grouping:
+  - The source assigns each public hospital to a local hospital network. Each state and territory has its own name for these networks. They are local health districts in New South Wales, hospital and health services in Queensland, and health services in Victoria and Western Australia.
+  - This site shows the source's grouping as published and does not change it.
+source_name: 'The source publishes this network as {name}.'
+hospitals_heading: 'Hospitals of {network}'
+hospitals_intro: The hospitals are in name order. Each name links to that hospital's page.
+hospitals_intro_states: The hospitals are in order of state or territory, then name. Each name links to that hospital's page.
+hospitals_caption: 'Public hospitals of {network}'
+row_heading: Hospital
+col_state: State or territory
+col_types: Surgery types reported
+col_urgent: Urgent patients treated on time
+closed_name: '{name} (closed)'
+types_note: The count includes surgery types for which the source published no figures. It is not a count of published figures. A surgery type counts when the hospital has any row for it in the newest period. The count covers procedures only and leaves out specialties and urgency categories.
+no_types_cell: The hospital reported no surgery type for the newest period.
+urgent_note: 'The urgent share is the share of category 1 patients treated within {within}. It covers all planned surgery at the hospital and is never combined with a procedure figure.'
+table_stamp: 'Figures are for {period}, released {release}, unless a cell gives its own period.'
+cell_stamp: '{text} ({stamp})'
+stale_cell: 'The source has no urgent figure for this hospital for the newest period. Its latest urgent figures are for {stamp}.'
+missing_cell: The source has no urgent figure for this hospital.
+urgency_link: '{category}: hospitals by share treated on time'
+links_heading: Related pages
+state_link: '{state}: planned surgery waiting times'
+index_link: All health services
+exclusion_heading: What this page leaves out
+exclusion: Private hospitals are excluded. This page covers public hospitals only, so it shows no private hospital.
+index_title: 'Waiting times by health service: {site}'
+index_description: This page lists the local hospital networks that have public hospitals reporting planned surgery waiting times. Each name links to the hospitals of that network.
+index_heading: Waiting times by health service
+index_lede: 'This page lists {count} local hospital networks. Each name links to the public hospitals of that network and their planned surgery waiting times.'
+index_stamp: 'The hospital counts are for {period}. The register was released on {release}.'
+index_states_heading: By state and territory
+index_state_intro: 'The networks in {state} are in name order.'
+hospitals_one: 1 public hospital
+hospitals_many: '{count} public hospitals'
+hospitals_state_one: '1 public hospital in {state}'
+hospitals_state_many: '{count} public hospitals in {state}'
+index_links_heading: Related pages
+index_hospitals_link: All public hospitals
+index_urgency_link: Urgency categories explained

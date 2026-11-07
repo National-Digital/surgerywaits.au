@@ -30,6 +30,7 @@ import {
   trendCharts,
   urgencyTiles,
 } from '../../../lib/hospital-page';
+import { networkPath } from '../../../lib/health-service-page';
 import { isBuilt } from '../../../lib/links';
 import { fill } from '../../../lib/slots';
 import type { Role } from '../../../lib/format';
@@ -69,7 +70,11 @@ const crumbs = [
 
 const about = [
   { term: t.about_state, value: state },
-  { term: t.about_network, value: hospital.network?.name ?? t.network_none },
+  {
+    term: t.about_network,
+    value: hospital.network?.name ?? t.network_none,
+    href: hospital.network === null ? undefined : networkPath(hospital.network.slug),
+  },
   { term: t.about_status, value: hospital.closed ? t.status_closed : t.status_open },
   ...(hospital.alternative_names.length > 0
     ? [{ term: t.about_names, value: hospital.alternative_names.join('; ') }]
