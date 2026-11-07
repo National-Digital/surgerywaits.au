@@ -79,16 +79,36 @@ const ROOTS: Readonly<Record<string, RegExp>> = {
   'image/svg+xml': /^svg$/u,
 };
 
+// One pass from left to right, so a removal never joins text into a new opener.
+function withoutMarkup(body: string): string | undefined {
+  const pairs: readonly (readonly [string, string])[] = [
+    ['<!--', '-->'],
+    ['<?', '?>'],
+    ['<![CDATA[', ']]>'],
+  ];
+  let out = '';
+  let at = 0;
+  for (;;) {
+    const next = pairs
+      .map(([open, close]) => ({ open, close, index: body.indexOf(open, at) }))
+      .filter((p) => p.index >= 0)
+      .sort((a, b) => a.index - b.index)[0];
+    if (next === undefined) {
+      return (out + body.slice(at)).trim();
+    }
+    const stop = body.indexOf(next.close, next.index + next.open.length);
+    if (stop < 0) {
+      return undefined;
+    }
+    out += body.slice(at, next.index);
+    at = stop + next.close.length;
+  }
+}
+
 // A tag stack: one root of the expected name and every tag closed in order.
 function xmlProblem(body: string, root: RegExp): string | undefined {
-  let bare = body;
-  // Repeat until nothing changes, so a removal cannot leave a new opener behind.
-  for (let previous = ''; previous !== bare;) {
-    previous = bare;
-    bare = bare.replace(/<\?[\s\S]*?\?>|<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>/gu, '');
-  }
-  bare = bare.trim();
-  if (/<!--|<\?|<!\[CDATA\[/u.test(bare)) {
+  const bare = withoutMarkup(body);
+  if (bare === undefined) {
     return 'unclosed comment, instruction or CDATA';
   }
   const stack: string[] = [];
