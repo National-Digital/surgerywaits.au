@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
+import pairs from './tweed-valley-pairs.json' with { type: 'json' };
 
 interface Redirect {
   from: string;
@@ -51,5 +52,21 @@ describe('the redirects file', () => {
     expect(tweed.length).toBeGreaterThan(1);
     expect(tweed.every((r) => r.to.startsWith('/hospital/the-tweed-hospital/'))).toBe(true);
     expect(tweed.some((r) => r.from === '/hospital/tweed-valley-hospital/')).toBe(true);
+  });
+
+  // The earlier site served 88 pair pages under this hospital; the list is those addresses.
+  it('redirects each earlier Tweed Valley pair address to the current hospital', () => {
+    const targets = new Map(list.map((r) => [r.from, r.to]));
+    expect(pairs).toHaveLength(88);
+    const missing = pairs.filter(
+      (slug) => !targets.has(`/hospital/tweed-valley-hospital/${slug}/`),
+    );
+    expect(missing).toEqual([]);
+    const stray = pairs.filter(
+      (slug) =>
+        targets.get(`/hospital/tweed-valley-hospital/${slug}/`) !==
+        `/hospital/the-tweed-hospital/${slug}/`,
+    );
+    expect(stray).toEqual([]);
   });
 });
