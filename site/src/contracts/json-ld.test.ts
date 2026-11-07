@@ -120,6 +120,7 @@ function stringsOf(value: unknown, out: string[] = []): string[] {
   return out;
 }
 
+// Parsing every page of the real build takes longer than the default hook limit.
 beforeAll(() => {
   files.forEach((file, index) => {
     const html = readFileSync(new URL(file, dist), 'utf8');
@@ -158,7 +159,7 @@ beforeAll(() => {
       pages.push({ path, html, nodes, scripts: found.scripts });
     }
   });
-});
+}, 300_000);
 
 const MONTHS =
   'January|February|March|April|May|June|July|August|September|October|November|December';
