@@ -65,6 +65,11 @@ describe('the body checks', () => {
     expect(bodyProblem('application/json', '{"a":1}')).toBeUndefined();
   });
 
+  it('reject an unclosed comment and accept a comment that hides a tag', () => {
+    expect(bodyProblem('image/svg+xml', SVG.replace('<svg', '<!-- open <svg'))).toBeDefined();
+    expect(bodyProblem('image/svg+xml', SVG.replace('<svg', '<!-- <g> --><svg'))).toBeUndefined();
+  });
+
   it('reject a truncated sitemap', () => {
     expect(bodyProblem('application/xml', SITEMAP.slice(0, -12))).toBeDefined();
     expect(bodyProblem('application/xml', SITEMAP.replace('</urlset>', ''))).toBeDefined();

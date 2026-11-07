@@ -81,10 +81,16 @@ const ROOTS: Readonly<Record<string, RegExp>> = {
 
 // A tag stack: one root of the expected name and every tag closed in order.
 function xmlProblem(body: string, root: RegExp): string | undefined {
-  const bare = body
-    .replace(/<\?[\s\S]*?\?>|<!--[\s\S]*?-->/gu, '')
-    .replace(/<!\[CDATA\[[\s\S]*?\]\]>/gu, '')
-    .trim();
+  let bare = body;
+  // Repeat until nothing changes, so a removal cannot leave a new opener behind.
+  for (let previous = ''; previous !== bare;) {
+    previous = bare;
+    bare = bare.replace(/<\?[\s\S]*?\?>|<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>/gu, '');
+  }
+  bare = bare.trim();
+  if (/<!--|<\?|<!\[CDATA\[/u.test(bare)) {
+    return 'unclosed comment, instruction or CDATA';
+  }
   const stack: string[] = [];
   let rootName: string | undefined;
   for (const [, closing, name = '', selfClosing] of bare.matchAll(TAG)) {
