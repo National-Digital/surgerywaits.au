@@ -47,6 +47,12 @@ export const DATA_API_HEADERS: Readonly<Record<string, string>> = {
 };
 
 export function cacheControl(pathname: string, status: number): string | undefined {
+  if (pathname === '/mcp') {
+    return 'no-store';
+  }
+  if (pathname === '/mcp/server-card' && (status === 200 || status === 304)) {
+    return 'public, max-age=3600';
+  }
   if (status === 404) {
     return MISSING_CACHE_CONTROL;
   }
