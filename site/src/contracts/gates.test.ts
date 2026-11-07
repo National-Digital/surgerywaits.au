@@ -1,4 +1,5 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ESLint } from 'eslint';
@@ -93,6 +94,106 @@ const reasons = (
     $defs: { not_published_figure: { properties: { reason: { enum: NotPublishedReason[] } } } };
   }
 ).$defs.not_published_figure.properties.reason.enum;
+
+const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
+
+// SVG output sizes its text by the viewBox, so its unitless font-size attributes scale with the picture.
+const SVG_ONLY = ['lib/state-chart.ts'];
+const STYLE_ATTRIBUTE = /\sstyle=(?:\x22([^\x22]*)\x22|\x27([^\x27]*)\x27)/g;
+const stripComments = (css: string): string =>
+  css.replace(new RegExp('/\\*[\\s\\S]*?\\*/', 'g'), '');
+// The CSS a reader's browser receives: stylesheets, component style blocks and style attributes,
+// and the style strings that .ts files build.
+function styleSources(): string[] {
+  const src = fileURLToPath(new URL('../', import.meta.url));
+  return readdirSync(src, { recursive: true, encoding: 'utf8' })
+    .filter(
+      (f) => /\.(?:css|astro|ts)$/.test(f) && !f.endsWith('.test.ts') && !SVG_ONLY.includes(f),
+    )
+    .flatMap((f) => {
+      const text = readFileSync(join(src, f), 'utf8');
+      if (f.endsWith('.css')) {
+        return [stripComments(text)];
+      }
+      const blocks = f.endsWith('.astro')
+        ? [...text.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) =>
+            stripComments(m[1] ?? ''),
+          )
+        : [];
+      const attributes = [...text.matchAll(STYLE_ATTRIBUTE)].map((m) => m[1] ?? m[2] ?? '');
+      return f.endsWith('.ts') ? [stripComments(text)] : [...blocks, ...attributes];
+    });
+}
+
+const TYPE_PROPERTY =
+  /^(?:font|font-size|line-height|letter-spacing|word-spacing|--(?:fs|lh|tracking)-.+)$/;
+const ABSOLUTE_UNIT = /\d(?:px|pt|pc|cm|mm|in|q)\b/i;
+const RELATIVE_UNIT = /\d(?:rem|em|ex|ch|lh|rlh|vw|vh|vi|vb|vmin|vmax|%)/i;
+// A px term inside a calc() that also holds a relative unit still follows the reader's size.
+function withoutRelativeCalc(value: string): string {
+  let next = value;
+  for (let prev = ''; prev !== next;) {
+    prev = next;
+    next = next.replace(/calc\(([^()]*)\)/g, (m, inner: string) =>
+      RELATIVE_UNIT.test(inner) ? '0' : m,
+    );
+  }
+  return next;
+}
+// A type size in an absolute unit would ignore the size a reader sets in the browser.
+function absoluteTypeSizes(sources: string[]): string[] {
+  return sources.flatMap((css) =>
+    [...stripComments(css).matchAll(/([\w-]+)\s*:\s*([^;{}]+)/g)]
+      .filter(
+        ([, name = '', value = '']) =>
+          TYPE_PROPERTY.test(name) && ABSOLUTE_UNIT.test(withoutRelativeCalc(value)),
+      )
+      .map(([, name = '', value = '']) => `${name}:${value.trim()}`),
+  );
+}
+
+// Data comes from the pinned manifest and never sits in git; the pipeline's test inputs are the one exception.
+const DATA_FILES = new Set([
+  'data/manifest.json',
+  'data/redirects.json',
+  'data/redirects.schema.json',
+]);
+const DATA_EXTENSION =
+  /\.(?:parquet|csv|tsv|ndjson|jsonl|feather|arrow|sqlite3?|db|xlsx?|xlsb|zip|gz|zst|tar|7z)$/i;
+const SIZE_CAP = 1_000_000;
+const FIXTURE_SIZE_CAP = 400_000; // the largest fixture is 162 KB
+// A snapshot can hide under any name, so a big file fails wherever it sits.
+function oversized(sizes: Record<string, number>): string[] {
+  return Object.entries(sizes)
+    .filter(
+      ([f, bytes]) =>
+        bytes > (f.startsWith('pipeline/tests/fixtures/') ? FIXTURE_SIZE_CAP : SIZE_CAP),
+    )
+    .map(([f]) => f);
+}
+function dataSnapshots(tracked: string[]): string[] {
+  return tracked.filter((f) => {
+    if (f.startsWith('pipeline/tests/fixtures/') || DATA_FILES.has(f)) {
+      return false;
+    }
+    return (
+      f.startsWith('data/') ||
+      DATA_EXTENSION.test(f) ||
+      f.split('/').some((part) => part === 'dist' || part === '.downloads')
+    );
+  });
+}
+
+function licenceMixing(code: string, data: string): string[] {
+  return [
+    ...(code.includes('GNU AFFERO GENERAL PUBLIC LICENSE') ? [] : ['LICENSE is not the AGPL']),
+    ...(/CC BY|Creative Commons/i.test(code) ? ['LICENSE names a data licence'] : []),
+    ...(data.includes('CC BY 4.0') ? [] : ['LICENSE-DATA.md does not name CC BY 4.0']),
+    ...(data.includes('GNU AFFERO GENERAL PUBLIC LICENSE')
+      ? ['LICENSE-DATA.md holds the code licence text']
+      : []),
+  ];
+}
 
 describe('Contract: dist files', () => {
   it('validate against their JSON Schemas in contract/', () => {
@@ -331,25 +432,57 @@ describe('Privacy', () => {
   it.todo('the privacy check allows exactly the Web Analytics beacon and report hosts');
 });
 
-describe('Page weight', () => {
-  it.todo('every page stays within the page-weight budget set when the site lands');
-});
-
-describe('HTML validity', () => {
-  it.todo('the W3C Nu Html Checker passes with --Werror');
-  it.todo('the Nu checker version is pinned and every filter line carries a reason');
-});
-
 describe('Accessibility', () => {
-  it.todo('axe passes at WCAG 2.2 AAA in light mode');
-  it.todo('axe passes at WCAG 2.2 AAA in dark mode');
-  it.todo('text a person reads is at or above a set minimum size');
-  it.todo('no paragraph averages more than 80 characters a line');
-  it.todo('every link, button and field meets a minimum target size');
-  it.todo('no link is named by a word that does not say where it goes');
-  it.todo('no page scrolls sideways at 320 CSS pixels wide');
-  it.todo('with the WCAG text-spacing settings forced, nothing is cut off');
-  it.todo("every size is relative, so a reader's own browser text size applies");
+  it("every size is relative, so a reader's own browser text size applies", () => {
+    const sources = styleSources();
+    // An empty scan would pass on nothing.
+    expect(sources.length).toBeGreaterThan(10);
+    expect(absoluteTypeSizes(sources)).toEqual([]);
+    expect(
+      absoluteTypeSizes([
+        'a{font-size:14px}',
+        'b{line-height:20px;letter-spacing:1pt}',
+        ':root{--fs-x:12px;--fs-ok:0.75rem}',
+        'c{font:italic 13px/1.5 serif}',
+        'd{font-size:clamp(1rem,2vw,16px)}',
+        'e{font-size:1rem;line-height:1.5;border-width:1px}',
+        '/* font-size:9px */f{font-size:1rem}',
+        'g{font-size:calc(1rem + 2px);line-height:calc(1.5 * 12px)}',
+        'h{font-size:clamp(1rem,calc(0.5rem + 1vw),calc(2rem + 1px))}',
+      ]),
+    ).toEqual([
+      'font-size:14px',
+      'line-height:20px',
+      'letter-spacing:1pt',
+      '--fs-x:12px',
+      'font:italic 13px/1.5 serif',
+      'font-size:clamp(1rem,2vw,16px)',
+      'line-height:calc(1.5 * 12px)',
+    ]);
+    expect(
+      absoluteTypeSizes(
+        ['<p style="font-size:14px">'].flatMap((h) =>
+          [...h.matchAll(STYLE_ATTRIBUTE)].map((m) => m[1] ?? ''),
+        ),
+      ),
+    ).toEqual(['font-size:14px']);
+  });
+  it('exempts only SVG output from the relative-size check, where text is sized by the viewBox', () => {
+    const src = fileURLToPath(new URL('../', import.meta.url));
+    expect(SVG_ONLY.length).toBeGreaterThan(0);
+    for (const f of SVG_ONLY) {
+      const text = readFileSync(join(src, f), 'utf8');
+      expect(text, f).toContain('<svg');
+      expect(text, f).not.toMatch(STYLE_ATTRIBUTE);
+      expect(text, f).not.toContain('<style');
+      const sizes = text.match(/font-size[^,;]{0,12}/g) ?? [];
+      expect(sizes.length, f).toBeGreaterThan(0);
+      expect(
+        sizes.every((v) => /^font-size=\x22\d+(?:\.\d+)?\x22/.test(v)),
+        f,
+      ).toBe(true);
+    }
+  });
   // The charts and bars are the only marks that carry data in colour, so the gate covers them.
   it('colour is never the only carrier of meaning', async () => {
     const { plain, gaps } = sampleCharts({ hospital: 'This hospital', national: 'Australia' });
@@ -366,10 +499,6 @@ describe('Accessibility', () => {
     expect(textsOf(html, 'c-waits__value').every((t) => t !== '')).toBe(true);
     expect(html.match(/<details/g)?.length).toBeGreaterThanOrEqual(2);
   });
-});
-
-describe('Contrast', () => {
-  it.todo('all text and meaningful graphics meet AAA contrast in light and dark');
 });
 
 describe('Copy', () => {
@@ -539,18 +668,72 @@ describe('Copy', () => {
     expect(site.operator.line).toBe('Built and operated by {operator}, Burleigh Heads, Queensland');
     expect(site.operator.url).toBe('https://nationaldigital.com.au/');
   });
-  it.todo('the credit line uses the citation publicdata.au publishes with each version');
 });
 
 describe('Repository', () => {
-  it.todo('no data snapshot is committed to git');
-  it.todo('the data licence stays in its own file, apart from the code licence');
+  it('no data snapshot is committed to git', () => {
+    const tracked = execFileSync('git', ['ls-files', '-z'], { cwd: repoRoot, encoding: 'utf8' })
+      .split('\0')
+      .filter((f) => f !== '');
+    expect(tracked.length).toBeGreaterThan(0);
+    expect(dataSnapshots(tracked)).toEqual([]);
+    expect(
+      oversized(
+        Object.fromEntries(
+          tracked
+            .filter((f) => existsSync(join(repoRoot, f)))
+            .map((f) => [f, statSync(join(repoRoot, f)).size]),
+        ),
+      ),
+    ).toEqual([]);
+    expect(
+      oversized({
+        'docs/big.bin': 1_000_001,
+        'docs/ok.bin': 1_000_000,
+        'pipeline/tests/fixtures/a/data.parquet': 399_999,
+        'pipeline/tests/fixtures/b/data.parquet': 400_001,
+        'site/public/one.json': 2_000_000,
+      }),
+    ).toEqual(['docs/big.bin', 'pipeline/tests/fixtures/b/data.parquet', 'site/public/one.json']);
+    expect(
+      dataSnapshots(['a/x.zst', 'a/x.tar', 'a/x.7z', 'a/x.xlsb', 'a/x.xlsx', 'a/x.txt']),
+    ).toEqual(['a/x.zst', 'a/x.tar', 'a/x.7z', 'a/x.xlsb', 'a/x.xlsx']);
+    expect(
+      dataSnapshots([
+        'data/manifest.json',
+        'pipeline/tests/fixtures/slug/data.parquet',
+        'site/src/lib/dist.ts',
+        'data/hospitals.json',
+        'pipeline/dist/index.json',
+        'pipeline/.downloads/0a1b2c',
+        'site/public/waits.csv',
+        'archive/waits.parquet',
+      ]),
+    ).toEqual([
+      'data/hospitals.json',
+      'pipeline/dist/index.json',
+      'pipeline/.downloads/0a1b2c',
+      'site/public/waits.csv',
+      'archive/waits.parquet',
+    ]);
+  });
+  it('the data licence stays in its own file, apart from the code licence', () => {
+    const code = readFileSync(join(repoRoot, 'LICENSE'), 'utf8');
+    const data = readFileSync(join(repoRoot, 'LICENSE-DATA.md'), 'utf8');
+    expect(licenceMixing(code, data)).toEqual([]);
+    expect(
+      licenceMixing(
+        'GNU AFFERO GENERAL PUBLIC LICENSE\nVersion 3\nThe data is under CC BY 4.0.',
+        'The text is under CC BY 4.0.\nGNU AFFERO GENERAL PUBLIC LICENSE\nVersion 3, 19 November 2007',
+      ),
+    ).toEqual(['LICENSE names a data licence', 'LICENSE-DATA.md holds the code licence text']);
+    expect(licenceMixing('MIT', 'Other')).toEqual([
+      'LICENSE is not the AGPL',
+      'LICENSE-DATA.md does not name CC BY 4.0',
+    ]);
+  });
 });
 
 describe('OpenAPI', () => {
   it.todo('a schema and the generated OpenAPI description never disagree');
-});
-
-describe('Delivery', () => {
-  it.todo('every internal link resolves');
 });

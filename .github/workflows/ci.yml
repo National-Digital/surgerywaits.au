@@ -85,6 +85,8 @@ jobs:
       - run: npm run html -- site/dist
       # Every internal link, asset and fragment resolves; external addresses are listed, not fetched.
       - run: npm run links -- site/dist --external
+      # Every page stays inside the compressed-size budget in scripts/page-weight-budget.json.
+      - run: npm run weight -- site/dist
       # Proves each gate fails a page built to fail it.
       - run: npx vitest run scripts/html.test.ts scripts/links.test.ts
         env:
@@ -226,6 +228,9 @@ jobs:
       - run: npm run html -- site/dist
         working-directory: .
       - run: npm run links -- site/dist
+        working-directory: .
+      # The budget in scripts/page-weight-budget.json is set from this real build.
+      - run: npm run weight -- site/dist
         working-directory: .
       - run: npx vitest run site/src/contracts/determinism.test.ts
         working-directory: .

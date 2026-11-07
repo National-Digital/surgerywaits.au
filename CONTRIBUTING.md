@@ -50,6 +50,7 @@ npm run a11y            # accessibility checks on their fixture pages (npx playw
 npm run a11y -- site/dist-preview /dev/primitives/   # the same checks on the preview page, after build:preview
 npm run html -- site/dist    # the W3C Nu Html Checker over the built pages, after npm run build; needs Java 21 (JAVA names the binary)
 npm run links -- site/dist   # internal links, assets and fragments on the built pages, after npm run build
+npm run weight -- site/dist  # compressed page weight against scripts/page-weight-budget.json, after npm run build
 HTML_TEST=1 npx vitest run scripts/html.test.ts   # proves the HTML gate fails a bad page; needs Java
 npm run worker:types:check   # fails when worker/worker-configuration.d.ts is stale
 npm run worker:dry-run -- /tmp/worker-out   # wrangler deploy --dry-run, no credentials

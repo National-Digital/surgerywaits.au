@@ -24,7 +24,8 @@
     "worker:types:check": "wrangler types --check --include-runtime=false --config worker/wrangler.jsonc worker/worker-configuration.d.ts",
     "a11y": "node scripts/a11y.ts",
     "html": "node scripts/html.ts",
-    "links": "node scripts/links.ts"
+    "links": "node scripts/links.ts",
+    "weight": "node scripts/weight.ts"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "5.20261106.1",

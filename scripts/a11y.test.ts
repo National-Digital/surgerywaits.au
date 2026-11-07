@@ -14,7 +14,7 @@ import {
   launch,
   serve,
 } from './a11y-audit.ts';
-import type { Served } from './a11y-audit.ts';
+import type { Scheme, Served } from './a11y-audit.ts';
 import {
   HOUSE,
   TEXT_SPACING,
@@ -84,6 +84,53 @@ browsers('each check fires on the fixture built to fail it', () => {
       expect(silent).toEqual([]);
     },
     T * PROOF.length,
+  );
+
+  const axeAaaRules = async (scheme: Scheme, path = '/fail/axe.html'): Promise<string[]> =>
+    (
+      await auditPage({
+        browser: up(browser),
+        base: up(server).base,
+        path,
+        scheme,
+        viewport: { name: 'desktop', width: 1280, height: 900 },
+        exceptions: [],
+        used: new Set(),
+      })
+    ).map((f) => f.rule);
+
+  it(
+    'axe fails text that passes AA but misses AAA contrast in light',
+    async () => {
+      const rules = await axeAaaRules('light');
+      expect(rules).toContain('axe:color-contrast-enhanced');
+      expect(rules).not.toContain('axe:color-contrast');
+      // The scheme is applied: a pair that fails only in the light scheme fires, and one that fails only in the dark scheme does not.
+      expect(await axeAaaRules('light', '/fail/aaa-light-only.html')).toContain(
+        'axe:color-contrast-enhanced',
+      );
+      expect(await axeAaaRules('light', '/fail/aaa-dark-only.html')).not.toContain(
+        'axe:color-contrast-enhanced',
+      );
+    },
+    T,
+  );
+
+  it(
+    'axe fails text that passes AA but misses AAA contrast in dark',
+    async () => {
+      const rules = await axeAaaRules('dark');
+      expect(rules).toContain('axe:color-contrast-enhanced');
+      expect(rules).not.toContain('axe:color-contrast');
+      // The scheme is applied: a pair that fails only in the dark scheme fires, and one that fails only in the light scheme does not.
+      expect(await axeAaaRules('dark', '/fail/aaa-dark-only.html')).toContain(
+        'axe:color-contrast-enhanced',
+      );
+      expect(await axeAaaRules('dark', '/fail/aaa-light-only.html')).not.toContain(
+        'axe:color-contrast-enhanced',
+      );
+    },
+    T,
   );
 
   it(
@@ -359,6 +406,21 @@ browsers('painted contrast', () => {
       `<svg width="300" height="60"><rect width="300" height="60" fill="#777"/><text id="t" x="10" y="40" font-size="20" fill="#fff" ${halo ? 'stroke="#000" stroke-width="6" paint-order="stroke"' : ''}>Cairns harbour</text></svg>`;
     expect(await painted(`${BASE}${svg(true)}${END}`, ['#t'])).toEqual([]);
     expect(await painted(`${BASE}${svg(false)}${END}`, ['#t'])).toHaveLength(1);
+  });
+});
+
+describe('the house settings', () => {
+  it('force the WCAG 1.4.12 text spacing and name the generic link words', () => {
+    // Line height 1.5, letter spacing 0.12em, word spacing 0.16em and paragraph spacing 2em.
+    expect(TEXT_SPACING).toContain('line-height:1.5!important');
+    expect(TEXT_SPACING).toContain('letter-spacing:.12em!important');
+    expect(TEXT_SPACING).toContain('word-spacing:.16em!important');
+    expect(TEXT_SPACING).toContain('p{margin-bottom:2em!important}');
+    expect(HOUSE.generic).toEqual(
+      expect.arrayContaining(['click here', 'here', 'more', 'read more']),
+    );
+    expect(HOUSE.maxCharsPerLine).toBe(80);
+    expect(HOUSE.reflowWidth).toBe(320);
   });
 });
 
