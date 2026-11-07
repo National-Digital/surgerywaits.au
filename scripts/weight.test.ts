@@ -49,6 +49,13 @@ describe('the page-weight gate', () => {
     expect(overScript(1001, budget)).toEqual(['the tool script is 1001 B, budget 1000 B']);
   });
 
+  it('adds the local chunks the script imports statically and leaves a dynamic import out', async () => {
+    expect(await scriptWeight(resolve(fixtures, 'split-script'))).toEqual({
+      file: '/tool.js',
+      bytes: 193,
+    });
+  });
+
   it('counts the script in the weight of the compare page and fails one over the script budget', async () => {
     const pages = await measurePages(resolve(fixtures, 'heavy-script'));
     const compare = pages.find((w) => w.page === '/compare/');

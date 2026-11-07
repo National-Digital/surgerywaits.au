@@ -233,6 +233,14 @@ jobs:
       # The budget in scripts/page-weight-budget.json is set from this real build.
       - run: npm run weight -- site/dist
         working-directory: .
+      # The Chromium build is fixed by the exact playwright version in package.json.
+      - run: npx playwright install --with-deps chromium
+        working-directory: .
+      # The compare sheet must print on one page with the real figures, whose names run longer than the fixture's.
+      - run: npx vitest run scripts/tool.test.ts -t "prints one sheet"
+        working-directory: .
+        env:
+          TOOL_TEST: '1'
       - run: npx vitest run site/src/contracts/determinism.test.ts
         working-directory: .
         env:

@@ -274,7 +274,8 @@ whose names are stable enough to require as status checks.
   with `uv`, sets `SURGERYWAITS_DIST` to it and runs vitest.
 - `Worker build` runs `npm ci`, `astro build`, the page and script weight check (`npm run weight`), the `wrangler types --check` freshness check and
   `wrangler deploy --dry-run` into a temporary directory. It uses no Cloudflare credential or
-  account identifier, and nothing is deployed.
+  account identifier, and nothing is deployed. The script budget can never be set above 44,900
+  bytes.
 - `Pipeline checks` installs the `uv` version in `pipeline/uv.toml`, runs `uv sync --locked`, then
   ruff, pyright and pytest. It leaves out `tests/test_repo.py`, `tests/test_docs.py` and
   `tests/test_testing_rules.py`, because the next job runs them.
@@ -283,7 +284,9 @@ whose names are stable enough to require as status checks.
   sha256 and fetches only from publicdata.au. About 140 MB downloads on a cache miss. It then runs
   the whole pytest suite with `SURGERYWAITS_REQUIRE_DATA=1`, which turns any skip whose reason
   does not start with `planned:` into a failure, so a missing pinned file cannot hide. Set the
-  same variable locally after a pull to see the same result.
+  same variable locally after a pull to see the same result. It then builds the site from the real
+  dist, runs the HTML, link and weight gates, installs Chromium and prints the compare sheet on the
+  real figures, which must fit one page.
 - `Accessibility` installs Chromium with `npx playwright install --with-deps chromium`, then runs
   `npm run a11y` and the tests in `scripts/a11y.test.ts`. The first proves each accessibility
   check fires on its fixture page in `scripts/a11y-fixtures/`. The job also builds the fixture dist

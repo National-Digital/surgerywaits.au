@@ -120,7 +120,11 @@ export function overBudget(weights: PageWeight[], budget: Budget): string[] {
   ]);
 }
 
-// The compare page's module script, as it sits in the dist, with the JSON it fetches later left out.
+// A module's static imports and re-exports, never a dynamic import.
+const STATIC_IMPORT = /\b(?:import|export)\s*(?:[^'"();]*?\bfrom\s*)?(["'])([^"']+)\1/g;
+
+// The compare page's module script and the local chunks it imports, as they sit in the dist, with
+// the JSON it fetches later left out.
 export async function scriptWeight(dist: string): Promise<{ file: string; bytes: number }> {
   const html = await readFile(join(dist, 'compare', 'index.html'), 'utf8');
   let src: string | undefined;
@@ -131,7 +135,24 @@ export async function scriptWeight(dist: string): Promise<{ file: string; bytes:
   if (file === null) {
     throw new Error('the compare page loads no local script');
   }
-  return { file: `/${file}`, bytes: (await readFile(join(dist, file))).byteLength };
+  const seen = new Set<string>();
+  let bytes = 0;
+  const pending = [file];
+  for (let next = pending.pop(); next !== undefined; next = pending.pop()) {
+    if (seen.has(next)) {
+      continue;
+    }
+    seen.add(next);
+    const source = await readFile(join(dist, next));
+    bytes += source.byteLength;
+    for (const match of source.toString('utf8').matchAll(STATIC_IMPORT)) {
+      const inner = local(match[2] ?? '', `/${next}`);
+      if (inner !== null) {
+        pending.push(inner);
+      }
+    }
+  }
+  return { file: `/${file}`, bytes };
 }
 
 export function overScript(bytes: number, budget: Budget): string[] {
