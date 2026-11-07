@@ -64,9 +64,8 @@ describe('the redirects file', () => {
     expect(missing).toEqual([]);
     const stray = pairs.filter(
       (slug) =>
-        !(targets.get(`/hospital/tweed-valley-hospital/${slug}/`) ?? '').startsWith(
-          '/hospital/the-tweed-hospital/',
-        ),
+        targets.get(`/hospital/tweed-valley-hospital/${slug}/`) !==
+        `/hospital/the-tweed-hospital/${slug}/`,
     );
     expect(stray).toEqual([]);
   });
