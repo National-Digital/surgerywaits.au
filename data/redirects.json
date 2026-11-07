@@ -171,6 +171,10 @@
     {
       "from": "/hospital/tweed-valley-hospital/ureteric-stent-insertion-of/",
       "to": "/hospital/the-tweed-hospital/ureteric-stent-insertion-of/"
+    },
+    {
+      "from": "/attribution/",
+      "to": "/data/"
     }
   ]
 }
