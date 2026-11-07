@@ -389,7 +389,12 @@ describe('hosts and the security file', () => {
   });
 
   it('leaves pages on the two site hosts indexable', async () => {
-    for (const host of ['surgerywaits.au', 'www.surgerywaits.au', 'SurgeryWaits.AU']) {
+    for (const host of [
+      'surgerywaits.au',
+      'www.surgerywaits.au',
+      'SurgeryWaits.AU',
+      'surgerywaits.au.',
+    ]) {
       expect((await on(host)).headers.get('X-Robots-Tag'), host).toBeNull();
       expect((await on(host, '/robots.txt')).headers.get('X-Robots-Tag'), host).toBeNull();
     }

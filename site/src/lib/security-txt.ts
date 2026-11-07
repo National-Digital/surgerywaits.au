@@ -1,6 +1,6 @@
 import { SITE } from './robots';
 
-// Renewed by hand; security-txt.test.ts fails 30 days before this date. RFC 9116 allows at most a year ahead.
+// Renewed by hand; the built surfaces test fails once a data release comes within 90 days of it.
 export const EXPIRES = '2027-09-30T00:00:00.000Z';
 
 export const SECURITY_TXT_PATH = '/.well-known/security.txt';

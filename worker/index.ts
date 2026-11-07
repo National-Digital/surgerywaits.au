@@ -85,7 +85,7 @@ export async function handle(
   table: RedirectTable = redirects,
 ): Promise<Response> {
   const response = await route(request, env, table);
-  if (!PRODUCTION_HOSTS.has(new URL(request.url).hostname)) {
+  if (!PRODUCTION_HOSTS.has(new URL(request.url).hostname.replace(/\.$/u, ''))) {
     response.headers.set('X-Robots-Tag', 'noindex');
   }
   return response;

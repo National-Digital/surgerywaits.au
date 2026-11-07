@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 
 import { redirectFor } from '../../../worker/redirects';
 import { handle } from '../../../worker/index';
+import { readDist } from '../lib/dist';
+import { EXPIRES } from '../lib/security-txt';
 import { isBuildAsset, SURFACES, surfaceBodyProblem, surfaceOf } from '../lib/surfaces';
 
 const dist = new URL('../../dist/', import.meta.url);
@@ -43,6 +45,18 @@ const env = {
 } as never;
 
 describe('the built surfaces', () => {
+  // Measured against the data, not the clock, so a build gives the same answer on any day.
+  it('keeps security.txt valid for 90 days past the newest data release', () => {
+    const credits = readDist('credits.json') as { sources: { as_at: string | null }[] };
+    const releases = credits.sources.flatMap((s) =>
+      s.as_at === null ? [] : [Date.parse(s.as_at)],
+    );
+    const newest = Math.max(...releases);
+    expect(releases.length).toBeGreaterThan(0);
+    expect(Number.isNaN(newest)).toBe(false);
+    expect(Date.parse(EXPIRES) - newest).toBeGreaterThan(90 * 86_400_000);
+  });
+
   it('builds every expected path of every surface', () => {
     for (const surface of SURFACES) {
       for (const path of surface.expected?.() ?? []) {
