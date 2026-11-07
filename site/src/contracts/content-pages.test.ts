@@ -12,6 +12,13 @@ import { readCredits } from '../lib/credits';
 import { pageStrings } from '../lib/content-files';
 import { formatDate, formatNotPublished } from '../lib/format';
 import { isBuilt } from '../lib/links';
+import {
+  BORDER_COUNT,
+  BORDER_RADIUS_KM,
+  CHANGE_COUNT,
+  LONGEST_COUNT,
+  MOVE_VOLUME_FLOOR,
+} from '../lib/longest-page';
 import { surgeryStamp } from '../lib/index-pages';
 import { fill } from '../lib/slots';
 import { render, text, textsOf } from '../lib/test-render';
@@ -193,6 +200,40 @@ describe('Methodology numbers', () => {
     const overrides = queensland.split('OVERRIDES')[1]?.split('\n}\n')[0] ?? '';
     expect([...overrides.matchAll(/Override\(/g)]).toHaveLength(4);
     expect(sectionText('queensland')).toContain('four named facilities');
+  });
+});
+
+describe('Methodology longest waits numbers', () => {
+  const code = library('longest-page.ts');
+  const copy = sectionText('longest');
+
+  it('states the list sizes, radius and volume floor the pages use', () => {
+    expect(copy).toContain(`holds the ${String(LONGEST_COUNT)} longest medians`);
+    expect(copy).toContain(`within ${String(BORDER_RADIUS_KM)} km of each other`);
+    expect(copy).toContain(`ranks the ${String(BORDER_COUNT)} largest differences`);
+    expect(copy).toContain(
+      `the ${String(CHANGE_COUNT)} biggest rises or the ${String(CHANGE_COUNT)} biggest falls`,
+    );
+    expect(copy).toContain(`at least ${String(MOVE_VOLUME_FLOOR)} surgeries`);
+  });
+
+  it('describes the rules the code applies', () => {
+    expect(code).toContain('entries.length < 2');
+    expect(copy).toContain('at least 2 hospitals');
+    expect(code).toContain('km <= BORDER_RADIUS_KM');
+    expect(code).toContain('a.state === b.state');
+    expect(code).toContain('distanceKm(a, b)');
+    expect(code).toContain('difference <= 0');
+    expect(code).toContain('now[0] !== before[0] + 1');
+    expect(code).toContain('volume.value < MOVE_VOLUME_FLOOR');
+    expect(code).toContain('key(item) === edge');
+    expect(code).toContain('!h.closed');
+    expect(code).toContain('isCurrent(row, surgery)');
+    expect(code).toContain("figure?.state === 'published'");
+    expect(code).toContain("ref.kind === 'procedure'");
+    for (const rule of ['ties the last row shown', 'closed hospitals', 'earlier period']) {
+      expect(copy).toContain(rule);
+    }
   });
 });
 

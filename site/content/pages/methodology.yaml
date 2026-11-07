@@ -107,6 +107,18 @@ sections:
     paragraphs:
       - A hospital and surgery page is marked so that search engines do not list it when it carries little beyond one figure. The page is still built and linked.
       - 'A page is marked when its median is not published. A page is also marked when it has none of these four things: an earlier published year of the same median, an open hospital on its nearby list with a published median, a share of patients who waited longer than 365 days beside a national share, or a nearest suburb in its state.'
+  - id: longest
+    heading: The longest waits pages
+    paragraphs:
+      - 'The longest waits pages rank the published median waits of procedures. A specialty groups many procedures under one figure, so these pages leave specialties out. A figure enters a list only when it is published, current and from an open hospital.'
+      - 'The list of the longest waits holds the 50 longest medians across every procedure and hospital. The list of waits by surgery names the shortest and the longest median for each procedure that at least 2 hospitals published. A hospital that ties at either end is named by its place in alphabetical order, and the page states how many other hospitals published the same median.'
+      - 'The border page compares hospitals in different states. A pair needs two open hospitals with recorded locations that lie within 100 km of each other. The distance is the great-circle distance between the recorded locations. The page ranks the 25 largest differences between the two medians for one procedure. Each hospital appears once for each procedure, against the hospital across the border with the largest difference. A pair appears only when the first hospital has the longer median.'
+      - 'The changes page compares the latest period with the year before it. A change is the later median minus the earlier median, and it appears only when both years are consecutive and both medians are published. Each table shows the 15 biggest rises or the 15 biggest falls. A hospital change needs a published volume of at least 50 surgeries in the latest period, because a median that rests on fewer surgeries can swing by hundreds of days.'
+      - 'A list cut at its size keeps every row that ties the last row shown, so a list can run longer than its size. No tie is split.'
+      - 'These pages leave out closed hospitals, figures from an earlier period and figures that are not published. They rank no private hospital.'
+    links:
+      - label: The longest published waits
+        href: /longest-waits/
   - id: freshness
     heading: How current the data is
     paragraphs:
