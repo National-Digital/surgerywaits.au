@@ -5,6 +5,7 @@ import JumpList from './JumpList.astro';
 import ArticleSection from './ArticleSection.astro';
 import Prose from './Prose.astro';
 import type { ArticleSection as Section } from '../lib/content-schema';
+import type { JsonLdNode } from '../lib/json-ld';
 
 interface Props {
   title: string;
@@ -21,15 +22,30 @@ interface Props {
   jump?: { heading: string; label: string };
   // Pages between the home page and this one.
   trail?: { label: string; href: string }[];
+  medical?: boolean | undefined;
+  jsonLd?: JsonLdNode[] | undefined;
 }
 
-const { title, description, path, crumbHome, crumb, heading, intro, sections, after, jump, trail } =
-  Astro.props;
+const {
+  title,
+  description,
+  path,
+  crumbHome,
+  crumb,
+  heading,
+  intro,
+  sections,
+  after,
+  jump,
+  trail,
+  medical,
+  jsonLd,
+} = Astro.props;
 const crumbs = [{ label: crumbHome, href: '/' }, ...(trail ?? []), { label: crumb }];
 const all = [...sections, ...(after ?? [])];
 ---
 
-<Base {title} {description} canonicalPath={path}>
+<Base {title} {description} canonicalPath={path} {medical} {jsonLd}>
   <div class="o-columns">
     <Breadcrumbs items={crumbs} />
     <h1>{heading}</h1>

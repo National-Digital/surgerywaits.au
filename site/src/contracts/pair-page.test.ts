@@ -5,7 +5,7 @@ import { getPairTemplate, getSite, label } from '../lib/content';
 import { history, loadPair, pairRoutes, shorterNearby } from '../lib/pair-page';
 import { formatDays, formatHospitals, formatPeriod, formatRank, formatStamp } from '../lib/format';
 import { fill } from '../lib/slots';
-import { elementsOf, render, text, textsOf } from '../lib/test-render';
+import { elementsOf, render, text, textsOf, withoutJsonLd } from '../lib/test-render';
 
 const t = getPairTemplate();
 const site = getSite();
@@ -77,7 +77,7 @@ describe('Pair pages', () => {
 
   it('ship no script and no handler', () => {
     for (const { slug, html } of pages) {
-      expect(html, slug).not.toMatch(/<script|\son[a-z]+=|javascript:/i);
+      expect(withoutJsonLd(html), slug).not.toMatch(/<script|\son[a-z]+=|javascript:/i);
     }
   });
 

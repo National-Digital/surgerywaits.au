@@ -3,7 +3,7 @@ import { planChart } from '../lib/chart';
 import type { ChartSeries } from '../lib/chart';
 import { formatTrendPoint } from '../lib/format';
 import type { Role, TrendPoint } from '../lib/format';
-import { render, text, textsOf } from '../lib/test-render';
+import { render, text, textsOf, withoutJsonLd } from '../lib/test-render';
 import TrendChart from './TrendChart.astro';
 
 function at<T>(list: readonly T[], i: number): T {
@@ -143,7 +143,7 @@ describe('TrendChart', () => {
 
   it('ships no script and no event handler', async () => {
     const html = await render(TrendChart, props);
-    expect(html).not.toMatch(/<script/i);
+    expect(withoutJsonLd(html)).not.toMatch(/<script/i);
     expect(html).not.toMatch(/\son[a-z]+=/i);
     expect(text(html)).not.toBe('');
   });

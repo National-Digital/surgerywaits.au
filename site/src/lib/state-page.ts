@@ -36,6 +36,9 @@ export const STATES_PATH = '/state/';
 const OVERLAY_STATE = 'Qld';
 
 const stateSlug = (state: string): string => state.toLowerCase();
+// The data file that holds the figures of a state's page.
+export const stateDataPath = (state: string): string => `/data-api/states/${stateSlug(state)}.json`;
+
 export const statePath = (state: string): string => `${STATES_PATH}${stateSlug(state)}/`;
 
 // The order the content names the states in, which is the order the pages list them.
@@ -64,6 +67,14 @@ export function statesStamp(): { period: string; release: string } {
 export const newestPeriod = (file: StateBenchmarks): string =>
   file.surgeries
     .map((s) => s.period)
+    .sort()
+    .at(-1) ?? '';
+
+// The release of the newest period's figures, as the ISO date the dist holds.
+export const newestRelease = (file: StateBenchmarks): string =>
+  file.surgeries
+    .filter((s) => s.period === newestPeriod(file))
+    .map((s) => s.release)
     .sort()
     .at(-1) ?? '';
 

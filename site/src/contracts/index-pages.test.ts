@@ -14,7 +14,7 @@ import {
 } from '../lib/content';
 import { readHospital, readHospitalIndex, readSurgeryIndex } from '../lib/dist';
 import { fill } from '../lib/slots';
-import { render, text, textsOf } from '../lib/test-render';
+import { render, text, textsOf, withoutJsonLd } from '../lib/test-render';
 
 type Node = DefaultTreeAdapterTypes.Node;
 
@@ -136,7 +136,7 @@ describe('Hospitals index', () => {
     const main = text(hospitalsHtml);
     expect(main).toContain(ht.exclusion_heading);
     expect(main).toContain(ht.exclusion);
-    expect(hospitalsHtml).not.toMatch(/<script|\son[a-z]+=/i);
+    expect(withoutJsonLd(hospitalsHtml)).not.toMatch(/<script|\son[a-z]+=/i);
   });
 
   it('jumps to a state with in-page anchors that all resolve', () => {
@@ -223,7 +223,7 @@ describe('Surgery index', () => {
 
   it('states the exclusion, takes its title from content and ships no script', () => {
     expect(text(surgeriesHtml)).toContain(st.exclusion);
-    expect(surgeriesHtml).not.toMatch(/<script|\son[a-z]+=/i);
+    expect(withoutJsonLd(surgeriesHtml)).not.toMatch(/<script|\son[a-z]+=/i);
     expect(surgeriesHtml).toContain(`<link rel="canonical" href="${getSite().url}surgery/">`);
   });
 });

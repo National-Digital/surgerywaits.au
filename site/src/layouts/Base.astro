@@ -4,8 +4,11 @@ import '../styles/global.css';
 import CompareBar from '../components/CompareBar.astro';
 import Footer from '../components/Footer.astro';
 import Masthead from '../components/Masthead.astro';
+import JsonLd from '../components/JsonLd.astro';
 import SkipLink from '../components/SkipLink.astro';
 import { getSite } from '../lib/content';
+import { organization, webPage, website } from '../lib/json-ld';
+import type { JsonLdNode } from '../lib/json-ld';
 
 interface Props {
   title: string;
@@ -17,6 +20,12 @@ interface Props {
   compareBar?: boolean;
   // A page that prints as one sheet leaves the footer off it.
   printFooter?: boolean;
+  // An ISO date, passed only by a page that states the data release it was built from.
+  released?: string | undefined;
+  medical?: boolean | undefined;
+  // The @id of the thing the page is about, and the nodes that define it.
+  about?: string | undefined;
+  jsonLd?: JsonLdNode[] | undefined;
 }
 
 const {
@@ -27,8 +36,22 @@ const {
   compactFooter = false,
   compareBar = true,
   printFooter = true,
+  released,
+  medical,
+  about,
+  jsonLd = [],
 } = Astro.props;
-const canonical = canonicalPath === undefined ? undefined : new URL(canonicalPath, getSite().url);
+const site = getSite();
+const canonical = canonicalPath === undefined ? undefined : new URL(canonicalPath, site.url);
+// A page with no canonical address, such as the 404, describes only the publisher and the site.
+const graph = [
+  organization(site),
+  website(site),
+  ...(canonicalPath === undefined
+    ? []
+    : [webPage(site, { path: canonicalPath, title, description, released, medical, about })]),
+  ...jsonLd,
+];
 ---
 
 <!doctype html>
@@ -40,6 +63,7 @@ const canonical = canonicalPath === undefined ? undefined : new URL(canonicalPat
     {description !== undefined && <meta name="description" content={description} />}
     {canonical !== undefined && <link rel="canonical" href={canonical.href} />}
     {noindex && <meta name="robots" content="noindex,follow" />}
+    <JsonLd nodes={graph} />
   </head>
   <body>
     <SkipLink />

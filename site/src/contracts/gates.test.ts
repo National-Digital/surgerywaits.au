@@ -77,7 +77,7 @@ import {
   sendingUses,
   storageUses,
 } from '../lib/privacy';
-import { render, text, textsOf } from '../lib/test-render';
+import { render, text, textsOf, withoutJsonLd } from '../lib/test-render';
 import { SECURITY_HEADERS } from '../../../worker/headers';
 
 const contractDir = new URL('../../../contract/', import.meta.url);
@@ -405,7 +405,7 @@ describe('Static pages', () => {
   it("every hospital's figures are reachable without script", async () => {
     for (const slug of listDist('hospitals')) {
       const html = await render(hospitalPage, { slug });
-      expect(html).not.toContain('<script');
+      expect(withoutJsonLd(html)).not.toContain('<script');
       const words = text(html);
       for (const surgery of readHospital(slug).surgeries) {
         if (surgery.kind === 'urgency') {
@@ -423,7 +423,7 @@ describe('Static pages', () => {
   it("every surgery's hospital figures are reachable without script", async () => {
     for (const ref of surgeryRefs()) {
       const html = await render(SurgeryHub, { kind: ref.kind, urlSlug: ref.urlSlug });
-      expect(html).not.toContain('<script');
+      expect(withoutJsonLd(html)).not.toContain('<script');
       const words = text(html);
       for (const row of readSurgery(ref.kind, ref.slug).hospitals.filter((h) => !h.closed)) {
         expect(words, `${ref.urlSlug} ${row.slug}`).toContain(row.name);

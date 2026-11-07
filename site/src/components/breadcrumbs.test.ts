@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { label } from '../lib/content';
-import { render, text, textsOf } from '../lib/test-render';
+import { render, text, textsOf, withoutJsonLd } from '../lib/test-render';
 import Breadcrumbs from './Breadcrumbs.astro';
 
 const items = [
@@ -38,10 +38,23 @@ describe('Breadcrumbs', () => {
     expect(text(await render(Breadcrumbs, { items: [{ label: 'Home' }] }))).toBe('');
   });
 
-  it('holds no script, no JSON-LD and no copy of its own', async () => {
+  it('holds no script but its JSON-LD, and no copy of its own', async () => {
     const html = await render(Breadcrumbs, { items });
-    expect(html).not.toContain('<script');
-    expect(html).not.toContain('BreadcrumbList');
+    expect(withoutJsonLd(html)).not.toContain('<script');
     expect(text(html)).toBe('Home Hospitals Royal Test Hospital');
+  });
+
+  it('describes the same trail in JSON-LD, with the current page at its own address', async () => {
+    const html = await render(Breadcrumbs, { items });
+    const [, body = ''] = /<script type="application\/ld\+json">(.*?)<\/script>/su.exec(html) ?? [];
+    const { '@graph': graph } = JSON.parse(body) as { '@graph': { itemListElement: unknown[] }[] };
+    expect(graph[0]?.itemListElement).toEqual(
+      items.map((item, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        name: item.label,
+        item: `https://surgerywaits.au${item.href ?? '/'}`,
+      })),
+    );
   });
 });

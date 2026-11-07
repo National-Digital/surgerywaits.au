@@ -9,7 +9,7 @@ import { hospitalTemplateSchema } from '../lib/content-schema';
 import { readContent } from '../lib/content-files';
 import { DIST_ENV, distDirectory, listDist, readHospital } from '../lib/dist';
 import { fill } from '../lib/slots';
-import { elementsOf, render, text, textsOf } from '../lib/test-render';
+import { elementsOf, render, text, textsOf, withoutJsonLd } from '../lib/test-render';
 
 const t = getHospitalTemplate();
 const slugs = listDist('hospitals');
@@ -96,7 +96,7 @@ describe('Hospital page', () => {
 
   it('ships the sections the page needs and no script', async () => {
     const html = await build('wollongong-hospital');
-    expect(html).not.toContain('<script');
+    expect(withoutJsonLd(html)).not.toContain('<script');
     for (const cls of [
       'c-breadcrumbs',
       'c-tiles',

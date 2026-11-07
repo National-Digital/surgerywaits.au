@@ -3,6 +3,7 @@ import ArticlePage from '../components/ArticlePage.astro';
 import DataPassport from '../components/DataPassport.astro';
 import { getDataPage, getSite } from '../lib/content';
 import { readCredits } from '../lib/credits';
+import { sourceDataset } from '../lib/json-ld';
 import { formatCount } from '../lib/format';
 import { homeCounts } from '../lib/home-page';
 import { surgeryStamp } from '../lib/index-pages';
@@ -12,6 +13,7 @@ import { fill } from '../lib/slots';
 const t = getDataPage();
 const facts = dataFacts();
 const counts = homeCounts();
+const credits = readCredits();
 ---
 
 <ArticlePage
@@ -31,6 +33,7 @@ const counts = homeCounts();
   ]}
   sections={fillSections(t.sections, facts)}
   after={fillSections(t.after, facts)}
+  jsonLd={credits.map((credit) => sourceDataset(credit))}
 >
-  <DataPassport sources={readCredits().map((credit) => credit.slug)} />
+  <DataPassport sources={credits.map((credit) => credit.slug)} />
 </ArticlePage>

@@ -31,7 +31,7 @@ export function plain(node: Node): string {
   if ('value' in node) {
     return node.value;
   }
-  if (!('childNodes' in node) || node.nodeName === 'style') {
+  if (!('childNodes' in node) || node.nodeName === 'style' || node.nodeName === 'script') {
     return '';
   }
   return node.childNodes.map(plain).join(' ');
@@ -96,3 +96,7 @@ export function elementsOf(html: Source, className: string): Found[] {
   });
   return found;
 }
+
+// JSON-LD is data, so a check that bans scripts reads the page without it.
+export const withoutJsonLd = (html: string): string =>
+  html.replace(/<script type="application\/ld\+json">.*?<\/script>/gsu, '');

@@ -81,6 +81,21 @@ function inTemplate(node: Node): boolean {
   return false;
 }
 
+// JSON-LD is data the page describes itself with, and its text comes from the same content as the page.
+function jsonLdScript(attr: Node): boolean {
+  const element = attr.parent;
+  return (
+    element?.type === 'JSXOpeningElement' &&
+    element.parent?.openingElement?.name?.name === 'script' &&
+    (element.parent.openingElement.attributes ?? []).some(
+      (a) =>
+        a.type === 'JSXAttribute' &&
+        attrName(a) === 'type' &&
+        (a.value as Node | undefined)?.value === 'application/ld+json',
+    )
+  );
+}
+
 function hidden(node: Node): boolean {
   for (let up = node.parent; up; up = up.parent) {
     const tag = up.openingElement?.name?.name;
@@ -223,7 +238,10 @@ export const noLiteralText: Rule.RuleModule = {
       }),
       JSXAttribute: on((node) => {
         const name = attrName(node);
-        if (name === 'set:html' || name === 'set:text') {
+        if (
+          (name === 'set:html' || name === 'set:text') &&
+          !(name === 'set:html' && jsonLdScript(node))
+        ) {
           context.report({
             node: node as unknown as Rule.Node,
             messageId: 'html',

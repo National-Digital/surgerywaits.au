@@ -10,7 +10,9 @@ import PlainTable from './PlainTable.astro';
 import SafetyBlock from './SafetyBlock.astro';
 import StatTile from './StatTile.astro';
 import StatTiles from './StatTiles.astro';
+import { creditsFor, readCredits } from '../lib/credits';
 import { getSite, getStateTemplate, label } from '../lib/content';
+import { fileDataset } from '../lib/json-ld';
 import { hospitalPath } from '../lib/hospital-page';
 import { formatCount, formatHospitals } from '../lib/format';
 import { longWaitDays } from '../lib/dist';
@@ -22,9 +24,11 @@ import {
   hospitalsIn,
   loadState,
   newestPeriod,
+  newestRelease,
   publishedUrgencyCount,
   overlayFor,
   sourcesOf,
+  stateDataPath,
   stateFiles,
   stateName,
   statePath,
@@ -76,12 +80,25 @@ const hospitalCols = hospitalColumns(hospitals?.categories ?? [], (category) =>
   fill(t.hospitals_column, { category: category.label }),
 );
 const sources = sourcesOf(file, state);
+const description = fill(t.description, { state: name, period });
 ---
 
 <Base
   title={fill(t.title, { state: name, site })}
-  description={fill(t.description, { state: name, period })}
+  description={description}
   canonicalPath={statePath(state)}
+  released={newestRelease(file)}
+  jsonLd={[
+    fileDataset(getSite(), {
+      path: statePath(state),
+      name,
+      description,
+      file: stateDataPath(state),
+      period,
+      release: newestRelease(file),
+      credits: creditsFor(file.sources, readCredits()),
+    }),
+  ]}
 >
   <div class="o-columns">
     <Breadcrumbs

@@ -25,7 +25,7 @@ import {
   surgeryPath,
   statePath as surgeryStatePath,
 } from '../lib/surgery-page';
-import { elementsOf, render, text, textsOf } from '../lib/test-render';
+import { elementsOf, render, text, textsOf, withoutJsonLd } from '../lib/test-render';
 import {
   categories,
   categoryByNumber,
@@ -173,7 +173,10 @@ describe('Every page', () => {
 
   it('ships no script and no event handler', () => {
     for (const { path, html } of pages) {
-      expect([path, /<script|\son[a-z]+=|javascript:/i.test(html)]).toEqual([path, false]);
+      expect([path, /<script|\son[a-z]+=|javascript:/i.test(withoutJsonLd(html))]).toEqual([
+        path,
+        false,
+      ]);
     }
   });
 
