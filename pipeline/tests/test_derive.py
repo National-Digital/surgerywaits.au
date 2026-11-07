@@ -148,6 +148,20 @@ def test_mesh_has_eight_nearest_and_widens_by_doubling() -> None:
     assert len(x.neighbours) == NEIGHBOURS
 
 
+def _mesh_radius_with_eighth_at(km: float) -> float:
+    # One degree of latitude spans the same distance everywhere on the sphere.
+    per_degree = distance_km((0.0, 150.0), (1.0, 150.0))
+    near = [_hospital(f"N{i}", -30.0 - (i + 1) * 0.1, 150.0) for i in range(NEIGHBOURS - 1)]
+    edge = _hospital("E", -30.0 - km / per_degree, 150.0)
+    origin = _hospital("O", -30.0, 150.0)
+    return next(m for m in build_meshes([origin, *near, edge]).meshes if m.code == "O").radius_km
+
+
+def test_mesh_keeps_the_radius_when_the_last_neighbour_sits_at_its_edge() -> None:
+    assert _mesh_radius_with_eighth_at(249.9) == 250  # noqa: PLR2004
+    assert _mesh_radius_with_eighth_at(250.1) == 500  # noqa: PLR2004
+
+
 def test_mesh_skips_closed_hospitals_and_reports_missing_coordinates() -> None:
     hospitals = [
         *_line(10),

@@ -1,3 +1,4 @@
+import { ABOUT_PATH, DATA_PATH, METHODOLOGY_PATH } from '../lib/article-pages';
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -204,6 +205,7 @@ describe('Every page', () => {
     built.add('/');
     built.add('/hospitals/');
     built.add('/surgery/');
+    [METHODOLOGY_PATH, DATA_PATH, ABOUT_PATH].forEach((path) => built.add(path));
     for (const kind of ['procedure', 'specialty'] as const) {
       for (const { props } of hubRoutes(kind)) {
         built.add(surgeryPath(refOf(kind, props.slug)));

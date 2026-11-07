@@ -15,3 +15,12 @@ export function fill(text: string, values: Record<string, string>): string {
   }
   return text.replaceAll(SLOT, (_, name: string) => values[name] ?? '');
 }
+
+// A section holds only the slots it uses, so each text takes its own and an unknown slot is a bug.
+export function fillKnown(text: string, values: Record<string, string>): string {
+  const unknown = slotsOf(text).filter((name) => !(name in values));
+  if (unknown.length > 0) {
+    throw new RangeError(`the text uses the unknown slots ${unknown.join(', ')}`);
+  }
+  return text.replaceAll(SLOT, (_, name: string) => values[name] ?? '');
+}

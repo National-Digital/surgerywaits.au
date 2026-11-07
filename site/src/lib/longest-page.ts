@@ -33,6 +33,8 @@ export const CHANGE_COUNT = 15;
 // A hospital with fewer surgeries than this can swing by hundreds of days on a handful of cases.
 export const MOVE_VOLUME_FLOOR = 50;
 export const BORDER_RADIUS_KM = 100;
+// A procedure needs this many reporting hospitals to have a shortest and a longest median.
+export const MIN_EXTREMES = 2;
 
 const collator = new Intl.Collator('en-AU');
 const byText = (a: string, b: string): number =>
@@ -142,7 +144,7 @@ export function extremes(): Extremes[] {
       const entries = rankable(ref, surgery).sort(byShortest);
       const shortest = entries[0];
       const longest = entries.at(-1);
-      if (shortest === undefined || longest === undefined || entries.length < 2) {
+      if (shortest === undefined || longest === undefined || entries.length < MIN_EXTREMES) {
         return [];
       }
       const sharing = (end: Entry): number =>

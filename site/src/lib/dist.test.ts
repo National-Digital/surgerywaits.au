@@ -62,6 +62,7 @@ describe('schemaFor', () => {
     ['health-services.json', 'health-service-index'],
     ['health-services/hunter-new-england.json', 'health-service'],
     ['queensland/h0385.json', 'queensland'],
+    ['rules.json', 'rules'],
   ])('maps %s to the %s schema', (path, schema) => {
     expect(schemaFor(path)).toBe(schema);
   });
@@ -138,6 +139,17 @@ describe('readDist', () => {
     }
     expect(message).toMatch(/name/);
     expect(message).toMatch(/slug/);
+  });
+
+  it('rejects a rules file that lost a limit or names an unknown measure', () => {
+    const lost = broken('rules.json', (doc) => {
+      Reflect.deleteProperty(doc, 'neighbours');
+    });
+    expect(() => readDist(lost)).toThrow(/rules schema/);
+    const extra = broken('rules.json', (doc) => {
+      (doc['measures'] as Record<string, string>)['other'] = 'Another measure';
+    });
+    expect(() => readDist(extra)).toThrow(/rules schema/);
   });
 
   it('rejects a withheld figure that carries a number', () => {

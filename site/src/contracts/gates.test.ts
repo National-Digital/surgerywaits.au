@@ -8,6 +8,9 @@ import type { z } from 'astro/zod';
 import {
   areasSchema,
   homeTemplateSchema,
+  aboutSchema,
+  dataPageSchema,
+  methodologySchema,
   hospitalTemplateSchema,
   hospitalsIndexSchema,
   labelsSchema,
@@ -378,7 +381,7 @@ describe('Copy', () => {
       );
     expect(found).toEqual([]);
     expect(terms.some((t) => t.replaces.includes('elective'))).toBe(true);
-    expect(quotes.every((q) => q.page === 'methodology')).toBe(true);
+    expect(quotes.every((q) => ['methodology', 'data'].includes(q.page))).toBe(true);
   });
   it('the terminology check catches a replaced term and honours a quote listed for its page', () => {
     const terms = [{ preferred: 'planned surgery', replaces: ['elective surgery', 'elective'] }];
@@ -469,11 +472,15 @@ describe('Copy', () => {
       'templates/health-service.yaml': healthServiceTemplateSchema,
       'templates/longest.yaml': longestTemplateSchema,
       'terms.yaml': termsSchema,
+      'pages/not-found.yaml': pageSchema,
+      'pages/methodology.yaml': methodologySchema,
+      'pages/data.yaml': dataPageSchema,
+      'pages/about.yaml': aboutSchema,
     };
     const files = readContent();
     expect(files.length).toBeGreaterThan(0);
     for (const { path, data } of files) {
-      const schema = path.startsWith('pages/') ? pageSchema : schemas[path];
+      const schema = schemas[path];
       expect(schema, path + ' has no schema').toBeDefined();
       expect(schema?.safeParse(data).success, path).toBe(true);
     }

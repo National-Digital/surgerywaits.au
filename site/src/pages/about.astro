@@ -1,0 +1,20 @@
+---
+import ArticlePage from '../components/ArticlePage.astro';
+import { getAbout, getSite } from '../lib/content';
+import { ABOUT_PATH, aboutFacts, fillSections, fillText } from '../lib/article-pages';
+import { fill } from '../lib/slots';
+
+const t = getAbout();
+const facts = aboutFacts();
+---
+
+<ArticlePage
+  title={fill(t.title, { site: getSite().name })}
+  description={t.description}
+  path={ABOUT_PATH}
+  crumbHome={t.crumb_home}
+  crumb={t.crumb}
+  heading={fillText(t.heading, facts)}
+  intro={[fillText(t.lede, facts)]}
+  sections={fillSections(t.sections, facts)}
+/>

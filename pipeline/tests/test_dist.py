@@ -271,7 +271,7 @@ def _check_sources(files: dict[str, bytes]) -> None:
     credited = _credit_slugs(files)
     assert credited == {e.slug for e in load()}
     for path, data in files.items():
-        if path.endswith(".json") and path != "credits.json":
+        if path.endswith(".json") and path not in {"credits.json", "rules.json"}:
             listed = json.loads(data)["sources"]
             assert listed == sorted(listed), path
             assert set(listed) <= credited, path

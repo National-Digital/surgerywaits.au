@@ -1,13 +1,16 @@
 import { getCollection, getEntry } from 'astro:content';
 import { z } from 'astro/zod';
 import {
+  aboutSchema,
   areasSchema,
   healthServiceTemplateSchema,
+  dataPageSchema,
   homeTemplateSchema,
   hospitalsIndexSchema,
   hospitalTemplateSchema,
   labelsSchema,
   longestTemplateSchema,
+  methodologySchema,
   navigationSchema,
   pairTemplateSchema,
   pageSchema,
@@ -41,6 +44,14 @@ const pages = new Map(
     .parse((await getCollection('pages')) as unknown)
     .map(({ id, data }) => [id, data]),
 );
+
+const methodology = await single('articles', 'methodology', methodologySchema);
+const dataPage = await single('articles', 'data', dataPageSchema);
+const about = await single('articles', 'about', aboutSchema);
+
+export const getMethodology = (): typeof methodology => methodology;
+export const getDataPage = (): typeof dataPage => dataPage;
+export const getAbout = (): typeof about => about;
 
 const hospitalTemplate = await single('templates', 'hospital', hospitalTemplateSchema);
 const hospitalsIndex = await single('templates', 'hospitals', hospitalsIndexSchema);

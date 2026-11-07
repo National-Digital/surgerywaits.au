@@ -313,7 +313,8 @@ def check_docs(entries: Sequence[Entry], docs: Mapping[str, tuple[str, dict[str,
     check_licences(e for e in entries if e.slug in credited)
     check_credits(entries, credited)
     for path, (kind, d) in sorted(docs.items()):
-        if kind == "credits":
+        # Credits and rules draw on no dataset, so they cite no source.
+        if kind in {"credits", "rules"}:
             continue
         if not isinstance(d.get("sources"), list) or not d["sources"]:
             msg = f"{path} lists no sources"

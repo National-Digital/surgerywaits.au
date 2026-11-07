@@ -1,0 +1,25 @@
+---
+import LinkList from './LinkList.astro';
+import Prose from './Prose.astro';
+import type { ArticleSection } from '../lib/content-schema';
+
+interface Props {
+  section: ArticleSection;
+}
+
+const { section } = Astro.props;
+---
+
+<section id={section.id} aria-labelledby={`${section.id}-heading`}>
+  <h2 id={`${section.id}-heading`}>{section.heading}</h2>
+  <Prose paragraphs={section.paragraphs} />
+  {section.items !== undefined && (
+    <ul>
+      {section.items.map((item) => (
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+        <li>{item}</li>
+      ))}
+    </ul>
+  )}
+  {section.links !== undefined && <LinkList links={section.links} />}
+</section>

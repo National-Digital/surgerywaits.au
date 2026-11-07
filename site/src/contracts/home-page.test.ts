@@ -2,6 +2,7 @@ import { parseFragment } from 'parse5';
 import type { DefaultTreeAdapterTypes } from 'parse5';
 import { describe, expect, it } from 'vitest';
 
+import { ABOUT_PATH, DATA_PATH, METHODOLOGY_PATH } from '../lib/article-pages';
 import HomePage from '../components/HomePage.astro';
 import { getHomeTemplate, getSite } from '../lib/content';
 import { readHospital, readHospitalIndex, readSurgeryIndex } from '../lib/dist';
@@ -61,7 +62,7 @@ describe('Home page', () => {
   });
 
   it('links only to pages that are built', () => {
-    const built = new Set<string>(BUILT);
+    const built = new Set<string>([...BUILT, METHODOLOGY_PATH, DATA_PATH, ABOUT_PATH]);
     for (const file of stateFiles()) {
       built.add(statePath(file.state));
     }

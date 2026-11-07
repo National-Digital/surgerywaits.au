@@ -22,6 +22,7 @@ import {
   urgencyTemplateSchema,
 } from '../lib/content-schema';
 import { getHomeTemplate, getHospitalTemplate } from '../lib/content';
+import { readCredits } from '../lib/credits';
 import { readHealthService, readHospitalIndex } from '../lib/dist';
 import { healthServicePath, healthServiceSlugs } from '../lib/health-service-page';
 import { formatCount, formatDate, formatPeriod } from '../lib/format';
@@ -1062,6 +1063,32 @@ describe('Built health service pages', () => {
           member.slug,
           expect.stringContaining(`href="${healthServicePath(slug)}"`),
         ]);
+      }
+    }
+  });
+});
+
+describe('Built content pages', () => {
+  it('hold the methodology, data and about pages at the earlier addresses', () => {
+    for (const path of ['methodology', 'data', 'about']) {
+      expect(paths).toContain(`${path}/index.html`);
+      expect(pageAt(`${path}/index.html`).h1).toBe(1);
+    }
+  });
+
+  it('credit every dataset pinned in the manifest on the data page', () => {
+    const manifest = JSON.parse(
+      readFileSync(new URL('../../../data/manifest.json', import.meta.url), 'utf8'),
+    ) as { datasets: { slug: string; title: string; version: string; citation: string }[] };
+    const html = read('data/index.html');
+    const found = pageStrings(html).join(' ');
+    expect(html.match(/c-passport__source/g)).toHaveLength(readCredits().length);
+    if (onRealDist) {
+      expect(readCredits().map((c) => c.slug)).toEqual(manifest.datasets.map((d) => d.slug));
+      for (const dataset of manifest.datasets) {
+        expect(found, dataset.slug).toContain(dataset.title);
+        expect(found, dataset.slug).toContain(dataset.citation);
+        expect(html, dataset.slug).toContain(`/d/${dataset.slug}/v/${dataset.version}/`);
       }
     }
   });
