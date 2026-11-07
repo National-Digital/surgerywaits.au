@@ -27,9 +27,9 @@ const assetsFetch = env.ASSETS.fetch.bind(env.ASSETS);
 env.ASSETS.fetch = (request: Request): Promise<Response> =>
   failAssets ? Promise.reject(new Error('binding down at /secret/stack')) : assetsFetch(request);
 const send = (path: string, method: string): Promise<Response> =>
-  handle(new Request(`https://example.test${path}`, { method }), env, table);
+  handle(new Request(`https://surgerywaits.au${path}`, { method }), env, table);
 const get = (path: string): Promise<Response> =>
-  handle(new Request(`https://example.test${path}`), env, table);
+  handle(new Request(`https://surgerywaits.au${path}`), env, table);
 
 describe('worker responses', () => {
   it('sets every security header on a served page', async () => {
@@ -149,23 +149,27 @@ describe('redirects', () => {
   it('answers a listed path with a 301 to the target, keeping the query', async () => {
     const response = await get('/old/?a=1');
     expect(response.status).toBe(301);
-    expect(response.headers.get('Location')).toBe('https://example.test/new/?a=1');
+    expect(response.headers.get('Location')).toBe('https://surgerywaits.au/new/?a=1');
     expect(response.body).toBeNull();
   });
 
   it('keeps the fragment of a target and the query of the request', async () => {
     const withFragment = new Map([['/old/', '/new/#part']]);
-    const response = await handle(new Request('https://example.test/old/?a=1'), env, withFragment);
-    expect(response.headers.get('Location')).toBe('https://example.test/new/?a=1#part');
+    const response = await handle(
+      new Request('https://surgerywaits.au/old/?a=1'),
+      env,
+      withFragment,
+    );
+    expect(response.headers.get('Location')).toBe('https://surgerywaits.au/new/?a=1#part');
   });
 
   it('finds a listed path given without its slash, in one hop', async () => {
     expect(redirectFor('/old', table)).toBe('/new/');
-    expect((await get('/old')).headers.get('Location')).toBe('https://example.test/new/');
+    expect((await get('/old')).headers.get('Location')).toBe('https://surgerywaits.au/new/');
   });
 
   it('finds a path in another case, with escaped letters, or without its slash', async () => {
-    const wanted = 'https://example.test/new/';
+    const wanted = 'https://surgerywaits.au/new/';
     for (const path of ['/OLD/', '/Old', '/%6Fld/', '/%4fld', '/o%6c%64']) {
       const response = await get(path);
       expect(response.status, path).toBe(301);
@@ -179,7 +183,7 @@ describe('redirects', () => {
     expect(redirectFor('//a/b/', slashed)).toBeUndefined();
     expect(redirectFor('/a/b/%2e%2e/', slashed)).toBeUndefined();
     const response = await get('/old/?next=https://elsewhere.test/');
-    expect(new URL(response.headers.get('Location') ?? '').origin).toBe('https://example.test');
+    expect(new URL(response.headers.get('Location') ?? '').origin).toBe('https://surgerywaits.au');
   });
 
   it('serves every other path from the assets', async () => {
@@ -213,7 +217,7 @@ describe('methods and failures', () => {
   it('answers HEAD on a redirect with the 301, its Location and no body', async () => {
     const response = await send('/old/?a=1', 'HEAD');
     expect(response.status).toBe(301);
-    expect(response.headers.get('Location')).toBe('https://example.test/new/?a=1');
+    expect(response.headers.get('Location')).toBe('https://surgerywaits.au/new/?a=1');
     expect(response.body).toBeNull();
   });
 
@@ -366,4 +370,35 @@ describe('the data files', () => {
       expect(response.headers.get('Access-Control-Allow-Methods')).toBe('GET, HEAD, OPTIONS');
     },
   );
+});
+
+describe('hosts and the security file', () => {
+  const on = (host: string, path = '/state/nsw/'): Promise<Response> =>
+    handle(new Request(`https://${host}${path}`), env, table);
+
+  it('sends noindex on every response from a host that is not the site', async () => {
+    for (const host of ['example.test', 'surgerywaits.pages.dev', 'surgerywaits.au.example.test']) {
+      for (const path of ['/state/nsw/', '/missing/', '/old/', '/robots.txt']) {
+        expect((await on(host, path)).headers.get('X-Robots-Tag'), `${host}${path}`).toBe(
+          'noindex',
+        );
+      }
+      const refused = await handle(new Request(`https://${host}/`, { method: 'POST' }), env, table);
+      expect(refused.headers.get('X-Robots-Tag'), host).toBe('noindex');
+    }
+  });
+
+  it('leaves pages on the two site hosts indexable', async () => {
+    for (const host of ['surgerywaits.au', 'www.surgerywaits.au', 'SurgeryWaits.AU']) {
+      expect((await on(host)).headers.get('X-Robots-Tag'), host).toBeNull();
+      expect((await on(host, '/robots.txt')).headers.get('X-Robots-Tag'), host).toBeNull();
+    }
+  });
+
+  it('passes the dot-directory security file to the assets at its exact path', async () => {
+    seen.length = 0;
+    const response = await on('surgerywaits.au', '/.well-known/security.txt');
+    expect(response.status).toBe(200);
+    expect(seen).toEqual(['/.well-known/security.txt']);
+  });
 });

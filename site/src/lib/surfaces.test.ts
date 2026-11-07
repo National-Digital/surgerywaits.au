@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import { redirectFor } from '../../../worker/redirects';
-import { bodyProblem, isBuildAsset, SURFACES, surfaceOf } from './surfaces';
+import { robotsTxt } from './robots';
+import { securityTxt } from './security-txt';
+import { bodyProblem, isBuildAsset, SURFACES, surfaceBodyProblem, surfaceOf } from './surfaces';
 
 describe('the surfaces registry', () => {
   it('gives each surface its own id, a purpose and a media type', () => {
@@ -55,13 +57,13 @@ const SITEMAP = `<?xml version="1.0" encoding="UTF-8"?>
 </urlset>
 `;
 const SVG = '<svg xmlns="http://www.w3.org/2000/svg"><title>t</title><rect width="1"/></svg>\n';
-const ROBOTS = 'User-agent: *\nAllow: /\n\nSitemap: https://surgerywaits.au/sitemap.xml\n';
 
 describe('the body checks', () => {
   it('accept a sitemap, an SVG, a robots file and JSON that are whole', () => {
     expect(bodyProblem('application/xml', SITEMAP)).toBeUndefined();
     expect(bodyProblem('image/svg+xml', SVG)).toBeUndefined();
-    expect(bodyProblem('text/plain', ROBOTS)).toBeUndefined();
+    expect(surfaceBodyProblem('/robots.txt', robotsTxt())).toBeUndefined();
+    expect(surfaceBodyProblem('/.well-known/security.txt', securityTxt())).toBeUndefined();
     expect(bodyProblem('application/json', '{"a":1}')).toBeUndefined();
   });
 
@@ -96,13 +98,34 @@ describe('the body checks', () => {
   });
 
   it('reject junk, an empty body and a robots file without its lines', () => {
-    expect(bodyProblem('text/plain', '<html>not robots</html>')).toBeDefined();
-    expect(bodyProblem('text/plain', 'User-agent: *\nAllow: /\n')).toBeDefined();
+    expect(bodyProblem('text/plain', '')).toBeDefined();
+    expect(surfaceBodyProblem('/robots.txt', '<html>not robots</html>')).toBeDefined();
+    expect(surfaceBodyProblem('/robots.txt', 'User-agent: *\nAllow: /\n')).toBeDefined();
     expect(
-      bodyProblem('text/plain', 'Sitemap: https://surgerywaits.au/sitemap.xml\n'),
+      surfaceBodyProblem(
+        '/robots.txt',
+        'User-agent: *\nAllow: /\nSitemap: https://surgerywaits.au/sitemap.xml\n',
+      ),
+    ).toBe('no Content-Signal line');
+    expect(
+      surfaceBodyProblem('/robots.txt', 'Sitemap: https://surgerywaits.au/sitemap.xml\n'),
     ).toBeDefined();
     expect(bodyProblem('application/json', '{"a":')).toBeDefined();
     expect(bodyProblem('application/json', '  ')).toBeDefined();
+  });
+
+  it('reject a security file missing a field or with an unreadable expiry', () => {
+    const path = '/.well-known/security.txt';
+    for (const field of ['Contact', 'Expires', 'Preferred-Languages', 'Canonical', 'Policy']) {
+      const without = securityTxt()
+        .split('\n')
+        .filter((line) => !line.startsWith(`${field}:`))
+        .join('\n');
+      expect(surfaceBodyProblem(path, without), field).toBe(`no ${field} field`);
+    }
+    expect(surfaceBodyProblem(path, securityTxt().replace(/Expires: \S+/u, 'Expires: soon'))).toBe(
+      'bad Expires',
+    );
   });
 });
 

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { redirectFor } from '../../../worker/redirects';
 import { handle } from '../../../worker/index';
-import { bodyProblem, isBuildAsset, SURFACES, surfaceOf } from '../lib/surfaces';
+import { isBuildAsset, SURFACES, surfaceBodyProblem, surfaceOf } from '../lib/surfaces';
 
 const dist = new URL('../../dist/', import.meta.url);
 if (!existsSync(dist)) {
@@ -77,7 +77,7 @@ describe('the built surfaces', () => {
       const response = await handle(new Request(`https://example.test${path}`), env);
       expect(response.status, path).toBe(200);
       expect(response.headers.get('Content-Type')?.split(';')[0], path).toBe(surface?.mediaType);
-      expect(bodyProblem(surface?.mediaType ?? '', await response.text()), path).toBeUndefined();
+      expect(surfaceBodyProblem(path, await response.text()), path).toBeUndefined();
     }
   });
 });

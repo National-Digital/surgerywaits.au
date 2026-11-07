@@ -2,6 +2,7 @@ import { readdirSync } from 'node:fs';
 
 import { dataApiPaths } from './data-api';
 import { contractSchemas } from './dist';
+import { SECURITY_TXT_PATH } from './security-txt';
 import { stateChartFiles } from './state-chart';
 
 export interface Surface {
@@ -12,7 +13,31 @@ export interface Surface {
   purpose: string;
   // The paths the build must write for this surface, where the sources name them.
   expected?: () => string[];
+  // Why a body is not what this surface promises, beyond what its media type needs.
+  check?: (body: string) => string | undefined;
 }
+
+const robotsProblem = (body: string): string | undefined => {
+  if (!/^User-agent: \S/mu.test(body)) {
+    return 'no User-agent line';
+  }
+  if (!/^Content-Signal: \S/mu.test(body)) {
+    return 'no Content-Signal line';
+  }
+  return /^Sitemap: https?:\/\/\S+$/mu.test(body) ? undefined : 'no Sitemap line';
+};
+
+// RFC 9116: Contact and Expires are required; the others are present on this site.
+const securityProblem = (body: string): string | undefined => {
+  for (const field of ['Contact', 'Expires', 'Preferred-Languages', 'Canonical', 'Policy']) {
+    if (!new RegExp(`^${field}: \\S`, 'mu').test(body)) {
+      return `no ${field} field`;
+    }
+  }
+  return Number.isNaN(Date.parse(/^Expires: (\S+)$/mu.exec(body)?.[1] ?? ''))
+    ? 'bad Expires'
+    : undefined;
+};
 
 // Every machine-readable file the site serves.
 // A new surface is added here with its own entry.
@@ -61,6 +86,15 @@ export const SURFACES: readonly Surface[] = [
     mediaType: 'text/plain',
     purpose: 'The crawl rules and the content signals for search and AI use.',
     expected: () => ['/robots.txt'],
+    check: robotsProblem,
+  },
+  {
+    id: 'security',
+    pattern: /^\/\.well-known\/security\.txt$/u,
+    mediaType: 'text/plain',
+    purpose: 'The security contact, policy and expiry that RFC 9116 asks for.',
+    expected: () => [SECURITY_TXT_PATH],
+    check: securityProblem,
   },
 ];
 
@@ -157,13 +191,14 @@ export function bodyProblem(mediaType: string, body: string): string | undefined
     } catch {
       return 'invalid JSON';
     }
-  } else if (mediaType === 'text/plain') {
-    if (!/^User-agent: \S/mu.test(body)) {
-      return 'no User-agent line';
-    }
-    if (!/^Sitemap: https?:\/\/\S+$/mu.test(body)) {
-      return 'no Sitemap line';
-    }
   }
   return undefined;
 }
+
+// The media-type check, then the check of the surface that serves the path.
+export const surfaceBodyProblem = (path: string, body: string): string | undefined => {
+  const surface = surfaceOf(path);
+  return surface === undefined
+    ? 'no surface'
+    : (bodyProblem(surface.mediaType, body) ?? surface.check?.(body));
+};
