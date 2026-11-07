@@ -2,7 +2,7 @@
 interface Props {
   id: string;
   heading: string;
-  rows: { term: string; value: string }[];
+  rows: { term: string; value: string; href?: string | undefined }[];
 }
 
 const { id, heading, rows } = Astro.props;
@@ -17,7 +17,7 @@ const { id, heading, rows } = Astro.props;
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
       <>
         <dt>{row.term}</dt>
-        <dd>{row.value}</dd>
+        <dd>{row.href === undefined ? row.value : <a href={row.href}>{row.value}</a>}</dd>
       </>
     ))}
   </dl>

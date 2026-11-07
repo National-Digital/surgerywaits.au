@@ -105,6 +105,12 @@ Cloudflare Worker    serves the static assets (planned)
   The urgency table publishes no national or state figure, so a category page says so, and shows the figures and the trend
   only when the dist carries them. These are the addresses the earlier site used. Copy is in `templates/state.yaml` and
   `templates/urgency.yaml`, and `/surgery/` links each urgency category to its page.
+  `/health-service/` lists each local hospital network that has a network file, by state or territory, and
+  `/health-service/<slug>/` lists its public hospitals with their state, the count of categories each has a published figure for,
+  and the share of urgent patients treated on time. A member whose latest urgent figures are older than the newest period shows
+  no value and its own period and release, and a member with no urgent figure says so. The page ranks nothing. Each member links
+  to its hospital page, and a hospital page links to its network. These are the addresses the earlier site used, and the copy is in
+  `site/content/templates/health-service.yaml`. The Built pages test compares the addresses with the earlier site's list.
   `npm run build:preview` adds a development page for the figure, the stat tile, the data table, the chart, the wait bars, the safety block, the breadcrumbs and the data passport at
   `/dev/primitives/` and writes to a `dist-preview` folder in `site/`, so the published build never holds it. The
   page is marked noindex and the `Accessibility` job audits it. The base layout holds the header with the site navigation inline, the footer and, on narrow screens, a "Compare near you" bar. A link in the header, the footer or the bar comes from `site/content/navigation.yaml` and is left out until its page is built.

@@ -21,6 +21,7 @@ import {
   surgeryTemplateSchema,
   termsSchema,
   urgencyTemplateSchema,
+  healthServiceTemplateSchema,
 } from '../lib/content-schema';
 import {
   contentSlug,
@@ -462,6 +463,7 @@ describe('Copy', () => {
       'templates/state.yaml': stateTemplateSchema,
       'templates/urgency.yaml': urgencyTemplateSchema,
       'templates/home.yaml': homeTemplateSchema,
+      'templates/health-service.yaml': healthServiceTemplateSchema,
       'templates/longest.yaml': longestTemplateSchema,
       'terms.yaml': termsSchema,
     };

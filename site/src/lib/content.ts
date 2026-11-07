@@ -2,6 +2,7 @@ import { getCollection, getEntry } from 'astro:content';
 import { z } from 'astro/zod';
 import {
   areasSchema,
+  healthServiceTemplateSchema,
   homeTemplateSchema,
   hospitalsIndexSchema,
   hospitalTemplateSchema,
@@ -55,12 +56,18 @@ const surgeryNames = await single('surgery-names', 'surgery-names', surgeryNames
 
 const stateTemplate = await single('state', 'state', stateTemplateSchema);
 const urgencyTemplate = await single('urgency', 'urgency', urgencyTemplateSchema);
+const healthServiceTemplate = await single(
+  'health-service',
+  'health-service',
+  healthServiceTemplateSchema,
+);
 const homeTemplate = await single('home', 'home', homeTemplateSchema);
 
 const longestTemplate = await single('longest', 'longest', longestTemplateSchema);
 
 export const getLongestTemplate = (): typeof longestTemplate => longestTemplate;
 export const getStateTemplate = (): typeof stateTemplate => stateTemplate;
+export const getHealthServiceTemplate = (): typeof healthServiceTemplate => healthServiceTemplate;
 export const getHomeTemplate = (): typeof homeTemplate => homeTemplate;
 export const getUrgencyTemplate = (): typeof urgencyTemplate => urgencyTemplate;
 export const getSurgeryTemplate = (): typeof surgeryTemplate => surgeryTemplate;

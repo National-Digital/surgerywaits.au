@@ -1,0 +1,16 @@
+---
+import HealthServicePage from '../../components/HealthServicePage.astro';
+import { healthServiceRoutes } from '../../lib/health-service-page';
+
+interface Props {
+  slug: string;
+}
+
+export function getStaticPaths(): { params: { slug: string }; props: Props }[] {
+  return healthServiceRoutes();
+}
+
+const { slug } = Astro.props;
+---
+
+<HealthServicePage {slug} />

@@ -3,6 +3,7 @@ import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 import {
   areasSchema,
+  healthServiceTemplateSchema,
   homeTemplateSchema,
   hospitalsIndexSchema,
   hospitalTemplateSchema,
@@ -50,6 +51,10 @@ export const collections = {
   urgency: defineCollection({
     loader: glob({ pattern: 'urgency.yaml', base: './content/templates' }),
     schema: urgencyTemplateSchema,
+  }),
+  'health-service': defineCollection({
+    loader: glob({ pattern: 'health-service.yaml', base: './content/templates' }),
+    schema: healthServiceTemplateSchema,
   }),
   home: defineCollection({
     loader: glob({ pattern: 'home.yaml', base: './content/templates' }),

@@ -12,6 +12,7 @@ import {
   replacedTerms,
 } from '../lib/content-files';
 import {
+  healthServiceTemplateSchema,
   hospitalTemplateSchema,
   longestTemplateSchema,
   pairTemplateSchema,
@@ -21,8 +22,9 @@ import {
   urgencyTemplateSchema,
 } from '../lib/content-schema';
 import { getHomeTemplate, getHospitalTemplate } from '../lib/content';
-import { readHospitalIndex } from '../lib/dist';
-import { formatCount } from '../lib/format';
+import { readHealthService, readHospitalIndex } from '../lib/dist';
+import { healthServicePath, healthServiceSlugs } from '../lib/health-service-page';
+import { formatCount, formatDate, formatPeriod } from '../lib/format';
 import { COMMON_COUNT } from '../lib/home-page';
 import { hospitalGroups, reportingCounts } from '../lib/index-pages';
 import { BORDER_PATH, BY_SURGERY_PATH, CHANGES_PATH, LONGEST_PATH } from '../lib/longest-page';
@@ -907,5 +909,160 @@ describe('Built home page', () => {
       .map((cell) => Number(cell.text.replaceAll(',', '')));
     const groups = hospitalGroups(Object.keys(getHospitalTemplate().states));
     expect(reporting.reduce((a, b) => a + b, 0)).toBe(reportingCounts(groups).reporting);
+  });
+});
+
+describe('Built health service pages', () => {
+  const service = healthServiceTemplateSchema.parse(
+    readContent().find(({ path }) => path === 'templates/health-service.yaml')?.data,
+  );
+  const mine = (): { path: string; html: string }[] =>
+    pages
+      .filter(({ path }) => path.startsWith('health-service/'))
+      .map(({ path }) => ({ path, html: read(path) }));
+  // The addresses the earlier site published, from its sitemap.
+  const earlier = [
+    'albury-wodonga-health',
+    'alfred-health',
+    'austin-health',
+    'australian-capital-territory',
+    'barossa-hills-fleurieu',
+    'barwon-health',
+    'bass-coast-regional-health',
+    'bendigo-health-care-group',
+    'cairns-and-hinterland',
+    'central-adelaide',
+    'central-coast',
+    'central-queensland',
+    'central-west',
+    'child-adolescent-health-service',
+    'childrens-health-queensland',
+    'darling-downs',
+    'east-metropolitan-health-service',
+    'eastern-health',
+    'eyre-and-far-north',
+    'far-west',
+    'flinders-and-upper-north',
+    'gold-coast',
+    'goulburn-valley-health',
+    'grampians-health',
+    'hunter-new-england',
+    'illawarra-shoalhaven',
+    'latrobe-regional-hospital',
+    'limestone-coast',
+    'mackay',
+    'melbourne-health',
+    'mercy-public-hospital-inc',
+    'metro-north',
+    'metro-south',
+    'mid-north-coast',
+    'monash-health',
+    'murrumbidgee',
+    'nepean-blue-mountains',
+    'north-metropolitan-health-service',
+    'north-west',
+    'northeast-health-wangaratta',
+    'northern-adelaide',
+    'northern-health',
+    'northern-nsw',
+    'northern-sydney',
+    'nt-regional-health-services',
+    'peninsula-health',
+    'peter-maccallum-cancer-institute',
+    'riverland-mallee-coorong',
+    'royal-childrens-hospital',
+    'royal-victorian-eye-and-ear-hospital',
+    'royal-womens-hospital',
+    'south-eastern-sydney',
+    'south-metropolitan-health-service',
+    'south-west-healthcare',
+    'south-west',
+    'south-western-sydney',
+    'southern-adelaide',
+    'southern-nsw',
+    'st-vincents-health-network',
+    'st-vincents-hospital-melbourne-limited',
+    'sunshine-coast',
+    'sydney-childrens-hospitals-network',
+    'sydney',
+    'tasmanian-health-service',
+    'torres-and-cape',
+    'townsville',
+    'wa-country-health-service',
+    'west-gippsland-healthcare-group',
+    'west-moreton',
+    'western-health',
+    'western-nsw',
+    'western-sydney',
+    'wide-bay',
+    'womens-and-childrens-health-network',
+    'yorke-and-northern',
+  ];
+
+  it('build the index and a page for each network file, and on the real data exactly the earlier addresses', () => {
+    const built = mine().map(({ path }) => address(path));
+    expect(built).toContain('/health-service/');
+    expect(built.filter((path) => path !== '/health-service/').sort()).toEqual(
+      healthServiceSlugs().map(healthServicePath).sort(),
+    );
+    if (onRealDist) {
+      expect(built.sort()).toEqual(
+        ['/health-service/', ...earlier.map((slug) => `/health-service/${slug}/`)].sort(),
+      );
+    }
+  });
+
+  it('state the exclusion, the safety block and the data passport on every page', () => {
+    for (const { path, html } of mine()) {
+      const body = plain(parseFragment(html.split('<main')[1] ?? ''))
+        .replace(/\s+/g, ' ')
+        .trim();
+      expect(body, path).toContain(service.exclusion);
+      expect(html.match(/id="[a-z-]+-safety-heading"/g) ?? [], path).toHaveLength(1);
+      expect((html.match(/class="c-passport"/g) ?? []).length, path).toBe(1);
+    }
+  });
+
+  it('state a period and release for each table, rank nothing and ship no script', () => {
+    for (const { path, html } of mine()) {
+      expect(textsOf(html, 'c-plain-table__stamp').length, path).toBe(
+        html.match(/<table[ >]/g)?.length ?? 0,
+      );
+      expect([path, /c-table__rank|<script|\son[a-z]+=/i.test(html)]).toEqual([path, false]);
+    }
+  });
+
+  it('show a stale member without a value and with its own period', () => {
+    let stale = 0;
+    for (const slug of healthServiceSlugs()) {
+      const html = read(`health-service/${slug}/index.html`);
+      for (const member of readHealthService(slug).hospitals) {
+        const u = member.urgent_on_time;
+        if (u.status !== 'stale' || u.period === null || u.release === null) {
+          continue;
+        }
+        stale += 1;
+        const own = fill(service.stale_cell, {
+          stamp: `${formatPeriod(u.period)}, released ${formatDate(u.release)}`,
+        });
+        expect([slug, member.slug, plain(parseFragment(html)).replace(/\s+/g, ' ')]).toEqual([
+          slug,
+          member.slug,
+          expect.stringContaining(own),
+        ]);
+      }
+    }
+    expect(stale).toBeGreaterThan(0);
+  });
+
+  it('link each hospital page to its network page', () => {
+    for (const slug of healthServiceSlugs()) {
+      for (const member of readHealthService(slug).hospitals.slice(0, onRealDist ? 3 : 1)) {
+        expect([member.slug, read(`hospital/${member.slug}/index.html`)]).toEqual([
+          member.slug,
+          expect.stringContaining(`href="${healthServicePath(slug)}"`),
+        ]);
+      }
+    }
   });
 });

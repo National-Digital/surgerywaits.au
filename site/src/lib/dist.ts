@@ -173,6 +173,7 @@ export interface HealthService {
   name: string;
   display_name: string;
   states: State[];
+  scope: Hospital['scope'];
   hospitals: HealthServiceMember[];
   sources: string[];
 }
@@ -309,6 +310,10 @@ export function readHealthService(slug: string): HealthService {
 
 export function readHealthServiceIndex(): HealthServiceIndexRow[] {
   return (readDist('health-services.json') as { networks: HealthServiceIndexRow[] }).networks;
+}
+
+export function readHealthServiceIndexSources(): string[] {
+  return (readDist('health-services.json') as { sources: string[] }).sources;
 }
 
 export function readTrend(slug: string): Trend {

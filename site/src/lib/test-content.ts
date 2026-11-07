@@ -19,6 +19,9 @@ function entries(collection: string): { id: string; data: unknown }[] {
     if (collection === 'surgery' && path === 'templates/surgery.yaml') {
       return [{ id: 'surgery', data }];
     }
+    if (collection === 'health-service' && path === 'templates/health-service.yaml') {
+      return [{ id: 'health-service', data }];
+    }
     if (collection === 'pair' && path === 'templates/pair.yaml') {
       return [{ id: 'pair', data }];
     }

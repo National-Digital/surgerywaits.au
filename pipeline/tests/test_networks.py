@@ -175,6 +175,27 @@ def test_a_network_file_rejects_an_unknown_field_and_a_missing_slug() -> None:
         validate("health-service", page)
 
 
+def test_a_stale_urgent_figure_carries_no_value() -> None:
+    docs = _docs()
+    path = next(
+        p
+        for p, (k, d) in sorted(docs.items())
+        if k == "health-service"
+        and any(h["urgent_on_time"]["status"] == "stale" for h in d["hospitals"])
+    )
+    page = docs[path][1]
+    validate("health-service", page)
+    stale = next(h for h in page["hospitals"] if h["urgent_on_time"]["status"] == "stale")
+    stale["urgent_on_time"]["figure"] = {
+        "state": "published",
+        "value": 0.9,
+        "period": stale["urgent_on_time"]["period"],
+        "release": stale["urgent_on_time"]["release"],
+    }
+    with pytest.raises(ContractError):
+        validate("health-service", page)
+
+
 def test_two_networks_sharing_a_slug_fail_the_gate() -> None:
     docs = _docs()
     paths = [p for p, (k, _) in sorted(docs.items()) if k == "health-service"]

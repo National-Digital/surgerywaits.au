@@ -107,7 +107,23 @@
               {
                 "properties": {
                   "status": {
-                    "enum": ["published", "not_published", "not_reported", "stale"]
+                    "const": "stale"
+                  },
+                  "figure": {
+                    "type": "null"
+                  },
+                  "period": {
+                    "$ref": "common.schema.json#/$defs/period"
+                  },
+                  "release": {
+                    "$ref": "common.schema.json#/$defs/date"
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "status": {
+                    "enum": ["published", "not_published", "not_reported"]
                   },
                   "period": {
                     "$ref": "common.schema.json#/$defs/period"

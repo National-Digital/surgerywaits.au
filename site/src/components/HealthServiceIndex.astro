@@ -1,0 +1,77 @@
+---
+// Base comes first so its global sheet, and with it the layer order, precedes every component sheet.
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+import DataPassport from './DataPassport.astro';
+import IndexList from './IndexList.astro';
+import LinkList from './LinkList.astro';
+import SafetyBlock from './SafetyBlock.astro';
+import { getHealthServiceTemplate, getHospitalTemplate, getSite } from '../lib/content';
+import { formatCount } from '../lib/format';
+import { HEALTH_SERVICES_PATH, indexGroups, indexSources } from '../lib/health-service-page';
+import { HOSPITALS_PATH } from '../lib/hospital-page';
+import { hospitalStamp } from '../lib/index-pages';
+import { fill } from '../lib/slots';
+import { URGENCY_PATH } from '../lib/urgency-page';
+
+const t = getHealthServiceTemplate();
+const names = getHospitalTemplate().states;
+const groups = indexGroups(Object.keys(names));
+const networks = new Set(groups.flatMap((g) => g.networks.map((n) => n.href))).size;
+---
+
+<Base
+  title={fill(t.index_title, { site: getSite().name })}
+  description={t.index_description}
+  canonicalPath={HEALTH_SERVICES_PATH}
+>
+  <div class="o-columns">
+    <Breadcrumbs items={[{ label: t.crumb_home, href: '/' }, { label: t.crumb_index }]} />
+    <h1>{t.index_heading}</h1>
+    <p>{fill(t.index_lede, { count: formatCount(networks) })}</p>
+    <p>{fill(t.index_stamp, hospitalStamp())}</p>
+    {t.grouping.map((paragraph) => (
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+      <p>{paragraph}</p>
+    ))}
+
+    <section aria-labelledby="states-heading">
+      <h2 id="states-heading">{t.index_states_heading}</h2>
+      {groups.map((group) => (
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+        <section aria-labelledby={`state-${group.id}`}>
+          <h3 id={`state-${group.id}`}>{names[group.state as keyof typeof names]}</h3>
+          <IndexList
+            items={group.networks.map((n) => ({
+              name: n.name,
+              href: n.href,
+              notes: [
+                n.hospitals === 1
+                  ? t.hospitals_one
+                  : fill(t.hospitals_many, { count: formatCount(n.hospitals) }),
+              ],
+            }))}
+          />
+        </section>
+      ))}
+    </section>
+
+    <section aria-labelledby="links-heading">
+      <h2 id="links-heading">{t.index_links_heading}</h2>
+      <LinkList
+        links={[
+          { label: t.index_hospitals_link, href: HOSPITALS_PATH },
+          { label: t.index_urgency_link, href: URGENCY_PATH },
+        ]}
+      />
+    </section>
+
+    <section aria-labelledby="exclusion-heading">
+      <h2 id="exclusion-heading">{t.exclusion_heading}</h2>
+      <p>{t.exclusion}</p>
+    </section>
+
+    <SafetyBlock id="health-service-safety-heading" />
+    <DataPassport sources={indexSources()} />
+  </div>
+</Base>

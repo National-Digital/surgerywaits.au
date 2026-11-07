@@ -1,0 +1,113 @@
+---
+// Base comes first so its global sheet, and with it the layer order, precedes every component sheet.
+import Base from '../layouts/Base.astro';
+import BlockLink from './BlockLink.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+import DataPassport from './DataPassport.astro';
+import LinkList from './LinkList.astro';
+import PlainTable from './PlainTable.astro';
+import SafetyBlock from './SafetyBlock.astro';
+import { getHealthServiceTemplate, getSite } from '../lib/content';
+import { readHealthService } from '../lib/dist';
+import { formatCount } from '../lib/format';
+import {
+  HEALTH_SERVICES_PATH,
+  healthServicePath,
+  memberTable,
+  urgentCategory,
+} from '../lib/health-service-page';
+import { fill } from '../lib/slots';
+import { stateFiles, stateName, statePath } from '../lib/state-page';
+
+interface Props {
+  slug: string;
+}
+
+const { slug } = Astro.props;
+const t = getHealthServiceTemplate();
+const service = readHealthService(slug);
+const network = service.display_name;
+const states = service.states.map((s) => stateName(s));
+const table = memberTable(service);
+const urgent = urgentCategory();
+const count = service.hospitals.length;
+const withPage = new Set<string>(stateFiles().map((f) => f.state));
+const stateLinks = service.states
+  .filter((s) => withPage.has(s))
+  .map((s) => ({
+    label: fill(t.state_link, { state: stateName(s) }),
+    href: statePath(s),
+  }));
+---
+
+<Base
+  title={fill(t.title, { network, site: getSite().name })}
+  description={fill(t.description, { network, states: states.join(', ') })}
+  canonicalPath={healthServicePath(slug)}
+>
+  <div class="o-columns">
+    <Breadcrumbs
+      items={[
+        { label: t.crumb_home, href: '/' },
+        { label: t.crumb_index, href: HEALTH_SERVICES_PATH },
+        { label: network },
+      ]}
+    />
+    <h1>{fill(t.heading, { network })}</h1>
+    <p>{fill(t.lede, { network, states: states.join(', ') })}</p>
+    <p>
+      {count === 1
+        ? fill(t.count_one, { network })
+        : fill(t.count_many, { count: formatCount(count), network })}
+    </p>
+  </div>
+
+  <section aria-labelledby="hospitals-heading">
+    <div class="o-columns">
+      <h2 id="hospitals-heading">{fill(t.hospitals_heading, { network })}</h2>
+      <p>{t.hospitals_intro}</p>
+    </div>
+    <PlainTable
+      id="hospitals"
+      caption={fill(t.hospitals_caption, { network })}
+      stamp={table.stamp}
+      rowHeading={t.row_heading}
+      headings={[t.col_state, t.col_categories, t.col_urgent]}
+      rows={table.rows}
+    />
+    <div class="o-columns">
+      <p>{t.categories_note}</p>
+      <p>{fill(t.urgent_note, { within: urgent.within })}</p>
+    </div>
+  </section>
+
+  <div class="o-columns">
+    <section aria-labelledby="grouping-heading">
+      <h2 id="grouping-heading">{t.grouping_heading}</h2>
+      {t.grouping.map((paragraph) => (
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+        <p>{paragraph}</p>
+      ))}
+      {service.name !== network && <p>{fill(t.source_name, { name: service.name })}</p>}
+    </section>
+
+    <section aria-labelledby="links-heading">
+      <h2 id="links-heading">{t.links_heading}</h2>
+      <LinkList
+        links={[
+          { label: fill(t.urgency_link, { category: urgent.label }), href: urgent.path },
+          ...stateLinks,
+        ]}
+      />
+      <BlockLink href={HEALTH_SERVICES_PATH}>{t.index_link}</BlockLink>
+    </section>
+
+    <section aria-labelledby="exclusion-heading">
+      <h2 id="exclusion-heading">{t.exclusion_heading}</h2>
+      <p>{t.exclusion}</p>
+    </section>
+
+    <SafetyBlock id="health-service-safety-heading" />
+    <DataPassport sources={service.sources} />
+  </div>
+</Base>
