@@ -53,7 +53,7 @@
             "type": "boolean"
           },
           "surgeries": {
-            "description": "How many categories the hospital has a published figure for in the newest period of their table, with the period and release of each table.",
+            "description": "How many categories the hospital has a published figure for in the newest period of their table, and the period and release of each table in which it has at least one, in the order urgency, procedure, specialty.",
             "type": "object",
             "additionalProperties": false,
             "required": ["count", "current"],
@@ -63,7 +63,6 @@
               },
               "current": {
                 "type": "array",
-                "minItems": 1,
                 "items": {
                   "type": "object",
                   "additionalProperties": false,
@@ -84,10 +83,41 @@
             }
           },
           "urgent_on_time": {
-            "description": "The share of urgent patients treated on time, stamped with the newest period and its release. The status is the figure's own state, or stale when the hospital's latest urgent figures are from an older period, or missing when it has none.",
+            "description": "The share of urgent patients treated on time, with the period and release of the figure. The status is the figure's own state. It is stale, with the period and release of the hospital's own latest urgent figures, when those are older than the newest period, and missing, with a null period and release, when the hospital has no on-time figure.",
             "type": "object",
             "additionalProperties": false,
             "required": ["status", "figure", "period", "release"],
+            "oneOf": [
+              {
+                "properties": {
+                  "status": {
+                    "const": "missing"
+                  },
+                  "figure": {
+                    "type": "null"
+                  },
+                  "period": {
+                    "type": "null"
+                  },
+                  "release": {
+                    "type": "null"
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "status": {
+                    "enum": ["published", "not_published", "not_reported", "stale"]
+                  },
+                  "period": {
+                    "$ref": "common.schema.json#/$defs/period"
+                  },
+                  "release": {
+                    "$ref": "common.schema.json#/$defs/date"
+                  }
+                }
+              }
+            ],
             "properties": {
               "status": {
                 "enum": ["published", "not_published", "not_reported", "stale", "missing"]
@@ -103,10 +133,10 @@
                 ]
               },
               "period": {
-                "$ref": "common.schema.json#/$defs/period"
+                "type": ["string", "null"]
               },
               "release": {
-                "$ref": "common.schema.json#/$defs/date"
+                "type": ["string", "null"]
               }
             }
           }

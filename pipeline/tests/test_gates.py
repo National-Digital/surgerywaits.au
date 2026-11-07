@@ -1,5 +1,6 @@
 import copy
 import json
+from collections.abc import Callable
 from dataclasses import replace
 from datetime import date, timedelta
 from typing import Any
@@ -15,6 +16,7 @@ from surgerywaits.gates import (
     ALLOWED_LICENCES,
     MAX_PERIOD_AGE_YEARS,
     MAX_QLD_LAG_DAYS,
+    URGENT_SLUG,
     GateError,
     check_docs,
     check_freshness,
@@ -25,6 +27,7 @@ from test_dist import overlay_dates, scan_for_clock
 
 DASH = chr(0x2013)
 ENTRIES = load()
+KINDS = ("urgency", "procedure", "specialty")
 TABLES = tuple(TABLE_SOURCES.values())
 URGENCY = TABLE_SOURCES[next(iter(TABLE_SOURCES))]
 
@@ -391,9 +394,149 @@ def test_a_member_with_altered_figures_fails() -> None:
         check_docs(ENTRIES, docs)
 
 
+def _networks(docs: dict[str, tuple[str, Doc]]) -> list[Doc]:
+    return [d for _, (k, d) in sorted(docs.items()) if k == "health-service"]
+
+
+def _hospital_with_urgent(
+    docs: dict[str, tuple[str, Doc]], *, stale: bool, published: bool = True
+) -> Doc:
+    def wanted(s: Doc) -> bool:
+        states = {m["figure"]["state"] for m in s["measures"].values()}
+        return (
+            s["slug"] == URGENT_SLUG
+            and s["stale"] == stale
+            and ("published" in states) == published
+        )
+
+    found = [
+        d
+        for _, (k, d) in sorted(docs.items())
+        if k == "hospital" and d["network"] and any(wanted(s) for s in d["surgeries"])
+    ]
+    assert found
+    return found[0]
+
+
+def _member_of(docs: dict[str, tuple[str, Doc]], hospital: Doc) -> Doc:
+    network = next(n for n in _networks(docs) if n["code"] == hospital["network"]["code"])
+    return next(m for m in network["hospitals"] if m["slug"] == hospital["slug"])
+
+
 def test_a_member_stamped_with_another_period_fails() -> None:
     docs = _docs()
     _, member = _member(docs)
-    member["surgeries"]["current"][1]["period"] = "1999-00"
-    with pytest.raises(GateError, match="stamps"):
+    assert member["surgeries"]["current"]
+    member["surgeries"]["current"][0]["period"] = "1999\u201300"
+    with pytest.raises(GateError, match="disagrees with the hospital file"):
+        check_docs(ENTRIES, docs)
+
+
+def test_a_member_lists_only_the_tables_where_it_has_a_current_figure() -> None:
+    members = [m for n in _networks(_docs()) for m in n["hospitals"]]
+    assert len({len(m["surgeries"]["current"]) for m in members}) > 1
+    for m in members:
+        assert (m["surgeries"]["count"] == 0) == (not m["surgeries"]["current"])
+        assert len(m["surgeries"]["current"]) <= m["surgeries"]["count"]
+
+
+def test_a_member_that_lists_a_table_it_has_no_current_figure_in_fails() -> None:
+    docs = _docs()
+    members = [m for n in _networks(docs) for m in n["hospitals"]]
+    stamp = next(m["surgeries"]["current"][0] for m in members if m["surgeries"]["current"])
+    short = next(m for m in members if len(m["surgeries"]["current"]) < len(KINDS))
+    listed = {c["kind"] for c in short["surgeries"]["current"]}
+    spare = next(k for k in KINDS if k not in listed)
+    short["surgeries"]["current"].append({**stamp, "kind": spare})
+    with pytest.raises(GateError, match="disagrees with the hospital file"):
+        check_docs(ENTRIES, docs)
+
+
+def test_a_stale_urgent_figure_carries_the_hospitals_own_period() -> None:
+    docs = _docs()
+    hospital = _hospital_with_urgent(docs, stale=True)
+    member = _member_of(docs, hospital)
+    own = next(s for s in hospital["surgeries"] if s["slug"] == URGENT_SLUG)["measures"]
+    figure = next(iter(own.values()))["figure"]
+    assert member["urgent_on_time"] == {
+        "status": "stale",
+        "figure": None,
+        "period": figure["period"],
+        "release": figure["release"],
+    }
+    member["urgent_on_time"]["period"] = "1999\u201300"
+    with pytest.raises(GateError, match="disagrees with the hospital file"):
+        check_docs(ENTRIES, docs)
+
+
+def test_a_missing_urgent_figure_carries_no_period_or_release() -> None:
+    docs = _docs()
+    hospital = _hospital_with_urgent(docs, stale=False, published=False)
+    hospital["surgeries"] = [s for s in hospital["surgeries"] if s["slug"] != URGENT_SLUG]
+    member = _member_of(docs, hospital)
+    member["urgent_on_time"] = {
+        "status": "missing",
+        "figure": None,
+        "period": None,
+        "release": None,
+    }
+    check_docs(ENTRIES, docs)
+    member["urgent_on_time"]["period"] = _any_period(docs)
+    with pytest.raises(GateError, match="disagrees with the hospital file"):
+        check_docs(ENTRIES, docs)
+
+
+def _any_period(docs: dict[str, tuple[str, Doc]]) -> str:
+    return next(
+        m["surgeries"]["current"][0]["period"] for m in _members(docs) if m["surgeries"]["current"]
+    )
+
+
+def _members(docs: dict[str, tuple[str, Doc]]) -> list[Doc]:
+    return [m for n in _networks(docs) for m in n["hospitals"]]
+
+
+def _break_index_count(docs: dict[str, tuple[str, Doc]]) -> None:
+    _index_row(docs)["hospitals"] += 1
+
+
+def _break_index_display_name(docs: dict[str, tuple[str, Doc]]) -> None:
+    _index_row(docs)["display_name"] = "Other"
+
+
+def _break_index_states(docs: dict[str, tuple[str, Doc]]) -> None:
+    _index_row(docs)["states"] = [*_index_row(docs)["states"], "Tas"]
+
+
+def _break_file_states(docs: dict[str, tuple[str, Doc]]) -> None:
+    network = _networks(docs)[0]
+    network["states"] = [*network["states"], "Tas"]
+
+
+def _break_scope(docs: dict[str, tuple[str, Doc]]) -> None:
+    network = _networks(docs)[0]
+    network["scope"] = {**network["scope"], "sector": "private"}
+
+
+def _index_row(docs: dict[str, tuple[str, Doc]]) -> Doc:
+    code = _networks(docs)[0]["code"]
+    return next(r for r in docs["health-services.json"][1]["networks"] if r["code"] == code)
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        _break_index_count,
+        _break_index_display_name,
+        _break_index_states,
+        _break_file_states,
+        _break_scope,
+    ],
+)
+def test_a_network_header_that_disagrees_with_its_index_or_members_fails(
+    mutate: Callable[[dict[str, tuple[str, Doc]]], None],
+) -> None:
+    docs = _docs()
+    mutate(docs)
+    with pytest.raises(GateError, match="disagrees with the network index"):
         check_docs(ENTRIES, docs)

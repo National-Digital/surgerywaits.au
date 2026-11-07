@@ -340,7 +340,7 @@ def build_context(inputs: Inputs) -> _Ctx:
         latest,
         hospitals,
         _hospital_slugs([hospitals[c] for c in with_data]),
-        network_slugs([hospitals[c] for c in with_data]),
+        network_slugs([h for c in with_data if (h := hospitals[c]).network_status == "mapped"]),
         benchmarks,
     )
 
@@ -451,18 +451,17 @@ def _urgent_lookup(ctx: _Ctx) -> dict[str, DerivedObservation]:
 
 
 def urgent_on_time(ctx: _Ctx, o: DerivedObservation | None) -> Doc:
-    """The on-time figure for urgent surgery, stamped with the newest period and its release."""
-    period, release = ctx.newest[Table.URGENCY], ctx.release_of[Table.URGENCY]
-    stamp: Doc = {"period": period, "release": release}
+    """The on-time figure for urgent surgery, with the period and release it comes from."""
+    release = ctx.release_of[Table.URGENCY]
     if o is None:
-        return {"status": "missing", "figure": None, **stamp}
-    if o.period != period:
-        return {"status": "stale", "figure": None, **stamp}
+        return {"status": "missing", "figure": None, "period": None, "release": None}
+    if o.period != ctx.newest[Table.URGENCY]:
+        return {"status": "stale", "figure": None, "period": o.period, "release": release}
     found = next((f for f in o.figures if f.role is Role.ON_TIME), None)
     if found is None:
-        return {"status": "missing", "figure": None, **stamp}
-    figure = _figure(found.figure, period, release)
-    return {"status": figure["state"], "figure": figure, **stamp}
+        return {"status": "missing", "figure": None, "period": None, "release": None}
+    figure = _figure(found.figure, o.period, release)
+    return {"status": figure["state"], "figure": figure, "period": o.period, "release": release}
 
 
 def network_docs(ctx: _Ctx) -> dict[str, tuple[str, Doc]]:
@@ -472,17 +471,20 @@ def network_docs(ctx: _Ctx) -> dict[str, tuple[str, Doc]]:
         h = ctx.hospitals[code]
         if h.network_status == "mapped" and h.network_code is not None:
             members[h.network_code].append(h)
-    current: dict[str, int] = defaultdict(int)
+    current: dict[str, dict[Table, int]] = defaultdict(lambda: defaultdict(int))
     for (code, table, _), o in ctx.latest.items():
         if o.period == ctx.newest[table] and any(
             f.figure.state is FigureState.PUBLISHED for f in o.figures
         ):
-            current[code] += 1
+            current[code][table] += 1
     urgent = _urgent_lookup(ctx)
-    stamps = [
-        {"kind": t.value, "period": ctx.newest[t], "release": ctx.release_of[t]}
-        for t in sorted(ctx.newest, key=lambda t: SCOPE_ORDER[t.value])
-    ]
+
+    def stamps(code: str) -> list[Doc]:
+        return [
+            {"kind": t.value, "period": ctx.newest[t], "release": ctx.release_of[t]}
+            for t in sorted(current[code], key=lambda t: SCOPE_ORDER[t.value])
+        ]
+
     docs: dict[str, tuple[str, Doc]] = {}
     rows: list[Doc] = []
     for code, hospitals in sorted(members.items()):
@@ -507,7 +509,10 @@ def network_docs(ctx: _Ctx) -> dict[str, tuple[str, Doc]]:
                         "name": h.name,
                         "state": h.state,
                         "closed": h.closed,
-                        "surgeries": {"count": current[h.code], "current": stamps},
+                        "surgeries": {
+                            "count": sum(current[h.code].values()),
+                            "current": stamps(h.code),
+                        },
                         "urgent_on_time": urgent_on_time(ctx, urgent.get(h.code)),
                     }
                     for h in sorted(hospitals, key=lambda h: (h.name, h.code))

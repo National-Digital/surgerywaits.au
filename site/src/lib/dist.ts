@@ -153,7 +153,7 @@ interface HealthServiceMember {
   name: string;
   state: State;
   closed: boolean;
-  // Categories with a published figure in the newest period, and the period and release of each table.
+  // Categories with a published figure in the newest period, and the period and release of each table that has one.
   surgeries: {
     count: number;
     current: { kind: HospitalSurgery['kind']; period: string; release: string }[];
@@ -161,8 +161,9 @@ interface HealthServiceMember {
   urgent_on_time: {
     status: 'published' | 'not_published' | 'not_reported' | 'stale' | 'missing';
     figure: Figure | null;
-    period: string;
-    release: string;
+    // Null only when the status is missing.
+    period: string | null;
+    release: string | null;
   };
 }
 

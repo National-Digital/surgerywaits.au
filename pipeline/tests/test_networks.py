@@ -6,7 +6,7 @@ import pytest
 from fixture_dist import fixture_docs
 from surgerywaits.contract import ContractError, validate
 from surgerywaits.dist import DistError, Doc, network_slugs
-from surgerywaits.gates import GateError, check_docs
+from surgerywaits.gates import URGENT_SLUG, GateError, check_docs
 from surgerywaits.hospitals import Hospital
 from surgerywaits.manifest import load
 from test_dist import real_docs
@@ -237,9 +237,20 @@ def test_every_real_mapped_hospital_is_a_member_of_exactly_one_network() -> None
     assert 0 < len(mapped) < len(docs["hospitals.json"]["hospitals"])
 
 
-def test_the_real_networks_carry_an_urgent_on_time_figure_for_most_members() -> None:
+def test_the_real_networks_count_the_published_urgent_figures_the_hospital_files_hold() -> None:
     docs: dict[str, Any] = real_docs()
     members = [
         h for p, d in docs.items() if p.startswith("health-services/") for h in d["hospitals"]
     ]
-    assert sum(1 for h in members if h["urgent_on_time"] is not None) > len(members) // 2
+    hospitals = {
+        d["slug"]: d for p, d in docs.items() if p.startswith("hospitals/") and d["network"]
+    }
+    expected = 0
+    for m in members:
+        surgeries = hospitals[m["slug"]]["surgeries"]
+        urgent = next((s for s in surgeries if s["slug"] == URGENT_SLUG), None)
+        on_time = urgent["measures"].get("on_time") if urgent and not urgent["stale"] else None
+        expected += on_time is not None and on_time["figure"]["state"] == "published"
+    found = sum(1 for h in members if h["urgent_on_time"]["status"] == "published")
+    assert found == expected
+    assert 0 < found < len(members)

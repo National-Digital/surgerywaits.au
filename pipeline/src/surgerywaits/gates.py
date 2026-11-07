@@ -33,6 +33,7 @@ RELEASE_DAY = re.compile(r"(\d{4})(\d{2})(\d{2})\d*")
 
 
 URGENT_SLUG = "urgent-elective-surgery"
+KIND_ORDER = {"urgency": 0, "procedure": 1, "specialty": 2}
 
 
 class GateError(Exception):
@@ -191,63 +192,66 @@ def _check_network_slugs(docs: Mapping[str, tuple[str, dict[str, Any]]]) -> None
 
 def _expected_member(hospital: dict[str, Any]) -> dict[str, Any]:
     """What a network file must say about a hospital, worked out from its hospital file."""
-    current = [s for s in hospital["surgeries"] if not s["stale"]]
-    published = [
-        s
-        for s in current
-        if any(m["figure"]["state"] == "published" for m in s["measures"].values())
-    ]
+    stamps: dict[str, tuple[str, str]] = {}
+    count = 0
+    for s in hospital["surgeries"]:
+        published = [
+            m["figure"] for m in s["measures"].values() if m["figure"]["state"] == "published"
+        ]
+        if not s["stale"] and published:
+            count += 1
+            stamps[s["kind"]] = (published[0]["period"], published[0]["release"])
     urgent = next(
         (s for s in hospital["surgeries"] if s["kind"] == "urgency" and s["slug"] == URGENT_SLUG),
         None,
     )
-    status, figure = "missing", None
+    status: str = "missing"
+    figure = period = release = None
     if urgent is not None and urgent["stale"]:
+        own = next((m["figure"] for m in urgent["measures"].values()), None)
         status = "stale"
+        period, release = (own["period"], own["release"]) if own else (None, None)
     elif urgent is not None and "on_time" in urgent["measures"]:
         figure = urgent["measures"]["on_time"]["figure"]
-        status = figure["state"]
+        status, period, release = figure["state"], figure["period"], figure["release"]
     return {
         "code": hospital["code"],
         "slug": hospital["slug"],
         "name": hospital["name"],
         "state": hospital["state"],
         "closed": hospital["closed"],
-        "count": len(published),
+        "count": count,
+        "current": [
+            {"kind": k, "period": p, "release": r}
+            for k, (p, r) in sorted(stamps.items(), key=lambda kv: KIND_ORDER[kv[0]])
+        ],
         "status": status,
         "figure": figure,
+        "period": period,
+        "release": release,
     }
 
 
-def _current_stamps(hospitals: Mapping[str, dict[str, Any]]) -> dict[str, tuple[str, str]]:
-    """The period and release the hospital files give each kind's current figures."""
-    stamps: dict[str, tuple[str, str]] = {}
-    for d in hospitals.values():
-        for s in d["surgeries"]:
-            if not s["stale"]:
-                for m in s["measures"].values():
-                    stamps[s["kind"]] = (m["figure"]["period"], m["figure"]["release"])
-    return stamps
-
-
-def _check_member_stamps(
-    path: str, m: dict[str, Any], stamps: Mapping[str, tuple[str, str]]
+def _check_network_headers(
+    path: str, n: dict[str, Any], row: dict[str, Any], hospitals: Mapping[str, dict[str, Any]]
 ) -> None:
-    current = {c["kind"]: (c["period"], c["release"]) for c in m["surgeries"]["current"]}
-    urgent = m["urgent_on_time"]
+    """A network file's own fields agree with its index row and with its member hospitals."""
+    members = [hospitals[m["slug"]] for m in n["hospitals"]]
     if (
-        list(current) != ["urgency", "procedure", "specialty"]
-        or any(current[k] != v for k, v in stamps.items())
-        or (urgent["period"], urgent["release"]) != current["urgency"]
+        row["hospitals"] != len(n["hospitals"])
+        or row["display_name"] != n["display_name"]
+        or row["states"] != n["states"]
+        or n["states"] != sorted({h["state"] for h in members})
+        or any(h["scope"] != n["scope"] for h in members)
     ):
-        msg = f"{path} stamps {m['slug']} with a period or release the hospital files do not"
+        msg = f"{path} disagrees with the network index or its member hospitals"
         raise GateError(msg)
 
 
 def _check_network_members(docs: Mapping[str, tuple[str, dict[str, Any]]]) -> None:
     """Every member of a network file agrees with its own hospital file."""
     hospitals = {d["slug"]: d for _, (k, d) in sorted(docs.items()) if k == "hospital"}
-    stamps = _current_stamps(hospitals)
+    rows = {r["code"]: r for r in docs["health-services.json"][1]["networks"]}
     for path, (kind, n) in sorted(docs.items()):
         if kind != "health-service":
             continue
@@ -259,13 +263,13 @@ def _check_network_members(docs: Mapping[str, tuple[str, dict[str, Any]]]) -> No
             found = {
                 **{k: m[k] for k in ("code", "slug", "name", "state", "closed")},
                 "count": m["surgeries"]["count"],
-                "status": m["urgent_on_time"]["status"],
-                "figure": m["urgent_on_time"]["figure"],
+                "current": m["surgeries"]["current"],
+                **{k: m["urgent_on_time"][k] for k in ("status", "figure", "period", "release")},
             }
             if found != _expected_member(h):
                 msg = f"{path} disagrees with the hospital file for {m['slug']}"
                 raise GateError(msg)
-            _check_member_stamps(path, m, stamps)
+        _check_network_headers(path, n, rows[n["code"]], hospitals)
 
 
 def check_benchmarks(docs: Mapping[str, tuple[str, dict[str, Any]]]) -> None:

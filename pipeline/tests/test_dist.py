@@ -611,8 +611,26 @@ def test_a_renamed_urgent_category_stops_the_build() -> None:
 
 def test_the_urgent_figure_says_why_it_is_absent() -> None:
     ctx = build_context(fixture_inputs())
-    stamp = {"period": ctx.newest[Table.URGENCY], "release": ctx.release_of[Table.URGENCY]}
-    assert urgent_on_time(ctx, None) == {"status": "missing", "figure": None, **stamp}
+    assert urgent_on_time(ctx, None) == {
+        "status": "missing",
+        "figure": None,
+        "period": None,
+        "release": None,
+    }
     old = next(o for o in ctx.latest.values() if o.table is Table.URGENCY)
-    stale = replace(old, period="1999-00")
-    assert urgent_on_time(ctx, stale)["status"] == "stale"
+    stale = urgent_on_time(ctx, replace(old, period="1999\u201300"))
+    assert stale == {
+        "status": "stale",
+        "figure": None,
+        "period": "1999\u201300",
+        "release": ctx.release_of[Table.URGENCY],
+    }
+    page = copy.deepcopy(
+        next(d for _, (k, d) in sorted(fixture_docs().items()) if k == "health-service")
+    )
+    for urgent in (stale, urgent_on_time(ctx, None)):
+        page["hospitals"][0]["urgent_on_time"] = urgent
+        validate("health-service", page)
+    page["hospitals"][0]["urgent_on_time"]["status"] = "published"
+    with pytest.raises(ContractError):
+        validate("health-service", page)
