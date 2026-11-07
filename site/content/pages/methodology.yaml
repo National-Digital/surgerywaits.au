@@ -89,7 +89,7 @@ sections:
     paragraphs:
       - Queensland Health publishes quarterly figures that count patients by urgency category and by specialty. The site shows them in a separate section on the hospital page and on the Queensland page.
       - The quarterly figures cover three months. They count different things from the national tables, so the site does not rank them. It does not compare them with a national figure or add them to one.
-      - 'The site matches each Queensland facility to one hospital in the national register by name. A short list of {hand_matched} named facilities is matched by hand, and the build stops if either name in that list changes. A facility that matches no hospital, or more than one, is left out. A facility whose hospital has closed is also left out. The state-wide total in the release is not a hospital and is left out.'
+      - 'The site matches each Queensland facility to one hospital in the national register by name. The site matches {hand_matched} named facilities by hand, and the build stops if either name in one of those pairs changes. A facility that matches no hospital, or more than one, is left out. A facility whose hospital has closed is also left out. The state-wide total in the release is not a hospital and is left out.'
       - 'A Queensland column that the release lists as withheld is shown as "{qld_withheld}". An empty change on the prior year, with no withheld mark, is shown as not reported.'
   - id: joins
     heading: Matching hospitals
