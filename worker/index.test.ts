@@ -22,6 +22,12 @@ const env = {
     },
   },
 } as unknown as Env;
+let failAssets = false;
+const assetsFetch = env.ASSETS.fetch.bind(env.ASSETS);
+env.ASSETS.fetch = (request: Request): Promise<Response> =>
+  failAssets ? Promise.reject(new Error('binding down at /secret/stack')) : assetsFetch(request);
+const send = (path: string, method: string): Promise<Response> =>
+  handle(new Request(`https://example.test${path}`, { method }), env, table);
 const get = (path: string): Promise<Response> =>
   handle(new Request(`https://example.test${path}`), env, table);
 
@@ -121,5 +127,56 @@ describe('redirects', () => {
     seen.length = 0;
     expect((await get('/new/')).status).toBe(200);
     expect(seen).toEqual(['/new/']);
+  });
+});
+
+describe('methods and failures', () => {
+  it('refuses a method other than GET and HEAD on a redirect source and on a page', async () => {
+    for (const path of ['/old/', '/state/nsw/']) {
+      for (const method of ['POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']) {
+        const response = await send(path, method);
+        expect(response.status, `${method} ${path}`).toBe(405);
+        expect(response.headers.get('Allow')).toBe('GET, HEAD');
+        expect(response.headers.get('Location')).toBeNull();
+        expect(response.headers.get('Content-Security-Policy')).toBe(
+          SECURITY_HEADERS['Content-Security-Policy'],
+        );
+      }
+    }
+  });
+
+  it('does not ask the assets for a refused method', async () => {
+    seen.length = 0;
+    await send('/state/nsw/', 'POST');
+    expect(seen).toEqual([]);
+  });
+
+  it('answers HEAD on a redirect with the 301, its Location and no body', async () => {
+    const response = await send('/old/?a=1', 'HEAD');
+    expect(response.status).toBe(301);
+    expect(response.headers.get('Location')).toBe('https://example.test/new/?a=1');
+    expect(response.body).toBeNull();
+  });
+
+  it('answers HEAD on a page from the assets', async () => {
+    expect((await send('/state/nsw/', 'HEAD')).status).toBe(200);
+  });
+
+  it('returns a plain 500 with the security headers when the assets fail', async () => {
+    failAssets = true;
+    try {
+      const response = await get('/state/nsw/');
+      expect(response.status).toBe(500);
+      expect(response.headers.get('Cache-Control')).toBe('no-store');
+      expect(response.headers.get('Content-Type')).toContain('text/plain');
+      for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+        expect(response.headers.get(name)).toBe(value);
+      }
+      const body = await response.text();
+      expect(body).toBe('Internal server error');
+      expect(body).not.toContain('secret');
+    } finally {
+      failAssets = false;
+    }
   });
 });
