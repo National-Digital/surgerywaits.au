@@ -1,9 +1,8 @@
-import { isDataApi, withHeaders } from './headers';
+import { ALLOWED_DATA_API, isDataApi, withHeaders } from './headers';
 import { redirectFor, redirects } from './redirects';
 import type { RedirectTable } from './redirects';
 
 const ALLOWED = 'GET, HEAD';
-const ALLOWED_DATA_API = 'GET, HEAD, OPTIONS';
 
 // A static site takes no input, so any method but GET and HEAD is refused, and OPTIONS under /data-api/ only.
 function methodNotAllowed(pathname: string): Response {

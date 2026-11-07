@@ -2,6 +2,8 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { Validator } from '@seriousme/openapi-schema-validator';
+import { Ajv2020 } from 'ajv/dist/2020.js';
 import { ESLint } from 'eslint';
 import { describe, expect, it } from 'vitest';
 import type { z } from 'astro/zod';
@@ -55,6 +57,7 @@ import { sampleCharts, surgeryTables } from '../dev/preview';
 import { planChart } from '../lib/chart';
 import {
   DistError,
+  contractSchemas,
   distDirectory,
   listDist,
   readHospital,
@@ -63,6 +66,7 @@ import {
   validateDist,
   validateDocument,
 } from '../lib/dist';
+import { openApiDisagreements, openApiDocument } from '../lib/openapi';
 import { getHospitalTemplate, getSurgeryTemplate } from '../lib/content';
 import { formatDate, formatFigure, formatStamp } from '../lib/format';
 import type { NotPublishedReason, Role } from '../lib/format';
@@ -78,7 +82,7 @@ import {
   storageUses,
 } from '../lib/privacy';
 import { render, text, textsOf, withoutJsonLd } from '../lib/test-render';
-import { SECURITY_HEADERS } from '../../../worker/headers';
+import { SECURITY_HEADERS, withHeaders } from '../../../worker/headers';
 
 const contractDir = new URL('../../../contract/', import.meta.url);
 const siteSrc = new URL('../', import.meta.url).pathname;
@@ -943,6 +947,120 @@ describe('Repository', () => {
   });
 });
 
+const withoutExternalRefs = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.map(withoutExternalRefs);
+  }
+  if (typeof value !== 'object' || value === null) {
+    return value;
+  }
+  const ref = (value as { $ref?: unknown }).$ref;
+  return typeof ref === 'string' && ref.startsWith('https:')
+    ? {}
+    : Object.fromEntries(Object.entries(value).map(([k, v]) => [k, withoutExternalRefs(v)]));
+};
+
 describe('OpenAPI', () => {
-  it.todo('a schema and the generated OpenAPI description never disagree');
+  // Read at collection, before another test stubs the variable to a copy it later deletes.
+  const dist = distDirectory();
+  const schemaCatalogue = (): Ajv2020 => {
+    const ajv = new Ajv2020({ strict: true, allErrors: true });
+    for (const [, schema] of contractSchemas()) {
+      ajv.addSchema(schema as object);
+    }
+    return ajv;
+  };
+  const distFiles = (): { path: string; body: unknown }[] =>
+    readdirSync(dist, { recursive: true, encoding: 'utf8' })
+      .filter((file) => file.endsWith('.json'))
+      .sort()
+      .map((path) => ({
+        path: `/data-api/${path}`,
+        body: JSON.parse(readFileSync(join(dist, path), 'utf8')) as unknown,
+      }));
+
+  it('a schema and the generated OpenAPI description never disagree', () => {
+    const files = distFiles();
+    expect(files.length).toBeGreaterThan(0);
+    expect(openApiDisagreements(openApiDocument(), files, schemaCatalogue())).toEqual([]);
+  });
+
+  it('reports a path that names the wrong schema, a path with no file and a file with no path', () => {
+    const document = structuredClone(openApiDocument()) as {
+      paths: Record<string, unknown>;
+    };
+    const hospital = document.paths['/data-api/hospitals/{slug}.json'] as {
+      get: {
+        responses: { '200': { content: { 'application/json': { schema: { $ref: string } } } } };
+      };
+    };
+    hospital.get.responses['200'].content['application/json'].schema.$ref =
+      'https://surgerywaits.au/contract/trend.schema.json';
+    document.paths['/data-api/ghosts.json'] = document.paths['/data-api/rules.json'];
+    delete document.paths['/data-api/credits.json'];
+    const problems = openApiDisagreements(document, distFiles(), schemaCatalogue());
+    expect(
+      problems.some((p) => p.startsWith('/data-api/hospitals/') && p.endsWith('trend.schema.json')),
+    ).toBe(true);
+    expect(problems).toContain('/data-api/ghosts.json matches no file');
+    expect(problems).toContain('/data-api/credits.json has no path in the description');
+  });
+
+  it('is a valid OpenAPI 3.1 document', async () => {
+    const validator = new Validator();
+    // The validator resolves internal references only; the disagreement test proves the external ones.
+    const document = withoutExternalRefs(openApiDocument()) as Record<string, unknown>;
+    const result = await validator.validate(document);
+    expect(result.errors).toBeUndefined();
+    expect(result.valid).toBe(true);
+    expect(validator.version).toBe('3.1');
+    const ids = Object.values(
+      (document as { paths: Record<string, Record<string, { operationId: string }>> }).paths,
+    ).flatMap((item) => Object.values(item).map((operation) => operation.operationId));
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('describes the headers the Worker sends for a 200, a 404 and a preflight', async () => {
+    const { handle } = await import('../../../worker/index');
+    const doc = openApiDocument() as {
+      info: { description: string };
+      components: { headers: Record<string, { schema: { const: string } }> };
+    };
+    const value = (name: string): string | undefined => doc.components.headers[name]?.schema.const;
+    const sent = (response: Response): (string | null)[] => [
+      response.headers.get('Access-Control-Allow-Origin'),
+      response.headers.get('X-Robots-Tag'),
+      response.headers.get('Cache-Control'),
+    ];
+    const answer = (status: number): Response =>
+      withHeaders(new Response('x', { status }), '/data-api/index.json');
+    const origin = value('AccessControlAllowOrigin');
+    const robots = value('XRobotsTag');
+    expect(sent(answer(200))).toEqual([origin, robots, value('CacheControlFile')]);
+    expect(sent(answer(404))).toEqual([origin, robots, value('CacheControlMissing')]);
+    const env = { ASSETS: { fetch: () => Promise.resolve(new Response('x')) } } as never;
+    const preflight = await handle(
+      new Request('https://surgerywaits.au/data-api/index.json', { method: 'OPTIONS' }),
+      env,
+    );
+    expect(preflight.status).toBe(204);
+    expect(preflight.headers.get('Access-Control-Allow-Methods')).toBe('GET, HEAD, OPTIONS');
+    expect(doc.info.description).toContain('the methods GET, HEAD and OPTIONS');
+    expect(doc.info.description).toContain('X-Robots-Tag: noindex');
+    expect(doc.info.description).toContain('keep a file for an hour');
+    expect(value('CacheControlFile')).toContain('max-age=3600');
+  });
+
+  it('gives each path a GET and a HEAD with a 200 and a 404', () => {
+    const { paths } = openApiDocument() as {
+      paths: Record<string, Record<string, { responses: Record<string, unknown> }>>;
+    };
+    expect(Object.keys(paths).length).toBe(14);
+    for (const [path, item] of Object.entries(paths)) {
+      expect(Object.keys(item).sort(), path).toEqual(['get', 'head']);
+      for (const operation of Object.values(item)) {
+        expect(Object.keys(operation.responses).sort(), path).toEqual(['200', '404']);
+      }
+    }
+  });
 });

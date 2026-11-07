@@ -293,6 +293,14 @@ describe('the data files', () => {
     expect(page.headers.get('X-Robots-Tag')).toBeNull();
   });
 
+  it('lets any origin read a published schema, which is not marked noindex', async () => {
+    const schema = await get('/contract/hospital.schema.json');
+    expect(schema.headers.get('Access-Control-Allow-Origin')).toBe('*');
+    expect(schema.headers.get('X-Robots-Tag')).toBeNull();
+    expect((await get('/contract/')).headers.get('Access-Control-Allow-Origin')).toBeNull();
+    expect((await get('/charts/x.svg')).headers.get('Access-Control-Allow-Origin')).toBeNull();
+  });
+
   it('answers a preflight under /data-api/ with the methods and no body', async () => {
     seen.length = 0;
     const response = await send('/data-api/trends/x.json', 'OPTIONS');
