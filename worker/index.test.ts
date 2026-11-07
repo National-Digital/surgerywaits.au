@@ -191,7 +191,7 @@ describe('methods and failures', () => {
 });
 
 describe('the compare tool files', () => {
-  it('allows the tool to run and fetch from the site, and serves its files revalidated and closed to other sites', async () => {
+  it('allows the tool to run and fetch from the site, and serves its files revalidated, closed to other sites and kept out of search', async () => {
     const policy = SECURITY_HEADERS['Content-Security-Policy'] ?? '';
     expect(policy).toMatch(/script-src 'self'/u);
     expect(policy).toMatch(/connect-src 'self'/u);
