@@ -7,6 +7,7 @@ import { normalise, rank, rankPlaces } from './match';
 import type { Candidate, Place } from './match';
 import { nearest } from './nearest';
 import { renderResults } from './results';
+import { formatCount } from '../lib/format';
 import { fill } from '../lib/slots';
 
 const LISTED = 8;
@@ -55,19 +56,30 @@ function wire(root: HTMLElement, data: ToolIndex): void {
     message.textContent = text;
   };
   const count = (n: number): string =>
-    n === 0 ? t.count_none : n === 1 ? t.count_one : fill(t.count_many, { count: String(n) });
+    n === 0 ? t.count_none : n === 1 ? t.count_one : fill(t.count_many, { count: formatCount(n) });
 
   let place: Combo | null = null;
   let places: (Place & { value: number })[] = [];
   let spots: PlaceRow[] = [];
   let lastQuery = '';
   let submits = 0;
+  let placesState: Load = LOAD.idle;
+  let figuresFailed = false;
   const failed = (): void => {
     say(attr(root, ATTR.failed));
     fallback.hidden = false;
   };
+  // Once nothing is failing, the page returns to its working state.
+  const recovered = (): void => {
+    if (placesState === LOAD.failed || figuresFailed) {
+      return;
+    }
+    fallback.hidden = true;
+    if (message.textContent === attr(root, ATTR.failed)) {
+      say('');
+    }
+  };
   // A failed file loads again only when asked to, on the next focus or submit and not each keystroke.
-  let placesState: Load = LOAD.idle;
   const loadPlaces = (again = false): void => {
     if (
       placesState === LOAD.loading ||
@@ -87,6 +99,7 @@ function wire(root: HTMLElement, data: ToolIndex): void {
           fields: [normalise(p[0]), normalise(`${p[0]} ${p[1]}`)],
         }));
         placesState = LOAD.done;
+        recovered();
         place?.refresh();
       },
       () => {
@@ -96,7 +109,6 @@ function wire(root: HTMLElement, data: ToolIndex): void {
     );
   };
   let figures: Promise<ToolFigures> | null = null;
-  let figuresFailed = false;
   // One file for every surgery, so no request depends on what a person chose.
   const loadFigures = (again = false): Promise<ToolFigures> => {
     if (figures !== null && !(again && figuresFailed)) {
@@ -104,7 +116,7 @@ function wire(root: HTMLElement, data: ToolIndex): void {
     }
     figuresFailed = false;
     const next = load<ToolFigures>(attr(root, ATTR.figures));
-    next.catch(() => {
+    next.then(recovered, () => {
       figuresFailed = true;
     });
     figures = next;
@@ -155,8 +167,16 @@ function wire(root: HTMLElement, data: ToolIndex): void {
           });
     },
     listed: (n) => {
-      const ready = placesState === LOAD.done && lastQuery.length >= MIN_PLACE_LETTERS;
-      say(n < 0 || !ready ? '' : count(n));
+      const typed = lastQuery.length >= MIN_PLACE_LETTERS;
+      say(
+        n < 0 || !typed
+          ? ''
+          : placesState === LOAD.loading
+            ? t.place_loading
+            : placesState === LOAD.done
+              ? count(n)
+              : '',
+      );
     },
     changed: () => {
       submits += 1;

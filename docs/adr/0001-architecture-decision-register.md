@@ -94,8 +94,7 @@ either half disagrees with it. The schemas and the OpenAPI description are plann
 ### D6: The site is Astro with strict TypeScript
 
 `site/` is an Astro project with static output and TypeScript in strict mode. The compare tool is
-one vanilla TypeScript module that Astro loads as a script. It uses no framework. The empty site
-exists, and the compare tool is planned.
+one vanilla TypeScript module that Astro loads as a script. It uses no framework. The tool is built.
 
 Why: Astro renders each page to HTML at build time, so a static page needs no JavaScript to read. A
 single dependency-free module keeps the one interactive part small enough to audit for privacy

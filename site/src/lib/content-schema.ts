@@ -823,6 +823,7 @@ export const compareTemplateSchema = z.strictObject({
     submit: slotted(),
     count_one: slotted(),
     count_many: slotted('count'),
+    place_loading: slotted(),
     count_none: slotted(),
     found_as: slotted('term'),
     need_surgery: slotted(),

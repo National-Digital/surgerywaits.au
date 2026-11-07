@@ -108,8 +108,14 @@ export function combo(field: HTMLElement, hooks: Hooks): Combo | null {
         show();
         return;
       }
-      const step = event.key === KEY.down ? 1 : -1;
-      highlight((active + step + options.length) % options.length);
+      const down = event.key === KEY.down;
+      highlight(
+        active < 0
+          ? down
+            ? 0
+            : options.length - 1
+          : (active + (down ? 1 : -1) + options.length) % options.length,
+      );
     } else if (event.key === KEY.enter && open && active >= 0) {
       event.preventDefault();
       choose(active);

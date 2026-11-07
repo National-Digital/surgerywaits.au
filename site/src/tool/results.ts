@@ -1,4 +1,5 @@
 import {
+  formatCount,
   formatFigure,
   formatKilometres,
   formatPeriod,
@@ -134,23 +135,24 @@ export function renderResults(
   hits: Hit[],
 ): HTMLElement {
   const t = data.strings;
-  const newest = context.procedure.period;
   const heading = make.h2(
     undefined,
     fill(t.results_heading, { surgery: context.surgery, place: context.place }),
   );
   heading.id = headingId(mount.id);
   labelBy(mount, heading.id);
+  const first = hits[0];
+  const own = first === undefined ? '' : (context.file.stamps[first.row[1]]?.[0] ?? '');
   const intro =
     hits.length === 0
       ? t.results_none
       : hits.length === 1
         ? fill(t.results_intro_one, {
             place: context.place,
-            period: formatPeriod(newest),
+            period: formatPeriod(own),
           })
         : fill(t.results_intro_many, {
-            count: String(hits.length),
+            count: formatCount(hits.length),
             place: context.place,
           });
   const list = make.ul(CLS.results);

@@ -66,6 +66,7 @@ interface Strings {
   count_one: string;
   count_many: string;
   count_none: string;
+  place_loading: string;
   found_as: string;
   need_surgery: string;
   need_place: string;

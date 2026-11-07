@@ -293,10 +293,10 @@ describe('Built pages', () => {
     }
   });
 
-  it('show the compare bar only when its page is built', () => {
+  it('show the compare bar only when its page is built, and never on that page', () => {
     const target = paths.includes('compare/index.html');
     for (const p of analysed()) {
-      expect([p.path, p.compareBar]).toEqual([p.path, target]);
+      expect([p.path, p.compareBar]).toEqual([p.path, target && p.path !== TOOL_PAGE]);
     }
   });
 

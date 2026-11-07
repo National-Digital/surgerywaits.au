@@ -206,6 +206,7 @@ browsers('The compare tool', () => {
       { surgery: 'cataract', place: 'Armidale' },
       { surgery: 'keyhole belly', place: 'Benayeo' },
     ];
+    let ran = 0;
     for (const { surgery, place } of cases) {
       const page = await up(browser).newPage();
       await open(page);
@@ -214,6 +215,7 @@ browsers('The compare tool', () => {
         return file.places.some((row) => row[0] === name);
       }, place);
       if (known) {
+        ran += 1;
         await compare(page, surgery, place);
         await page.emulateMedia({ media: 'print' });
         expect(await page.locator('.js-tool-form').isVisible()).toBe(false);
@@ -240,6 +242,76 @@ browsers('The compare tool', () => {
       }
       await page.close();
     }
+    expect(ran, 'a print case ran').toBeGreaterThan(0);
+  });
+
+  it(
+    'moves through the options from the arrow keys when none is highlighted',
+    { timeout: T },
+    async () => {
+      const page = await up(browser).newPage();
+      const rows = ['A', 'B', 'C', 'D', 'E'].map((x) => [`Bay ${x}`, 'QLD', -16.9, 145.8]);
+      await page.route('**/tool/places.json', (route) => route.fulfill({ json: { places: rows } }));
+      await open(page);
+      const input = page.locator(INPUT).nth(1);
+      const field = page.locator('.js-tool-field').nth(1);
+      await input.fill('Bay');
+      await field.locator(OPTION).first().waitFor();
+      expect(await field.locator(OPTION).count()).toBe(5);
+      await input.press('ArrowUp');
+      expect(await field.locator(`${OPTION}[aria-selected="true"]`).innerText()).toContain('Bay');
+      expect(await input.getAttribute('aria-activedescendant')).toMatch(/-4$/);
+      await input.fill('Ba');
+      await input.fill('Bay');
+      await input.press('ArrowDown');
+      expect(await input.getAttribute('aria-activedescendant')).toMatch(/-0$/);
+      await page.close();
+    },
+  );
+
+  it(
+    'hides the fallback and clears the message once a failed load succeeds',
+    { timeout: T },
+    async () => {
+      const page = await up(browser).newPage();
+      let calls = 0;
+      await page.route('**/tool/figures.json', (route) => {
+        calls += 1;
+        return calls === 1 ? route.abort() : route.continue();
+      });
+      await open(page);
+      const input = page.locator(INPUT).nth(0);
+      const fallback = page.locator('.js-tool-fallback');
+      await input.fill('knee');
+      await fallback.waitFor({ state: 'visible' });
+      expect(await page.locator('.js-tool-message').innerText()).not.toBe('');
+      await input.blur();
+      await input.focus();
+      await fallback.waitFor({ state: 'hidden' });
+      expect(calls).toBe(2);
+      expect(await page.locator('.js-tool-message').innerText()).toBe('');
+      await page.close();
+    },
+  );
+
+  it('says the places are loading while that file loads', { timeout: T }, async () => {
+    const page = await up(browser).newPage();
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((done) => {
+      release = done;
+    });
+    await page.route('**/tool/places.json', async (route) => {
+      await held;
+      await route.continue();
+    });
+    await open(page);
+    await page.locator(INPUT).nth(1).fill('Armidale');
+    const message = page.locator('.js-tool-message');
+    await expect.poll(() => message.innerText()).toContain('is loading');
+    expect(await message.innerText()).not.toContain('No match');
+    release();
+    await expect.poll(() => message.innerText()).toMatch(/match/);
+    await page.close();
   });
 
   it('prints the note on a withheld rank', { timeout: T }, async () => {

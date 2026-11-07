@@ -25,6 +25,7 @@ const fallback = [
   description={fill(t.description, { period })}
   canonicalPath={getNavigation().compare.href}
   compactFooter
+  compareBar={false}
   printFooter={false}
 >
   <section
@@ -60,6 +61,7 @@ const fallback = [
             id="surgery"
             type="text"
             autocomplete="off"
+            spellcheck={false}
             aria-describedby="surgery-hint"
           />
           <ul class="c-combo js-combo-list" id="surgery-list" hidden></ul>
@@ -76,6 +78,7 @@ const fallback = [
             id="place"
             type="text"
             autocomplete="off"
+            spellcheck={false}
             aria-describedby="place-hint"
           />
           <ul class="c-combo js-combo-list" id="place-list" hidden></ul>
