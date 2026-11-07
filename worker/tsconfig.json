@@ -1,5 +1,5 @@
 {
   "extends": "../tsconfig.json",
-  "compilerOptions": { "types": ["@cloudflare/workers-types"] },
-  "include": ["index.ts", "worker-configuration.d.ts"]
+  "compilerOptions": { "types": ["@cloudflare/workers-types"], "resolveJsonModule": true },
+  "include": ["*.ts", "../data/redirects.json"]
 }

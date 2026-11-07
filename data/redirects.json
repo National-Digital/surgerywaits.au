@@ -1,0 +1,176 @@
+{
+  "redirects": [
+    {
+      "from": "/hospital/tweed-valley-hospital/",
+      "to": "/hospital/the-tweed-hospital/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/acl-reconstruction/",
+      "to": "/hospital/the-tweed-hospital/acl-reconstruction/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/acromioplasty-arthroscopy-shoulder-sub-acromial-decompression/",
+      "to": "/hospital/the-tweed-hospital/acromioplasty-arthroscopy-shoulder-sub-acromial-decompression/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/adenoidectomy/",
+      "to": "/hospital/the-tweed-hospital/adenoidectomy/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/arthroscopy/",
+      "to": "/hospital/the-tweed-hospital/arthroscopy/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/breast-lump-removal/",
+      "to": "/hospital/the-tweed-hospital/breast-lump-removal/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/carpal-tunnel-surgery/",
+      "to": "/hospital/the-tweed-hospital/carpal-tunnel-surgery/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/circumcision/",
+      "to": "/hospital/the-tweed-hospital/circumcision/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/colectomy-anterior-resection-large-bowel-resection/",
+      "to": "/hospital/the-tweed-hospital/colectomy-anterior-resection-large-bowel-resection/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/cystoscopy/",
+      "to": "/hospital/the-tweed-hospital/cystoscopy/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/dialysis-access-surgery/",
+      "to": "/hospital/the-tweed-hospital/dialysis-access-surgery/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/dilatation-and-curettage/",
+      "to": "/hospital/the-tweed-hospital/dilatation-and-curettage/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/dupuytrens-contracture-surgery/",
+      "to": "/hospital/the-tweed-hospital/dupuytrens-contracture-surgery/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/functional-endoscopic-sinus-surgery/",
+      "to": "/hospital/the-tweed-hospital/functional-endoscopic-sinus-surgery/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/gallbladder-removal/",
+      "to": "/hospital/the-tweed-hospital/gallbladder-removal/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/grommets/",
+      "to": "/hospital/the-tweed-hospital/grommets/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/hernia-repair/",
+      "to": "/hospital/the-tweed-hospital/hernia-repair/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/hip-replacement/",
+      "to": "/hospital/the-tweed-hospital/hip-replacement/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/hysterectomy/",
+      "to": "/hospital/the-tweed-hospital/hysterectomy/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/inguinal-hernia-repair/",
+      "to": "/hospital/the-tweed-hospital/inguinal-hernia-repair/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/knee-replacement/",
+      "to": "/hospital/the-tweed-hospital/knee-replacement/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/laparoscopy/",
+      "to": "/hospital/the-tweed-hospital/laparoscopy/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/lithotripsy/",
+      "to": "/hospital/the-tweed-hospital/lithotripsy/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/lletz-procedure/",
+      "to": "/hospital/the-tweed-hospital/lletz-procedure/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/lobectomy-wedge-resection-pneumonectomy/",
+      "to": "/hospital/the-tweed-hospital/lobectomy-wedge-resection-pneumonectomy/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/mastectomy/",
+      "to": "/hospital/the-tweed-hospital/mastectomy/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/microlaryngoscopy/",
+      "to": "/hospital/the-tweed-hospital/microlaryngoscopy/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/myringotomy/",
+      "to": "/hospital/the-tweed-hospital/myringotomy/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/nephrectomy/",
+      "to": "/hospital/the-tweed-hospital/nephrectomy/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/orchidopexy/",
+      "to": "/hospital/the-tweed-hospital/orchidopexy/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/parathyroidectomy/",
+      "to": "/hospital/the-tweed-hospital/parathyroidectomy/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/parotidectomy-submandibular-gland-excision-of/",
+      "to": "/hospital/the-tweed-hospital/parotidectomy-submandibular-gland-excision-of/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/prolapse-repair/",
+      "to": "/hospital/the-tweed-hospital/prolapse-repair/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/prostate-biopsy/",
+      "to": "/hospital/the-tweed-hospital/prostate-biopsy/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/prostate-surgery/",
+      "to": "/hospital/the-tweed-hospital/prostate-surgery/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/repair-of-obstructing-hiatus-hernia/",
+      "to": "/hospital/the-tweed-hospital/repair-of-obstructing-hiatus-hernia/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/salpingo-oophorectomy-oophorectomy-ovarian-cystectomy/",
+      "to": "/hospital/the-tweed-hospital/salpingo-oophorectomy-oophorectomy-ovarian-cystectomy/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/septoplasty/",
+      "to": "/hospital/the-tweed-hospital/septoplasty/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/shoulder-joint-replacement/",
+      "to": "/hospital/the-tweed-hospital/shoulder-joint-replacement/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/skin-lesion-removal/",
+      "to": "/hospital/the-tweed-hospital/skin-lesion-removal/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/thyroidectomy-hemi-thyroidectomy/",
+      "to": "/hospital/the-tweed-hospital/thyroidectomy-hemi-thyroidectomy/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/tonsillectomy/",
+      "to": "/hospital/the-tweed-hospital/tonsillectomy/"
+    },
+    {
+      "from": "/hospital/tweed-valley-hospital/ureteric-stent-insertion-of/",
+      "to": "/hospital/the-tweed-hospital/ureteric-stent-insertion-of/"
+    }
+  ]
+}

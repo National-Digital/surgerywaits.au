@@ -535,8 +535,5 @@ describe('OpenAPI', () => {
 });
 
 describe('Delivery', () => {
-  it.todo('CSP and security headers are set on every response');
-  it.todo('every redirect reaches a 200');
   it.todo('every internal link resolves');
-  it.todo('the sitemap lists every indexable page and only those');
 });

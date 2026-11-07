@@ -1,14 +1,18 @@
 import { defineConfig } from 'astro/config';
 
+import { sitemaps } from './src/integrations/sitemap';
+
 // The preview build adds a development route and writes to its own folder, so the published
 // build never holds it.
 // Two flags, both set inline by build:preview, so a stray SURGERYWAITS_PREVIEW cannot redirect a plain build.
 const preview =
   process.env['SURGERYWAITS_PREVIEW'] === '1' && process.env['SURGERYWAITS_PREVIEW_SCRIPT'] === '1';
 
+const site = 'https://surgerywaits.au';
+
 export default defineConfig({
   output: 'static',
-  site: 'https://surgerywaits.au',
+  site,
   trailingSlash: 'always',
   build: { format: 'directory' },
   outDir: preview ? './dist-preview' : './dist',
@@ -26,5 +30,5 @@ export default defineConfig({
           },
         },
       ]
-    : [],
+    : [sitemaps(site, process.env['SURGERYWAITS_DIST'])],
 });

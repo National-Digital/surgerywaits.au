@@ -2,7 +2,7 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "workspaces": {
     ".": {
-      "entry": ["worker/index.ts", "scripts/*.test.ts", "eslint/*.test.ts"],
+      "entry": ["worker/index.ts", "worker/*.test.ts", "scripts/*.test.ts", "eslint/*.test.ts"],
       "ignoreDependencies": ["astro"]
     },
     "site": {
