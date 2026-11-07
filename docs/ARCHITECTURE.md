@@ -5,8 +5,9 @@ all its data from [publicdata.au](https://publicdata.au/) and has no other sourc
 
 ## Status
 
-This repository is being rebuilt. The compare tool and the extractability gate are not yet built,
-and this page changes as each part lands.
+This repository is being rebuilt. The compare tool and the extractability gate are not yet built.
+A rule whose check is not yet written marks that check as planned. This page changes as each part
+lands.
 
 ## The shape
 
