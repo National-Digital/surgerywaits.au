@@ -1,7 +1,9 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-import { mediaTypeOf, SURFACES, surfaceOf } from '../lib/surfaces';
+import { redirectFor } from '../../../worker/redirects';
+import { handle } from '../../../worker/index';
+import { bodyProblem, isBuildAsset, SURFACES, surfaceOf } from '../lib/surfaces';
 
 const dist = new URL('../../dist/', import.meta.url);
 if (!existsSync(dist)) {
@@ -9,13 +11,36 @@ if (!existsSync(dist)) {
 }
 const read = (path: string): string => readFileSync(new URL(`.${path}`, dist), 'utf8');
 
-// The build's own page files and assets are not surfaces.
-const NOT_A_SURFACE = /(\.html$|^\/_astro\/|^\/fonts\/)/u;
 const built = readdirSync(dist, { recursive: true, encoding: 'utf8' })
   .filter((file) => statSync(new URL(file, dist)).isFile())
   .map((file) => `/${file}`)
-  .filter((path) => !NOT_A_SURFACE.test(path))
+  .filter((path) => !isBuildAsset(path))
   .sort();
+
+// The type the static assets binding gives a file from its extension.
+const PLATFORM_TYPES: Readonly<Record<string, string>> = {
+  json: 'application/json',
+  svg: 'image/svg+xml',
+  xml: 'application/xml',
+  txt: 'text/plain',
+};
+const env = {
+  ASSETS: {
+    fetch: (request: Request): Promise<Response> => {
+      const { pathname } = new URL(request.url);
+      const type = PLATFORM_TYPES[pathname.slice(pathname.lastIndexOf('.') + 1)];
+      return Promise.resolve(
+        type === undefined || !existsSync(new URL(`.${pathname}`, dist))
+          ? new Response('missing', { status: 404 })
+          : new Response(read(pathname), {
+              headers: {
+                'Content-Type': `${type}${type === 'application/json' ? '' : '; charset=utf-8'}`,
+              },
+            }),
+      );
+    },
+  },
+} as never;
 
 describe('the built surfaces', () => {
   it('builds every expected path of every surface', () => {
@@ -40,21 +65,19 @@ describe('the built surfaces', () => {
     }
   });
 
-  it('serves each file with the media type of its surface and a body that parses as it', () => {
+  it('leaves each built surface address clear of the Worker redirect table', () => {
+    for (const path of built) {
+      expect(redirectFor(path), path).toBeUndefined();
+    }
+  });
+
+  it('serves each file through the Worker with the media type of its surface and a whole body', async () => {
     for (const path of built) {
       const surface = surfaceOf(path);
-      expect(mediaTypeOf(path), path).toBe(surface?.mediaType);
-      const body = read(path);
-      expect(body.length, path).toBeGreaterThan(0);
-      if (surface?.mediaType === 'application/json') {
-        expect(() => JSON.parse(body) as unknown, path).not.toThrow();
-      } else if (surface?.mediaType === 'image/svg+xml') {
-        expect(body, path).toMatch(/^<svg[ >]/u);
-      } else if (surface?.mediaType === 'application/xml') {
-        expect(body, path).toMatch(
-          /^<\?xml version="1\.0" encoding="UTF-8"\?>\n<(urlset|sitemapindex) /u,
-        );
-      }
+      const response = await handle(new Request(`https://example.test${path}`), env);
+      expect(response.status, path).toBe(200);
+      expect(response.headers.get('Content-Type')?.split(';')[0], path).toBe(surface?.mediaType);
+      expect(bodyProblem(surface?.mediaType ?? '', await response.text()), path).toBeUndefined();
     }
   });
 });

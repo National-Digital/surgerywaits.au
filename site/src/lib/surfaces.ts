@@ -1,3 +1,5 @@
+import { readdirSync } from 'node:fs';
+
 import { dataApiPaths } from './data-api';
 import { contractSchemas } from './dist';
 import { stateChartFiles } from './state-chart';
@@ -12,7 +14,8 @@ export interface Surface {
   expected?: () => string[];
 }
 
-// Every machine-readable file the site serves; a new surface is added here with its own entry.
+// Every machine-readable file the site serves.
+// A new surface is added here with its own entry.
 export const SURFACES: readonly Surface[] = [
   {
     id: 'data-files',
@@ -40,7 +43,10 @@ export const SURFACES: readonly Surface[] = [
     pattern: /^\/tool\/(figures|index|places)\.json$/u,
     mediaType: 'application/json',
     purpose: 'The three files the compare tool fetches.',
-    expected: () => ['/tool/figures.json', '/tool/index.json', '/tool/places.json'],
+    expected: () =>
+      readdirSync(new URL('../pages/tool/', import.meta.url))
+        .filter((file) => file.endsWith('.json.ts'))
+        .map((file) => `/tool/${file.slice(0, -'.ts'.length)}`),
   },
   {
     id: 'sitemaps',
@@ -62,13 +68,76 @@ export const SURFACES: readonly Surface[] = [
 export const surfaceOf = (path: string): Surface | undefined =>
   SURFACES.find((surface) => surface.pattern.test(path));
 
-const TYPES: Readonly<Record<string, string>> = {
-  json: 'application/json',
-  svg: 'image/svg+xml',
-  xml: 'application/xml',
-  txt: 'text/plain',
+// The build's own pages and hashed script, style and font files are not surfaces.
+const BUILD_ASSET =
+  /^(\/.+\.html|\/_astro\/[^/]+\.[A-Za-z0-9_-]{8}\.(js|css)|\/fonts\/[^/]+\.woff2?|\/fonts\/OFL\.txt)$/u;
+export const isBuildAsset = (path: string): boolean => BUILD_ASSET.test(path);
+
+const TAG = /<(\/?)([A-Za-z_][\w.:-]*)(?:\s[^<>]*?)?(\/?)>/gu;
+const ROOTS: Readonly<Record<string, RegExp>> = {
+  'application/xml': /^(urlset|sitemapindex)$/u,
+  'image/svg+xml': /^svg$/u,
 };
 
-// The type a static host gives a file from its extension.
-export const mediaTypeOf = (path: string): string | undefined =>
-  TYPES[path.slice(path.lastIndexOf('.') + 1)];
+// A tag stack: one root of the expected name and every tag closed in order.
+function xmlProblem(body: string, root: RegExp): string | undefined {
+  const bare = body
+    .replace(/<\?[\s\S]*?\?>|<!--[\s\S]*?-->/gu, '')
+    .replace(/<!\[CDATA\[[\s\S]*?\]\]>/gu, '')
+    .trim();
+  const stack: string[] = [];
+  let rootName: string | undefined;
+  for (const [, closing, name = '', selfClosing] of bare.matchAll(TAG)) {
+    if (closing === '/') {
+      if (stack.pop() !== name) {
+        return `unmatched </${name}>`;
+      }
+    } else {
+      if (stack.length === 0) {
+        if (rootName !== undefined) {
+          return 'second root';
+        }
+        rootName = name;
+      }
+      if (selfClosing !== '/') {
+        stack.push(name);
+      }
+    }
+  }
+  if (rootName === undefined || !root.test(rootName)) {
+    return 'wrong or missing root';
+  }
+  if (stack.length > 0) {
+    return 'unclosed tag';
+  }
+  if (!bare.startsWith('<') || !bare.endsWith('>') || bare.replace(TAG, '').includes('<')) {
+    return 'content outside the root or a broken tag';
+  }
+  return undefined;
+}
+
+// Why a body is not what its media type promises, if it is not.
+export function bodyProblem(mediaType: string, body: string): string | undefined {
+  if (body.trim() === '') {
+    return 'empty';
+  }
+  const root = ROOTS[mediaType];
+  if (root !== undefined) {
+    return xmlProblem(body, root);
+  }
+  if (mediaType === 'application/json') {
+    try {
+      JSON.parse(body);
+    } catch {
+      return 'invalid JSON';
+    }
+  } else if (mediaType === 'text/plain') {
+    if (!/^User-agent: \S/mu.test(body)) {
+      return 'no User-agent line';
+    }
+    if (!/^Sitemap: https?:\/\/\S+$/mu.test(body)) {
+      return 'no Sitemap line';
+    }
+  }
+  return undefined;
+}
