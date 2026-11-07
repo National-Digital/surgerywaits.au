@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://surgerywaits.au/contract/tool-places.schema.json",
+  "title": "Compare tool places",
+  "description": "/tool/places.json: the suburbs and localities the compare tool searches. It loads when the place box is first used. A place is [name, state, latitude, longitude].",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["places"],
+  "properties": {
+    "places": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "prefixItems": [
+          {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          {
+            "$ref": "common.schema.json#/$defs/state"
+          },
+          {
+            "$ref": "common.schema.json#/$defs/latitude"
+          },
+          {
+            "$ref": "common.schema.json#/$defs/longitude"
+          }
+        ],
+        "items": false,
+        "minItems": 4
+      }
+    }
+  }
+}

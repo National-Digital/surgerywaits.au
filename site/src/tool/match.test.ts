@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalise, rank } from './match';
+import { normalise, rank, rankPlaces } from './match';
 import { nearest } from './nearest';
 
 const items = [
@@ -54,5 +54,43 @@ describe('the nearest hospitals', () => {
   it('keeps only the number asked for', () => {
     const rows = [at(0, 0, 0), at(1, 0, 1), at(2, 0, 2)];
     expect(nearest(rows, { latitude: 0, longitude: 0 }, 2)).toHaveLength(2);
+  });
+});
+
+describe('the place search', () => {
+  const place = (
+    name: string,
+    state: string,
+  ): { name: string; state: string; fields: string[] } => ({
+    name: normalise(name),
+    state,
+    fields: [normalise(name), normalise(`${name} ${state}`)],
+  });
+  const found = [
+    place('Bayview Cairns', 'NSW'),
+    place('Cairns North', 'QLD'),
+    place('Cairns', 'QLD'),
+    place('East Cairns', 'QLD'),
+    place('Cairns Bay', 'ACT'),
+    place('Cairnsmore', 'NSW'),
+    place('Cairns', 'WA'),
+  ];
+
+  it('ranks the name that equals the text, then a name that starts with it as a whole word, then the rest', () => {
+    const names = rankPlaces(found, 'Cairns', 10).map((p) => `${p.name} ${p.state}`);
+    expect(names).toEqual([
+      'cairns QLD',
+      'cairns WA',
+      'cairns bay ACT',
+      'cairns north QLD',
+      'bayview cairns NSW',
+      'cairnsmore NSW',
+      'east cairns QLD',
+    ]);
+  });
+
+  it('holds the list to the limit and finds nothing for an empty query', () => {
+    expect(rankPlaces(found, 'cairns', 2)).toHaveLength(2);
+    expect(rankPlaces(found, ' ', 2)).toEqual([]);
   });
 });

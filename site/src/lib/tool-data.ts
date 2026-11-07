@@ -1,5 +1,6 @@
 import { getCompareTemplate, getSynonyms } from './content';
 import {
+  distDirectory,
   listDist,
   readDist,
   readHospitalIndex,
@@ -11,7 +12,9 @@ import {
   readTrend,
   validateDocument,
 } from './dist';
+import type { SchemaName } from './dist';
 import type { Figure, TrendPoint } from './format';
+import { pairRoutes } from './pair-page';
 import { surgeryPath, surgeryRefs } from './surgery-page';
 import type {
   FigureRow,
@@ -19,7 +22,9 @@ import type {
   HospitalRow,
   PlaceRow,
   Procedure,
-  ToolData,
+  ToolIndex,
+  ToolPlaces,
+  ToolProcedure,
   Value,
 } from '../tool/data';
 
@@ -81,7 +86,19 @@ export function unknownSynonyms(
     .sort();
 }
 
-export function buildToolData(): ToolData {
+export const procedureSlugs = (): string[] =>
+  surgeryRefs()
+    .filter((ref) => ref.kind === 'procedure')
+    .map((ref) => ref.slug);
+
+// The hospitals the tool can place on a map, in code order; a row of a procedure file points into this list.
+function locatedHospitals(): ReturnType<typeof readHospitalIndex> {
+  return readHospitalIndex()
+    .filter((h) => !h.closed && h.latitude !== null && h.longitude !== null)
+    .sort((a, b) => before(a.code, b.code));
+}
+
+export function buildToolIndex(): ToolIndex {
   const refs = surgeryRefs().filter((ref) => ref.kind === 'procedure');
   const synonyms = getSynonyms();
   const unknown = unknownSynonyms(
@@ -91,19 +108,89 @@ export function buildToolData(): ToolData {
   if (unknown.length > 0) {
     throw new RangeError(`synonyms name no procedure in the dist: ${unknown.join(', ')}`);
   }
-
-  const located = readHospitalIndex()
-    .filter((h) => !h.closed && h.latitude !== null && h.longitude !== null)
-    .sort((a, b) => before(a.code, b.code));
-  const indexOf = new Map(located.map((h, i) => [h.slug, i]));
-  const hospitals = located.map((h): HospitalRow => [
+  const hospitals = locatedHospitals().map((h): HospitalRow => [
     h.slug,
     h.name,
     h.state,
     Math.round((h.latitude ?? 0) * HOSPITAL_DECIMALS) / HOSPITAL_DECIMALS,
     Math.round((h.longitude ?? 0) * HOSPITAL_DECIMALS) / HOSPITAL_DECIMALS,
   ]);
+  const procedures: Procedure[] = refs.map((ref) => {
+    const surgery = readSurgery('procedure', ref.slug);
+    let of = 0;
+    for (const row of surgery.hospitals) {
+      const rank = row.measures.median_wait?.rank;
+      if (rank?.status === 'ranked') {
+        if (of !== 0 && of !== rank.of) {
+          throw new RangeError(`${ref.slug} has two rank sizes`);
+        }
+        of = rank.of;
+      }
+    }
+    return {
+      name: ref.name,
+      of,
+      path: surgeryPath(ref),
+      period: surgery.period,
+      slug: ref.slug,
+      surgery: ref.urlSlug,
+      terms: [
+        ...new Set([
+          ...(synonyms[ref.slug] ?? []),
+          ...(ref.source === ref.name ? [] : [ref.source]),
+        ]),
+      ].sort(before),
+    };
+  });
+  procedures.sort(
+    (a, b) => before(a.name.toLowerCase(), b.name.toLowerCase()) || before(a.slug, b.slug),
+  );
+  return {
+    hospitals,
+    neighbours: readRules().neighbours,
+    procedures,
+    reasons: [...REASONS],
+    strings: getCompareTemplate().tool,
+  };
+}
 
+export function buildToolPlaces(): ToolPlaces {
+  const places = [...readSuburbs()]
+    .sort((a, b) => before(a[1], b[1]) || before(a[2], b[2]) || before(a[0], b[0]))
+    .map(([, name, state, lat, lon]): PlaceRow => [
+      name,
+      state,
+      Math.round(lat * PLACE_DECIMALS) / PLACE_DECIMALS,
+      Math.round(lon * PLACE_DECIMALS) / PLACE_DECIMALS,
+    ]);
+  return { places };
+}
+
+let routes: { key: string; bySurgery: Map<string, Set<string>> } | undefined;
+
+// The hospitals that have a built page for a surgery, read once from the pair routes.
+function pairHospitals(surgery: string): Set<string> {
+  const key = distDirectory();
+  if (routes?.key !== key) {
+    const bySurgery = new Map<string, Set<string>>();
+    for (const { params } of pairRoutes()) {
+      bySurgery.set(params.surgery, (bySurgery.get(params.surgery) ?? new Set()).add(params.slug));
+    }
+    routes = { key, bySurgery };
+  }
+  return routes.bySurgery.get(surgery) ?? new Set();
+}
+
+// One procedure's figure rows, each pointing at its hospital's place in the index.
+export function buildToolProcedure(slug: string): ToolProcedure {
+  const ref = surgeryRefs().find((r) => r.kind === 'procedure' && r.slug === slug);
+  if (ref === undefined) {
+    throw new RangeError(`no procedure ${slug}`);
+  }
+  const indexOf = new Map(locatedHospitals().map((h, i) => [h.slug, i]));
+  const withTrend = new Set(listDist('trends'));
+  const surgery = readSurgery('procedure', slug);
+  const built = pairHospitals(ref.urlSlug);
   const stamps: [string, string][] = [];
   const stampOf = (figure: Figure): number => {
     const at = stamps.findIndex(([p, r]) => p === figure.period && r === figure.release);
@@ -113,100 +200,43 @@ export function buildToolData(): ToolData {
     stamps.push([figure.period, figure.release]);
     return stamps.length - 1;
   };
-
-  const withTrend = new Set(listDist('trends'));
-  const histories = new Map<string, ReturnType<typeof readTrend>['series']>();
-  const seriesOf = (slug: string): ReturnType<typeof readTrend>['series'] => {
-    const cached = histories.get(slug);
-    if (cached !== undefined) {
-      return cached;
+  const rows: FigureRow[] = [];
+  const pairs: number[] = [];
+  for (const row of surgery.hospitals) {
+    const index = indexOf.get(row.slug);
+    const median = row.measures.median_wait;
+    if (index === undefined || median === undefined) {
+      continue;
+    }
+    const volume = row.measures.volume;
+    if (
+      volume !== undefined &&
+      (volume.figure.period !== median.figure.period ||
+        volume.figure.release !== median.figure.release)
+    ) {
+      throw new RangeError(`${row.slug} gives ${slug} two periods`);
     }
     // A hospital that reported one year only has no trend file.
-    const { series } = withTrend.has(slug) ? readTrend(slug) : { series: [] };
-    histories.set(slug, series);
-    return series;
-  };
-
-  const figures: Record<string, FigureRow[]> = {};
-  const procedures: Procedure[] = [];
-  for (const ref of refs) {
-    const surgery = readSurgery('procedure', ref.slug);
-    let of = 0;
-    const rows: FigureRow[] = [];
-    for (const row of surgery.hospitals) {
-      const index = indexOf.get(row.slug);
-      const median = row.measures.median_wait;
-      if (index === undefined || median === undefined) {
-        continue;
-      }
-      const volume = row.measures.volume;
-      if (
-        volume !== undefined &&
-        (volume.figure.period !== median.figure.period ||
-          volume.figure.release !== median.figure.release)
-      ) {
-        throw new RangeError(`${row.slug} gives ${ref.slug} two periods`);
-      }
-      if (median.rank.status === 'ranked') {
-        if (of !== 0 && of !== median.rank.of) {
-          throw new RangeError(`${ref.slug} has two rank sizes`);
-        }
-        of = median.rank.of;
-      }
-      const history = runOf(
-        seriesOf(row.slug)
-          .filter((s) => s.kind === 'procedure' && s.slug === ref.slug && s.role === 'median_wait')
-          .flatMap((s) => s.points.map((p) => [p[0], pointValue(p)] as const)),
-      );
-      rows.push([
-        index,
-        stampOf(median.figure),
-        value(median.figure),
-        value(volume?.figure),
-        median.rank.status === 'ranked' ? median.rank.position : null,
-        history,
-      ]);
-    }
-    rows.sort((a, b) => a[0] - b[0]);
-    figures[ref.slug] = rows;
-    procedures.push({
-      name: ref.name,
-      of,
-      path: surgeryPath(ref),
-      period: surgery.period,
-      slug: ref.slug,
-      terms: [
-        ...new Set([
-          ...(synonyms[ref.slug] ?? []),
-          ...(ref.source === ref.name ? [] : [ref.source]),
-        ]),
-      ].sort(before),
-    });
-  }
-  procedures.sort(
-    (a, b) => before(a.name.toLowerCase(), b.name.toLowerCase()) || before(a.slug, b.slug),
-  );
-
-  const places = [...readSuburbs()]
-    .sort((a, b) => before(a[1], b[1]) || before(a[2], b[2]) || before(a[0], b[0]))
-    .map(([, name, state, lat, lon]): PlaceRow => [
-      name,
-      state,
-      Math.round(lat * PLACE_DECIMALS) / PLACE_DECIMALS,
-      Math.round(lon * PLACE_DECIMALS) / PLACE_DECIMALS,
+    const series = withTrend.has(row.slug) ? readTrend(row.slug).series : [];
+    const history = runOf(
+      series
+        .filter((s) => s.kind === 'procedure' && s.slug === slug && s.role === 'median_wait')
+        .flatMap((s) => s.points.map((p) => [p[0], pointValue(p)] as const)),
+    );
+    rows.push([
+      index,
+      stampOf(median.figure),
+      value(median.figure),
+      value(volume?.figure),
+      median.rank.status === 'ranked' ? median.rank.position : null,
+      history,
     ]);
-
-  const data: ToolData = {
-    figures,
-    hospitals,
-    neighbours: readRules().neighbours,
-    places,
-    procedures,
-    reasons: [...REASONS],
-    stamps,
-    strings: getCompareTemplate().tool,
-  };
-  return data;
+    if (built.has(row.slug)) {
+      pairs.push(index);
+    }
+  }
+  rows.sort((a, b) => a[0] - b[0]);
+  return { pairs: pairs.sort((a, b) => a - b), rows, slug, stamps };
 }
 
 // Keys sorted at every depth, so two builds write the same bytes.
@@ -223,12 +253,19 @@ export function stableJson(node: unknown): string {
   return JSON.stringify(node);
 }
 
-export function toolDataJson(): string {
-  const text = stableJson(buildToolData());
-  // The file is checked against its own schema before it is served, as every dist file is.
-  validateDocument('tool-data', JSON.parse(text), '/tool/data.json');
+// Each file is checked against its own schema before it is served, as every dist file is.
+function checked(name: SchemaName, node: unknown, path: string): string {
+  const text = stableJson(node);
+  validateDocument(name, JSON.parse(text), path);
   return text;
 }
+
+export const toolIndexJson = (): string =>
+  checked('tool-index', buildToolIndex(), '/tool/index.json');
+export const toolPlacesJson = (): string =>
+  checked('tool-places', buildToolPlaces(), '/tool/places.json');
+export const toolProcedureJson = (slug: string): string =>
+  checked('tool-procedure', buildToolProcedure(slug), `/tool/procedures/${slug}.json`);
 
 // Every source the tool's data file draws on, by credit key.
 export const toolSources = (): string[] =>

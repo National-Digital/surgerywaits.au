@@ -13,7 +13,7 @@ fallback_states_name: States and territories
 fallback_states_note: Each state and territory page ranks its public hospitals by median wait.
 load_failed: The search data did not load. Reload the page to try again, or use the pages above.
 privacy_heading: What this page keeps
-privacy: Nothing you type on this page is stored on your device, added to the address or sent anywhere. The search runs in your browser against one data file from this site.
+privacy: This page stores nothing on your device and adds nothing to the address. The text you type is not sent anywhere. The search runs in your browser. The page loads a list of surgeries and hospitals when it opens, a list of places when you first type in the place box, and the figures for one surgery when you ask for results. All three come from this site. The request for the figures contains the name of the surgery. No request contains the place.
 distance_note: The distance on this page is measured in a straight line between two points on the map. A road journey is longer than that, and this page gives no travel time.
 tool:
   surgery_label: Surgery
@@ -40,7 +40,7 @@ tool:
   history_none: No median wait is published for earlier years.
   history_label: '{hospital}: median wait by year. {points}.'
   history_point: '{period}, {figure}'
-  rank: 'Ranked {rank} among public hospitals'
+  rank: 'Ranked {rank} for {period} among the public hospitals in Australia that published a median wait for this surgery. The shortest median wait ranks first.'
   earlier_period: This figure is from an earlier period than the latest figures, so it carries no rank.
   withheld_rank: This hospital carries no rank because it has no published median wait.
   closed_note: Closed hospitals are not listed.

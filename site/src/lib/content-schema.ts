@@ -840,7 +840,7 @@ export const compareTemplateSchema = z.strictObject({
     history_none: slotted(),
     history_label: slotted('hospital', 'points'),
     history_point: slotted('period', 'figure'),
-    rank: slotted('rank'),
+    rank: slotted('rank', 'period'),
     earlier_period: slotted(),
     withheld_rank: slotted(),
     closed_note: slotted(),

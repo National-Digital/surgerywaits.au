@@ -11,7 +11,12 @@ export const SEL = {
   item: 'li',
 } as const;
 
-export const ATTR = { src: 'data-src', failed: 'data-failed' } as const;
+export const ATTR = {
+  src: 'data-src',
+  places: 'data-places',
+  procedures: 'data-procedures',
+  failed: 'data-failed',
+} as const;
 export const attr = (node: Element, name: string): string => node.getAttribute(name) ?? '';
 
 // Words of the data file and of the platform that are not copy.
@@ -26,6 +31,8 @@ export const NAMES = {
 } as const;
 
 export const hospitalHref = (slug: string): string => `/hospital/${slug}/`;
+export const pairHref = (slug: string, surgery: string): string =>
+  `${hospitalHref(slug)}${surgery}/`;
 export const headingId = (id: string): string => `${id}-heading`;
 
 export function labelBy(node: HTMLElement, id: string): void {

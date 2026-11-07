@@ -31,7 +31,9 @@ const fallback = [
     class="c-tool"
     aria-labelledby="compare-heading"
     data-tool
-    data-src="/tool/data.json"
+    data-src="/tool/index.json"
+    data-places="/tool/places.json"
+    data-procedures="/tool/procedures/{slug}.json"
     data-failed={t.load_failed}
   >
     <div class="o-columns u-no-print">
@@ -95,8 +97,10 @@ const fallback = [
       <p>{t.distance_note}</p>
       <p>{t.tool.closed_note}</p>
     </section>
-    <SafetyBlock id="compare-safety-heading" />
     <DataPassport sources={toolSources()} />
+  </div>
+  <div class="o-columns c-tool__safety">
+    <SafetyBlock id="compare-safety-heading" />
   </div>
   <script>
     import '../tool/tool';

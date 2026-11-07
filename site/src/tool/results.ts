@@ -9,7 +9,7 @@ import {
 } from '../lib/format';
 import type { Figure, NotPublishedReason } from '../lib/format';
 import { fill } from '../lib/slots';
-import type { FigureRow, ToolData, Value } from './data';
+import type { FigureRow, Procedure, ToolIndex, ToolProcedure, Value } from './data';
 import {
   CLS,
   EVENT,
@@ -20,6 +20,7 @@ import {
   joinPoints,
   labelBy,
   make,
+  pairHref,
   sparkline,
 } from './dom';
 import type { SparkPoint } from './dom';
@@ -41,7 +42,7 @@ const figureOf = (value: Value, reasons: string[], period: string, release: stri
 };
 
 function history(
-  data: ToolData,
+  data: ToolIndex,
   row: FigureRow,
   name: string,
   release: string,
@@ -80,18 +81,19 @@ function history(
   return sparkline(CLS.spark, label, spots);
 }
 
-function card(data: ToolData, hit: Hit, newest: string, of: number): HTMLElement {
+function card(data: ToolIndex, file: ToolProcedure, hit: Hit, procedure: Procedure): HTMLElement {
   const t = data.strings;
+  const [newest, of] = [procedure.period, procedure.of];
   const [index, stampAt, medianValue, volumeValue, rank] = hit.row;
   const [slug, name, state] = data.hospitals[index] ?? ['', '', ''];
-  const [period, release] = data.stamps[stampAt] ?? ['', ''];
+  const [period, release] = file.stamps[stampAt] ?? ['', ''];
   const median = figureOf(medianValue, data.reasons, period, release);
   const volume = figureOf(volumeValue, data.reasons, period, release);
   const item = make.li(CLS.result);
 
   const heading = make.h3(CLS.name);
   const link = make.a(undefined, name);
-  link.href = hospitalHref(slug);
+  link.href = file.pairs.includes(index) ? pairHref(slug, procedure.surgery) : hospitalHref(slug);
   heading.append(link, make.span(undefined, ` ${state}`));
   item.append(
     heading,
@@ -108,7 +110,9 @@ function card(data: ToolData, hit: Hit, newest: string, of: number): HTMLElement
   item.append(facts);
 
   if (rank !== null && period === newest) {
-    item.append(make.p(CLS.note2, fill(t.rank, { rank: formatRank(rank, of) })));
+    item.append(
+      make.p(CLS.note2, fill(t.rank, { rank: formatRank(rank, of), period: formatPeriod(period) })),
+    );
   } else if (!isPublished(median)) {
     item.append(make.p(CLS.history, t.withheld_rank));
   } else if (period !== newest) {
@@ -123,13 +127,12 @@ function card(data: ToolData, hit: Hit, newest: string, of: number): HTMLElement
 
 export function renderResults(
   mount: HTMLElement,
-  data: ToolData,
-  context: { surgery: string; place: string; slug: string },
+  data: ToolIndex,
+  context: { surgery: string; place: string; procedure: Procedure; file: ToolProcedure },
   hits: Hit[],
 ): HTMLElement {
   const t = data.strings;
-  const procedure = data.procedures.find((p) => p.slug === context.slug);
-  const newest = procedure?.period ?? '';
+  const newest = context.procedure.period;
   const heading = make.h2(
     undefined,
     fill(t.results_heading, { surgery: context.surgery, place: context.place }),
@@ -149,7 +152,7 @@ export function renderResults(
             place: context.place,
           });
   const list = make.ul(CLS.results);
-  list.append(...hits.map((hit) => card(data, hit, newest, procedure?.of ?? 0)));
+  list.append(...hits.map((hit) => card(data, context.file, hit, context.procedure)));
   const print = make.button(CLS.print, t.print);
   asButton(print);
   print.addEventListener(EVENT.click, () => {

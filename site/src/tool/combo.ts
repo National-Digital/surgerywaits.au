@@ -20,6 +20,8 @@ export interface Option {
 
 export interface Combo {
   picked: () => Option | null;
+  // Lists again, for a search that could not answer until its data arrived.
+  refresh: () => void;
 }
 
 interface Hooks {
@@ -28,6 +30,8 @@ interface Hooks {
   listed: (count: number) => void;
   // Told when a pick is made or lost.
   changed: () => void;
+  // Told each time the box is about to list, so a caller can load what the search needs.
+  used?: () => void;
 }
 
 export function combo(field: HTMLElement, hooks: Hooks): Combo | null {
@@ -66,6 +70,7 @@ export function combo(field: HTMLElement, hooks: Hooks): Combo | null {
     hooks.changed();
   };
   const show = (): void => {
+    hooks.used?.();
     options = hooks.search(input.value);
     list.replaceChildren(
       ...options.map((option, i) => {
@@ -113,5 +118,12 @@ export function combo(field: HTMLElement, hooks: Hooks): Combo | null {
       close();
     }
   });
-  return { picked: () => picked };
+  return {
+    picked: () => picked,
+    refresh: (): void => {
+      if (input.value.trim() !== '' && picked === null && document.activeElement === input) {
+        show();
+      }
+    },
+  };
 }

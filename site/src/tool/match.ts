@@ -52,3 +52,48 @@ export function rank<T extends Candidate>(
     .slice(0, limit)
     .map(({ item, field }) => ({ item, field }));
 }
+
+export interface Place extends Candidate {
+  state: string;
+  // The normalised name, for the order within a tier.
+  name: string;
+}
+
+// 0 for the name itself, 1 for a name that starts with the query as whole words, 2 for any other match.
+const tierOf = (field: string, words: string[], whole: string): number =>
+  field === whole
+    ? 0
+    : field.startsWith(`${whole} `)
+      ? 1
+      : fieldScore(field, words, whole) < 3
+        ? 2
+        : Infinity;
+
+// Matching places, best tier first and by state then name inside a tier.
+export function rankPlaces<T extends Place>(
+  items: readonly T[],
+  query: string,
+  limit: number,
+): T[] {
+  const whole = normalise(query);
+  if (whole === '') {
+    return [];
+  }
+  const words = whole.split(' ');
+  return items
+    .map((item, at) => ({
+      item,
+      at,
+      tier: Math.min(...item.fields.map((field) => tierOf(field, words, whole))),
+    }))
+    .filter(({ tier }) => tier < Infinity)
+    .sort(
+      (a, b) =>
+        a.tier - b.tier ||
+        (a.item.state < b.item.state ? -1 : a.item.state > b.item.state ? 1 : 0) ||
+        (a.item.name < b.item.name ? -1 : a.item.name > b.item.name ? 1 : 0) ||
+        a.at - b.at,
+    )
+    .slice(0, limit)
+    .map(({ item }) => item);
+}

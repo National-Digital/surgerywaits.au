@@ -1,4 +1,4 @@
-// The shape of /tool/data.json; contract/tool-data.schema.json describes the same file.
+// The shapes of the three kinds of file under /tool/; the schemas in contract/ describe the same files.
 // A figure is its number, or -1 minus the place of its reason in `reasons` when it is withheld.
 export type Value = number;
 // The first year, then one value for each year after it, with null for a year with no point.
@@ -27,18 +27,30 @@ export interface Procedure {
   path: string;
   period: string;
   slug: string;
+  surgery: string;
   terms: string[];
 }
 
-export interface ToolData {
-  figures: Record<string, FigureRow[]>;
+// The surgeries, hospitals with locations, reasons and copy, loaded when the page opens.
+export interface ToolIndex {
   hospitals: HospitalRow[];
   neighbours: number;
-  places: PlaceRow[];
   procedures: Procedure[];
   reasons: string[];
-  stamps: Stamp[];
   strings: Strings;
+}
+
+// Loaded when the place box is first used.
+export interface ToolPlaces {
+  places: PlaceRow[];
+}
+
+// Loaded when results are needed; `pairs` lists the hospitals that have a page for this surgery.
+export interface ToolProcedure {
+  pairs: number[];
+  rows: FigureRow[];
+  slug: string;
+  stamps: Stamp[];
 }
 
 interface Strings {

@@ -1,16 +1,31 @@
 import { describe, expect, it } from 'vitest';
 import { getSynonyms } from './content';
+import { pairRoutes } from './pair-page';
 import { readSurgeryIndex, validateDocument } from './dist';
-import { buildToolData, stableJson, toolDataJson, unknownSynonyms } from './tool-data';
+import {
+  buildToolIndex,
+  buildToolPlaces,
+  buildToolProcedure,
+  procedureSlugs,
+  stableJson,
+  toolIndexJson,
+  toolPlacesJson,
+  toolProcedureJson,
+  unknownSynonyms,
+} from './tool-data';
 
-const data = buildToolData();
+const index = buildToolIndex();
 const WITHHELD = /^[a-z_]+$/;
+const files = procedureSlugs().map((slug) => buildToolProcedure(slug));
 
 describe('the compare tool data', () => {
-  it('validates against its schema and writes the same bytes twice', () => {
-    const first = toolDataJson();
-    validateDocument('tool-data', JSON.parse(first));
-    expect(toolDataJson()).toBe(first);
+  it('validates each file against its schema and writes the same bytes twice', () => {
+    const slug = procedureSlugs()[0] ?? '';
+    validateDocument('tool-index', JSON.parse(toolIndexJson()));
+    validateDocument('tool-places', JSON.parse(toolPlacesJson()));
+    validateDocument('tool-procedure', JSON.parse(toolProcedureJson(slug)));
+    expect(toolIndexJson()).toBe(toolIndexJson());
+    expect(toolProcedureJson(slug)).toBe(toolProcedureJson(slug));
   });
 
   it('sorts keys at every depth', () => {
@@ -37,27 +52,42 @@ describe('the compare tool data', () => {
     }
   });
 
-  it('lists only open hospitals with a location, in code order, and every figure row points at one', () => {
-    expect(data.hospitals.length).toBeGreaterThan(0);
-    for (const rows of Object.values(data.figures)) {
-      for (const row of rows) {
-        expect(data.hospitals[row[0]]).toBeDefined();
-        expect(data.stamps[row[1]]).toBeDefined();
+  it('keeps the index free of figures and places, and gives each procedure one file', () => {
+    expect(Object.keys(index).sort()).toEqual([
+      'hospitals',
+      'neighbours',
+      'procedures',
+      'reasons',
+      'strings',
+    ]);
+    expect(index.procedures.map((p) => p.slug).sort()).toEqual([...procedureSlugs()].sort());
+    expect(buildToolPlaces().places.length).toBeGreaterThan(0);
+  });
+
+  it('lists only open hospitals with a location, and every figure row points at one', () => {
+    expect(index.hospitals.length).toBeGreaterThan(0);
+    for (const file of files) {
+      for (const row of file.rows) {
+        expect(index.hospitals[row[0]]).toBeDefined();
+        expect(file.stamps[row[1]]).toBeDefined();
+      }
+      for (const hospital of file.pairs) {
+        expect(file.rows.some((row) => row[0] === hospital)).toBe(true);
       }
     }
   });
 
   it('carries a withheld figure as a reason code and never as a number, and ranks only a published one', () => {
     let withheld = 0;
-    for (const rows of Object.values(data.figures)) {
-      for (const [, , median, volume, rank, history] of rows) {
+    for (const file of files) {
+      for (const [, , median, volume, rank, history] of file.rows) {
         if (median < 0) {
           withheld += 1;
-          expect(data.reasons[-median - 1]).toMatch(WITHHELD);
+          expect(index.reasons[-median - 1]).toMatch(WITHHELD);
           expect(rank).toBeNull();
         }
         if (volume < 0) {
-          expect(data.reasons[-volume - 1]).toMatch(WITHHELD);
+          expect(index.reasons[-volume - 1]).toMatch(WITHHELD);
         }
         if (history !== null) {
           expect(history.slice(1).some((v) => v !== null && v >= 0)).toBe(true);
@@ -68,17 +98,33 @@ describe('the compare tool data', () => {
   });
 
   it('takes its strings from the compare template, and a place from the suburbs file', () => {
-    expect(data.strings.submit).toBe('Compare near you');
-    expect(data.places.length).toBeGreaterThan(0);
-    expect(data.neighbours).toBe(8);
+    expect(index.strings.submit).toBe('Compare near you');
+    expect(index.neighbours).toBe(8);
+  });
+
+  it('lists as having a pair page exactly the hospitals whose page is built', () => {
+    const built = new Set(pairRoutes().map(({ params }) => `${params.slug}/${params.surgery}`));
+    let listed = 0;
+    for (const file of files) {
+      const surgery = index.procedures.find((p) => p.slug === file.slug)?.surgery ?? '';
+      for (const row of file.rows) {
+        const slug = index.hospitals[row[0]]?.[0] ?? '';
+        expect(file.pairs.includes(row[0]), `${slug}/${surgery}`).toBe(
+          built.has(`${slug}/${surgery}`),
+        );
+      }
+      listed += file.pairs.length;
+    }
+    expect(listed).toBeGreaterThan(0);
   });
 
   it('gives each procedure its address and the synonyms the content lists', () => {
-    const knee = data.procedures.find((p) => p.slug === 'total-knee-replacement');
+    const knee = index.procedures.find((p) => p.slug === 'total-knee-replacement');
     expect(knee?.path).toBe('/surgery/knee-replacement/');
+    expect(knee?.surgery).toBe('knee-replacement');
     expect(knee?.name).toBe('Knee replacement');
     expect(knee?.terms).toEqual(['Total knee replacement']);
-    const cataract = data.procedures.find((p) => p.name === 'Cataract surgery');
+    const cataract = index.procedures.find((p) => p.name === 'Cataract surgery');
     expect(cataract?.terms).toContain('cataracts');
   });
 });
