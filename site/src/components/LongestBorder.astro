@@ -1,0 +1,88 @@
+---
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+import LongestTail from './LongestTail.astro';
+import RankingTable from './RankingTable.astro';
+import { getLongestTemplate, getSite } from '../lib/content';
+import { formatCount, formatDays, formatKilometres } from '../lib/format';
+import {
+  BORDER_COUNT,
+  BORDER_PATH,
+  LONGEST_PATH,
+  borderPairs,
+  longestStamp,
+} from '../lib/longest-page';
+import { borderTable, radiusText, waitText } from '../lib/longest-tables';
+import { fill } from '../lib/slots';
+import { stateName } from '../lib/state-page';
+
+const t = getLongestTemplate();
+const stamp = longestStamp();
+const pairs = borderPairs();
+const first = pairs[0];
+const radius = radiusText();
+const ledeText =
+  first === undefined
+    ? fill(t.border_none, { radius, period: stamp.period })
+    : fill(t.border_lede, {
+        period: stamp.period,
+        difference: formatDays(first.difference),
+        surgery: first.ref.name,
+        from_median: waitText(first.from.figure),
+        from_hospital: first.from.row.name,
+        from_state: stateName(first.from.row.state),
+        to_median: waitText(first.to.figure),
+        to_hospital: first.to.row.name,
+        distance: formatKilometres(Math.round(first.km)),
+        to_state: stateName(first.to.row.state),
+      });
+---
+
+<Base
+  title={fill(t.border_title, { period: stamp.period, site: getSite().name })}
+  description={fill(t.border_description, {
+    count: formatCount(pairs.length),
+    period: stamp.period,
+    radius,
+  })}
+  canonicalPath={BORDER_PATH}
+>
+  <div class="o-columns">
+    <Breadcrumbs
+      items={[
+        { label: t.crumb_home, href: '/' },
+        { label: t.crumb_longest, href: LONGEST_PATH },
+        { label: t.crumb_border },
+      ]}
+    />
+    <h1>{t.border_heading}</h1>
+    <p>{ledeText}</p>
+    <p>{fill(t.stamp, { period: stamp.period, release: stamp.release })}</p>
+    <p>{fill(t.border_intro, { radius })}</p>
+
+    {first !== undefined && (
+      <section aria-labelledby="table-heading">
+        <h2 id="table-heading">
+          {fill(t.border_table_heading, { count: formatCount(pairs.length) })}
+        </h2>
+        <RankingTable
+          id="border"
+          caption={fill(t.border_table_caption, { radius, limit: formatCount(BORDER_COUNT) })}
+          {...borderTable(pairs)}
+        />
+      </section>
+    )}
+
+    <section aria-labelledby="method-heading">
+      <h2 id="method-heading">{t.method_heading}</h2>
+      <ul>
+        {t.method.map((item) => (
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+          <li>{item}</li>
+        ))}
+      </ul>
+    </section>
+
+    <LongestTail current={BORDER_PATH} />
+  </div>
+</Base>

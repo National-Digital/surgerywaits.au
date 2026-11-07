@@ -1,0 +1,102 @@
+---
+import { label } from '../lib/content';
+import { assertRanking } from '../lib/ranking-table';
+import type { RankingModel } from '../lib/ranking-table';
+import { isPublished } from '../lib/format';
+
+interface Props extends RankingModel {
+  id: string;
+  caption: string;
+}
+
+const { id, caption, columns, rows, span } = Astro.props;
+// A row with no published figure behind its order, or two stamps in one table, throws here.
+const stamp = assertRanking({ columns, rows, span });
+---
+
+<p class="c-table__hint">{label('table_scroll_hint')}</p>
+<div class="o-table-scroll" role="region" aria-labelledby={`${id}-caption`} tabindex="0">
+  <table class="c-table c-table--ranking">
+    <caption class="c-table__caption" id={`${id}-caption`}>
+      {caption}
+      <small class="c-table__stamp">{stamp}</small>
+    </caption>
+    <thead>
+      <tr>
+        {columns.map((column) => (
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+          <th class="c-table__head" scope="col">
+            {column}
+          </th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      {rows.map((row) => (
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+        <tr>
+          {row.cells.map((cell) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- the Astro parser types JSX as error
+            const inner = (
+              <>
+                {cell.href === undefined ? (
+                  cell.text
+                ) : (
+                  <a href={cell.href} aria-label={cell.label}>
+                    {cell.text}
+                  </a>
+                )}
+                {cell.note !== undefined && (
+                  <>
+                    {' '}
+                    <small class="c-table__note">{cell.note}</small>
+                  </>
+                )}
+              </>
+            );
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+            return cell.heading === true ? (
+              <th scope="row">{inner}</th>
+            ) : (
+              <td
+                class:list={{
+                  'is-not-published': cell.figure !== undefined && !isPublished(cell.figure),
+                }}
+              >
+                {inner}
+              </td>
+            );
+          })}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+<style is:global>
+  @layer components {
+    .c-table.c-table--ranking th,
+    .c-table.c-table--ranking td {
+      text-align: start;
+    }
+
+    .c-table.c-table--ranking tbody th {
+      position: static;
+      min-width: 0;
+    }
+
+    .c-table.c-table--ranking td {
+      font: var(--fs-small) / var(--lh-body) var(--sans);
+    }
+
+    .c-table.c-table--ranking td.is-not-published {
+      font-style: italic;
+    }
+
+    .c-table--ranking a {
+      display: inline-block;
+      min-height: var(--target);
+      line-height: var(--target);
+    }
+  }
+</style>

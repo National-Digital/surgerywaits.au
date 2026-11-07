@@ -1,0 +1,73 @@
+---
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+import LongestTail from './LongestTail.astro';
+import RankingTable from './RankingTable.astro';
+import { getLongestTemplate, getSite } from '../lib/content';
+import { formatCount, formatDays } from '../lib/format';
+import {
+  BY_SURGERY_PATH,
+  LONGEST_PATH,
+  extremes,
+  longestStamp,
+  spread,
+  widest,
+} from '../lib/longest-page';
+import { extremesTable, waitText } from '../lib/longest-tables';
+import { fill } from '../lib/slots';
+import { stateName } from '../lib/state-page';
+
+const t = getLongestTemplate();
+const stamp = longestStamp();
+const all = extremes();
+const top = widest(all);
+const ledeText =
+  top === undefined
+    ? fill(t.by_surgery_none, { period: stamp.period })
+    : fill(t.by_surgery_lede, {
+        period: stamp.period,
+        surgery: top.ref.name,
+        shortest: waitText(top.shortest.figure),
+        shortest_hospital: top.shortest.row.name,
+        shortest_state: stateName(top.shortest.row.state),
+        longest: waitText(top.longest.figure),
+        longest_hospital: top.longest.row.name,
+        longest_state: stateName(top.longest.row.state),
+      });
+---
+
+<Base
+  title={fill(t.by_surgery_title, { period: stamp.period, site: getSite().name })}
+  description={fill(t.by_surgery_description, {
+    period: stamp.period,
+    count: formatCount(all.length),
+  })}
+  canonicalPath={BY_SURGERY_PATH}
+>
+  <div class="o-columns">
+    <Breadcrumbs
+      items={[
+        { label: t.crumb_home, href: '/' },
+        { label: t.crumb_longest, href: LONGEST_PATH },
+        { label: t.crumb_by_surgery },
+      ]}
+    />
+    <h1>{t.by_surgery_heading}</h1>
+    <p>{ledeText}</p>
+    <p>{fill(t.stamp, { period: stamp.period, release: stamp.release })}</p>
+    {top !== undefined && <p>{fill(t.by_surgery_intro, { widest: formatDays(spread(top)) })}</p>}
+
+    {top !== undefined && (
+      <section aria-labelledby="table-heading">
+        <h2 id="table-heading">{t.by_surgery_table_heading}</h2>
+        <RankingTable
+          id="by-surgery"
+          caption={t.by_surgery_table_caption}
+          {...extremesTable(all)}
+        />
+      </section>
+    )}
+
+    <LongestTail current={BY_SURGERY_PATH} />
+  </div>
+</Base>

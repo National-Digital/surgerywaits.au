@@ -1,0 +1,92 @@
+crumb_home: Home
+crumb_longest: Longest waits
+crumb_by_surgery: Wait range by surgery
+crumb_border: Across the border
+crumb_changes: Year on year
+stamp: 'The figures are for {period}. The data was released on {release}.'
+reading_heading: How to read these figures
+reading:
+  - A median wait describes surgery that already happened. It does not judge a hospital, because hospitals differ in the cases they treat and in the number of people they serve.
+  - This site calls no hospital best or worst. A figure that is not published never counts as a number.
+exclusion_heading: What these figures leave out
+exclusion: Private hospitals are excluded. These pages cover public hospitals only, so they show no private hospital. They also leave out closed hospitals and any figure that is not published.
+companions_heading: Related pages
+companions_intro: Each page below shows the same published medians from a different angle.
+link_pair: '{hospital}, {surgery}'
+link_surgery_state: '{surgery}, {state}'
+link_longest: The longest published waits
+link_by_surgery: The shortest and longest wait for each surgery
+link_border: Where published waits differ across a state border
+link_changes: Where waits rose and fell year on year
+index_title: 'The {count} longest public hospital surgery waits, {period}: {site}'
+index_description: 'This page lists the {count} longest published median waits for planned surgery in Australian public hospitals in {period}. Each row names the hospital, the surgery and the median wait.'
+index_heading: 'The {count} longest published surgery waits in Australia'
+index_lede: 'The longest published median wait in {period} was {days}, for {surgery} at {hospital} in {state}.'
+index_none: 'No public hospital published a median wait for planned surgery in {period}.'
+index_intro: 'Every figure on this page is a median that a public hospital published for {period}. Half of the people who had that surgery at the hospital waited longer than the median. The list shows the {limit} longest waits and every row that shares the last wait shown, so it can have more than {limit} rows.'
+index_table_heading: 'The {count} longest published waits'
+index_table_caption: 'The {count} longest published median waits across every surgery and public hospital'
+index_rank_note: The rank orders this list only. It compares figures from different surgeries and different hospitals, so it says nothing about how well a hospital performs.
+column_rank: Rank
+column_hospital: Hospital
+column_surgery: Surgery
+column_state: State
+column_median: Median wait
+column_volume: Surgeries
+by_surgery_title: 'Shortest and longest surgery waits by type, {period}: {site}'
+by_surgery_description: 'This page names the public hospital with the shortest published median wait and the one with the longest for each surgery in {period}. It covers {count} surgeries that at least two public hospitals published a figure for.'
+by_surgery_heading: The range of published waits for each surgery
+by_surgery_lede: 'The widest published range in {period} was for {surgery}: {shortest} at {shortest_hospital} in {shortest_state}, against {longest} at {longest_hospital} in {longest_state}.'
+by_surgery_none: 'No surgery had a median wait from two public hospitals in {period}.'
+by_surgery_intro: 'The published medians for one surgery differ by up to {widest} between public hospitals. This page names, for each surgery with at least two published medians, the hospital with the shortest median and the hospital with the longest. Each surgery name links to its full comparison.'
+by_surgery_table_heading: Shortest and longest, surgery by surgery
+by_surgery_table_caption: The shortest and longest published median wait for each surgery that at least two public hospitals published a median for
+by_surgery_place: '{state} · {median}'
+tied_one: '{count} other hospital published the same median.'
+tied_many: '{count} other hospitals published the same median.'
+column_shortest: Shortest published median
+column_longest: Longest published median
+column_hospitals: Hospitals
+border_title: 'Where published waits differ across a state border, {period}: {site}'
+border_description: 'This page ranks the {count} places where a public hospital in another state published a shorter median wait for the same surgery in {period}, within {radius} of the first hospital.'
+border_heading: Where published waits differ across a state border
+border_lede: 'The biggest published cross-border difference in {period} was {difference}. The median wait for {surgery} was {from_median} at {from_hospital} in {from_state}, and {to_median} at {to_hospital}, {distance} away in {to_state}.'
+border_none: 'No pair of public hospitals in different states within {radius} of each other published a median wait for the same surgery with a difference in {period}.'
+border_intro: 'This page compares the published median waits for the same surgery at pairs of public hospitals. The two hospitals in a pair are in different states and lie within {radius} of each other.'
+border_table_heading: 'The {count} biggest published differences'
+border_table_caption: 'Public hospitals in different states within {radius} of each other that both published a median wait for the same surgery, ranked by the difference. Each row pairs a hospital with the hospital in the other state that has the largest difference. The table shows the {limit} largest differences and every row that shares the last difference shown, so it can have more than {limit} rows.'
+border_place: '{state} · {median}'
+column_longer: Hospital with the longer median
+column_across: Hospital in the other state
+column_distance: Distance
+column_difference: Difference
+method_heading: How this is calculated
+method:
+  - Both hospitals published a median wait for the same surgery in the period. Only published figures enter the calculation.
+  - The two hospitals are in different states and lie within the stated distance, measured in a straight line between their recorded locations. The distance is approximate and is not a road distance.
+  - The difference describes two published medians only. A person's own wait depends on their case, and this page does not recommend travel.
+  - Each hospital appears once for each surgery, against the hospital across the border with the largest difference.
+changes_title: 'Where surgery waits rose and fell, {previous} to {period}: {site}'
+changes_description: 'This page lists the biggest year-on-year changes in published median waits for planned surgery, {previous} to {period}, by state and by hospital.'
+changes_heading: Where surgery waits rose and fell
+changes_lede: 'The biggest state-level change from {previous} to {period} was for {surgery} in {state}: from {from} to {to}, {change}.'
+changes_none: 'No surgery has a published state median for both {previous} and {period}.'
+changes_intro: 'Both figures in every row are published medians, {previous} against {period}. A row appears only when the source published both years. The linked pages show the full history behind each row. Each table shows the {limit} biggest changes and every row that shares the last change shown, so a table can have more than {limit} rows.'
+state_rises_heading: State medians that rose most
+state_rises_caption: The biggest year-on-year rises in a state median wait
+state_falls_heading: State medians that fell most
+state_falls_caption: The biggest year-on-year falls in a state median wait
+hospital_heading: Hospital medians that changed most
+hospital_intro: 'This section includes only hospital and surgery pairs with at least {floor} surgeries in {period}. A median that rests on fewer surgeries is left out.'
+hospital_rises_heading: Rose most
+hospital_rises_caption: 'The biggest year-on-year rises in a hospital median wait, for pairs with at least {floor} surgeries in {period}'
+hospital_falls_heading: Fell most
+hospital_falls_caption: 'The biggest year-on-year falls in a hospital median wait, for pairs with at least {floor} surgeries in {period}'
+rows_none: No row meets these conditions.
+column_was: Was
+column_now: Now
+column_change: Change
+change_figure: '{median} ({period})'
+change_up: 'up {days}'
+change_down: 'down {days}'
+changes_note: A one-year change is a single comparison. Each linked page shows the history behind it.

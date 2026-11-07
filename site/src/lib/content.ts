@@ -6,6 +6,7 @@ import {
   hospitalsIndexSchema,
   hospitalTemplateSchema,
   labelsSchema,
+  longestTemplateSchema,
   navigationSchema,
   pairTemplateSchema,
   pageSchema,
@@ -56,6 +57,9 @@ const stateTemplate = await single('state', 'state', stateTemplateSchema);
 const urgencyTemplate = await single('urgency', 'urgency', urgencyTemplateSchema);
 const homeTemplate = await single('home', 'home', homeTemplateSchema);
 
+const longestTemplate = await single('longest', 'longest', longestTemplateSchema);
+
+export const getLongestTemplate = (): typeof longestTemplate => longestTemplate;
 export const getStateTemplate = (): typeof stateTemplate => stateTemplate;
 export const getHomeTemplate = (): typeof homeTemplate => homeTemplate;
 export const getUrgencyTemplate = (): typeof urgencyTemplate => urgencyTemplate;

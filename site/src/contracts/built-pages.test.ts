@@ -13,6 +13,7 @@ import {
 } from '../lib/content-files';
 import {
   hospitalTemplateSchema,
+  longestTemplateSchema,
   pairTemplateSchema,
   stateTemplateSchema,
   surgeryTemplateSchema,
@@ -24,6 +25,7 @@ import { readHospitalIndex } from '../lib/dist';
 import { formatCount } from '../lib/format';
 import { COMMON_COUNT } from '../lib/home-page';
 import { hospitalGroups, reportingCounts } from '../lib/index-pages';
+import { BORDER_PATH, BY_SURGERY_PATH, CHANGES_PATH, LONGEST_PATH } from '../lib/longest-page';
 import { indexablePairPaths, pairRoutes, thinPairPaths } from '../lib/pair-page';
 import { stateFiles } from '../lib/state-page';
 import { categories } from '../lib/urgency-page';
@@ -654,6 +656,76 @@ describe('Built state and urgency pages', () => {
 
   it('link only to pages that are built', () => {
     const built = new Set(pages.map(({ path }) => `/${path.replace(/index\.html$/, '')}`));
+    for (const { path, html } of mine()) {
+      const main = elements(parse(html)).find((t) => t.tagName === 'main');
+      for (const href of (main ? anchors(main) : []).filter((h) => h.startsWith('/'))) {
+        expect([path, href, built.has(href)]).toEqual([path, href, true]);
+      }
+    }
+  });
+});
+
+describe('Built longest-waits pages', () => {
+  const longest = longestTemplateSchema.parse(
+    readContent().find(({ path }) => path === 'templates/longest.yaml')?.data,
+  );
+  const mine = (): { path: string; html: string }[] =>
+    pages
+      .filter(({ path }) => path.startsWith('longest-waits/'))
+      .map(({ path }) => ({ path, html: read(path) }));
+  // The addresses the earlier site published, from its sitemap.
+  const earlier = [
+    '/longest-waits/',
+    '/longest-waits/by-surgery/',
+    '/longest-waits/border/',
+    '/longest-waits/changes/',
+  ];
+
+  it('build exactly the addresses the earlier site used', () => {
+    expect(
+      mine()
+        .map(({ path }) => address(path))
+        .sort(),
+    ).toEqual([...earlier].sort());
+    expect([LONGEST_PATH, BY_SURGERY_PATH, BORDER_PATH, CHANGES_PATH].sort()).toEqual(
+      [...earlier].sort(),
+    );
+  });
+
+  it('state the exclusion, the safety block and the data passport on every page', () => {
+    for (const { path, html } of mine()) {
+      const body = plain(parseFragment(html.split('<main')[1] ?? ''))
+        .replace(/\s+/g, ' ')
+        .trim();
+      expect(body, path).toContain(longest.exclusion);
+      expect(html.match(/id="[a-z]+-safety-heading"/g) ?? [], path).toHaveLength(1);
+      expect((html.match(/class="c-passport"/g) ?? []).length, path).toBe(1);
+    }
+  });
+
+  it('give every table a stated period and rank only inside the list', () => {
+    for (const { path, html } of mine()) {
+      expect(textsOf(html, 'c-table__stamp').length, path).toBe(
+        html.match(/<table[ >]/g)?.length ?? 0,
+      );
+      expect([path, html.includes('c-table__rank')]).toEqual([path, false]);
+      expect([path, /<script|\son[a-z]+=/i.test(html)]).toEqual([path, false]);
+    }
+    // A page with no rows says so; the sample data has no cross-border pair.
+    const nones = [
+      longest.index_none,
+      longest.by_surgery_none,
+      longest.border_none,
+      longest.changes_none,
+    ].map((t) => t.split('{')[0] ?? t);
+    for (const { path, html } of mine().filter(({ html }) => !html.includes('<table'))) {
+      expect([path, nones.some((t) => html.includes(t))]).toEqual([path, true]);
+    }
+    expect(mine().some(({ html }) => html.includes('<table'))).toBe(true);
+  });
+
+  it('link only to pages that are built', () => {
+    const built = new Set(pages.map(({ path }) => address(path)));
     for (const { path, html } of mine()) {
       const main = elements(parse(html)).find((t) => t.tagName === 'main');
       for (const href of (main ? anchors(main) : []).filter((h) => h.startsWith('/'))) {
