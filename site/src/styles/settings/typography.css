@@ -14,6 +14,9 @@
     --fs-body: 1rem;
     --fs-small: 0.875rem;
     --fs-label: 0.75rem;
+    /* 10pt and 11pt, the smallest print sizes. */
+    --fs-print: 0.834rem;
+    --fs-print-name: 0.917rem;
     --lh-body: 1.55;
     --lh-heading: 1.25;
     --lh-h2: 1.2;

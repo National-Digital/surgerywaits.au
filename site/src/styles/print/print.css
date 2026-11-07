@@ -27,6 +27,10 @@
       padding-block: 0 !important;
     }
 
+    main:has(.c-results-mount) {
+      padding-block: 0 !important;
+    }
+
     .c-results-mount :is(h2, p) {
       margin-block: var(--space-1) !important;
     }
@@ -37,37 +41,38 @@
 
     .c-results__intro,
     .c-print-only {
-      font-size: var(--fs-small) !important;
-      line-height: 1.3 !important;
+      font-size: var(--fs-print) !important;
+      line-height: 1.2 !important;
     }
 
     .c-results {
       grid-template-columns: 1fr !important;
-      gap: var(--space-1) !important;
+      gap: var(--space-print) !important;
     }
 
     .c-result {
       display: grid !important;
       grid-template-columns: 1fr auto !important;
       column-gap: var(--space-3) !important;
-      padding: var(--space-1) var(--space-2) !important;
+      padding: var(--space-print) var(--space-2) !important;
+      border-radius: 0 !important;
       border-color: var(--print-ink) !important;
-      font-size: var(--fs-small) !important;
-      line-height: 1.3 !important;
+      font-size: var(--fs-print) !important;
+      line-height: 1.1 !important;
       break-inside: avoid;
     }
 
     .c-result__name {
       grid-column: 1 !important;
       grid-row: 1 !important;
-      font-size: var(--fs-body) !important;
+      font-size: var(--fs-print-name) !important;
     }
 
     .c-result__distance {
       grid-column: 2 !important;
       grid-row: 1 !important;
       margin: 0 !important;
-      font-size: var(--fs-label) !important;
+      font-size: var(--fs-print) !important;
     }
 
     .c-result__facts {
@@ -79,14 +84,19 @@
       gap: 0 var(--space-1) !important;
     }
 
+    .c-result__facts dt,
     .c-result__facts dd {
-      margin-inline-end: var(--space-3) !important;
+      margin-block: 0 !important;
+    }
+
+    .c-result__facts dd {
+      margin-inline-end: var(--space-2) !important;
     }
 
     .c-result__note {
-      grid-column: 1 !important;
+      grid-column: 1 / -1 !important;
       margin: 0 !important;
-      font-size: var(--fs-label) !important;
+      font-size: var(--fs-print) !important;
     }
 
     .c-result__history {
@@ -94,9 +104,15 @@
     }
 
     .c-spark {
-      grid-column: 2 !important;
-      grid-row: 3 !important;
-      width: 4rem !important;
+      display: none !important;
+    }
+
+    .c-tool__safety {
+      padding: 0 !important;
+    }
+
+    .c-tool__safety > * {
+      max-width: none !important;
     }
 
     .c-tool__safety .c-safety {
@@ -105,15 +121,15 @@
       border: 1px solid var(--print-ink) !important;
       background: none !important;
       color: var(--print-ink) !important;
-      font-size: var(--fs-small) !important;
-      line-height: 1.3 !important;
+      font-size: var(--fs-print) !important;
+      line-height: 1.2 !important;
       break-inside: avoid;
     }
 
     .c-tool__safety :is(h2, p) {
       margin-block: 0 !important;
       color: var(--print-ink) !important;
-      font-size: var(--fs-small) !important;
+      font-size: var(--fs-print) !important;
     }
 
     .c-footer {

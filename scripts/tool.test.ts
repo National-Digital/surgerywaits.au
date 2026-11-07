@@ -6,8 +6,8 @@ import type { Browser, Page } from 'playwright';
 import { launch, serve } from './a11y-audit.ts';
 import type { Served } from './a11y-audit.ts';
 
-// Drives the built compare tool in Chromium. It needs `npm run build` first, so only the
-// Accessibility job runs it, with TOOL_TEST=1.
+// Drives the built compare tool in Chromium. It needs `npm run build` first, so the
+// Accessibility job runs it all and the Data checks job runs the print case on the real dist.
 const T = 120_000;
 const skip = !existsSync(chromium.executablePath()) && process.env['CI'] === undefined;
 const browsers = describe.skipIf(skip);
@@ -131,15 +131,20 @@ browsers('The compare tool', () => {
       const page = await context.newPage();
       const requests: string[] = [];
       const records: string[] = [];
+      const pending: Promise<void>[] = [];
       page.on('request', (request) => {
         requests.push(request.url());
-        records.push(
-          [
-            request.method(),
-            request.url(),
-            JSON.stringify(request.headers()),
-            request.postData() ?? '',
-          ].join(' '),
+        pending.push(
+          request.allHeaders().then((headers) => {
+            records.push(
+              [
+                request.method(),
+                request.url(),
+                JSON.stringify(headers),
+                request.postData() ?? '',
+              ].join(' '),
+            );
+          }),
         );
       });
       await open(page);
@@ -175,6 +180,7 @@ browsers('The compare tool', () => {
       const other = requests.filter((url) => !url.startsWith(up(server).base));
       expect(other).toEqual([]);
       expect(jsonNow()).toEqual(['/tool/index.json', '/tool/figures.json', '/tool/places.json']);
+      await Promise.all(pending);
       // No URL, header or body of any request holds what was chosen or typed.
       expect(records.length).toBeGreaterThan(3);
       expect(records.filter((r) => /knee|armidale|total-knee-replacement/i.test(r))).toEqual([]);
@@ -195,22 +201,79 @@ browsers('The compare tool', () => {
   });
 
   it('prints one sheet with the tool hidden', { timeout: T }, async () => {
+    // The second case needs a place that only the real dist holds.
+    const cases = [
+      { surgery: 'cataract', place: 'Armidale' },
+      { surgery: 'keyhole belly', place: 'Benayeo' },
+    ];
+    for (const { surgery, place } of cases) {
+      const page = await up(browser).newPage();
+      await open(page);
+      const known = await page.evaluate(async (name) => {
+        const file = (await (await fetch('/tool/places.json')).json()) as { places: string[][] };
+        return file.places.some((row) => row[0] === name);
+      }, place);
+      if (known) {
+        await compare(page, surgery, place);
+        await page.emulateMedia({ media: 'print' });
+        expect(await page.locator('.js-tool-form').isVisible()).toBe(false);
+        expect(await page.locator('.js-tool-print').isVisible()).toBe(false);
+        expect(await page.locator('.c-masthead').isVisible()).toBe(false);
+        expect(await page.locator(`${RESULTS} li`).first().isVisible()).toBe(true);
+        expect(await page.locator('.c-spark').first().isVisible()).toBe(false);
+        const safety = page.locator('.c-tool__safety');
+        expect(await safety.getByRole('heading').innerText()).toBe('Before you use these figures');
+        expect(await safety.isVisible()).toBe(true);
+        const sizes = await page.evaluate(() =>
+          [...document.querySelectorAll('.c-results-mount *, .c-tool__safety *')]
+            .filter((node) => node.childNodes.length > 0 && node.textContent.trim() !== '')
+            .map((node) => parseFloat(getComputedStyle(node).fontSize)),
+        );
+        // 10pt is 13.33px.
+        expect(Math.min(...sizes)).toBeGreaterThanOrEqual(13.3);
+        const pdf = await page.pdf({
+          format: 'A4',
+          margin: { top: '1.5cm', bottom: '1.5cm', left: '1cm', right: '1cm' },
+        });
+        const sheets = pdf.toString('latin1').match(/\/Type\s*\/Page(?![s\w])/g) ?? [];
+        expect(sheets, `${surgery} near ${place}`).toHaveLength(1);
+      }
+      await page.close();
+    }
+  });
+
+  it('prints the note on a withheld rank', { timeout: T }, async () => {
     const page = await up(browser).newPage();
-    await compare(page, 'cataract', 'Armidale');
+    await compare(page, 'acl', 'Armidale');
     await page.emulateMedia({ media: 'print' });
-    expect(await page.locator('.js-tool-form').isVisible()).toBe(false);
-    expect(await page.locator('.js-tool-print').isVisible()).toBe(false);
-    expect(await page.locator('.c-masthead').isVisible()).toBe(false);
-    expect(await page.locator(`${RESULTS} li`).first().isVisible()).toBe(true);
-    const safety = page.locator('.c-tool__safety');
-    expect(await safety.getByRole('heading').innerText()).toBe('Before you use these figures');
-    expect(await safety.isVisible()).toBe(true);
-    const pdf = await page.pdf({
-      format: 'A4',
-      margin: { top: '1.5cm', bottom: '1.5cm', left: '1cm', right: '1cm' },
+    const note = page.locator('.c-result__note--withheld').first();
+    expect(await note.isVisible()).toBe(true);
+    expect(await note.innerText()).toContain('no rank');
+    await page.close();
+  });
+
+  it('breaks the history line across years with no figure', { timeout: T }, async () => {
+    const page = await up(browser).newPage();
+    await page.route('**/tool/figures.json', async (route) => {
+      const response = await route.fetch();
+      const all = (await response.json()) as {
+        procedures: Record<string, { rows: (number | null | (number | null)[])[][] }>;
+      };
+      for (const data of Object.values(all.procedures)) {
+        for (const row of data.rows) {
+          row[5] = [2011, 7, ...Array<null>(11).fill(null), 9, 10];
+        }
+      }
+      await route.fulfill({ response, json: all });
     });
-    const sheets = pdf.toString('latin1').match(/\/Type\s*\/Page(?![s\w])/g) ?? [];
-    expect(sheets).toHaveLength(1);
+    await compare(page, 'cataract', 'Armidale');
+    const chart = page.locator('.c-spark').first();
+    const paths = await chart
+      .locator('path')
+      .evaluateAll((nodes) => nodes.map((node) => node.getAttribute('d') ?? ''));
+    expect(paths).toHaveLength(1);
+    expect(paths[0]?.match(/[ML]/g)).toEqual(['M', 'L']);
+    expect(await chart.locator('circle').count()).toBe(3);
     await page.close();
   });
 
