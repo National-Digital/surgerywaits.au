@@ -1,4 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { parse } from 'parse5';
+import type { DefaultTreeAdapterTypes } from 'parse5';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { distSlug, readContent, replacedTerms } from '../lib/content-files';
@@ -69,7 +71,16 @@ interface Seen {
 }
 const terms = termsSchema.parse(readContent().find(({ path }) => path === 'terms.yaml')?.data);
 
-const BLOCK = /<script([^>]*)>(.*?)<\/script>/gsu;
+type Element = DefaultTreeAdapterTypes.Element;
+// A parser reads script tags as a browser does, whatever their case or spacing.
+const scriptsOf = (node: DefaultTreeAdapterTypes.ParentNode): Element[] =>
+  node.childNodes.flatMap((child) => [
+    ...('tagName' in child && child.tagName === 'script' ? [child] : []),
+    ...('childNodes' in child ? scriptsOf(child) : []),
+    ...('content' in child ? scriptsOf(child.content) : []),
+  ]);
+const attrOf = (el: Element, name: string): string | undefined =>
+  el.attrs.find((a) => a.name === name)?.value;
 const files = readdirSync(dist, { recursive: true, encoding: 'utf8' })
   .filter((file) => file.endsWith('.html'))
   .sort();
@@ -123,15 +134,18 @@ beforeAll(() => {
       types: new Map(),
       replaced: [],
     };
-    for (const [, attrs = '', body = ''] of html.matchAll(BLOCK)) {
-      if (attrs === ' type="application/ld+json"') {
+    for (const script of scriptsOf(parse(html, { scriptingEnabled: false }))) {
+      const type = attrOf(script, 'type');
+      const src = attrOf(script, 'src');
+      if (type === 'application/ld+json' && src === undefined && script.attrs.length === 1) {
         found.scripts += 1;
+        const body = script.childNodes.map((c) => ('value' in c ? c.value : '')).join('');
         const document = JSON.parse(body) as Json;
         found.contexts.push(document['@context']);
         nodes.push(...(document['@graph'] as Json[]));
-      } else if (!attrs.startsWith(' type="module" src="/_astro/')) {
+      } else if (!(type === 'module' && (src ?? '').startsWith('/_astro/'))) {
         // The compare tool's module is the one script that runs.
-        found.stray.push(attrs);
+        found.stray.push(script.attrs.map((a) => `${a.name}=${a.value}`).join(' '));
       }
     }
     for (const node of nodes) {
@@ -161,8 +175,9 @@ const stampsOf = (html: string): { period: string; release: string }[] =>
 const canonicalOf = (html: string): string | undefined =>
   /<link rel="canonical" href="(.+?)"/u.exec(html)?.[1];
 const titleOf = (html: string): string => /<title>([^<]*)<\/title>/u.exec(html)?.[1] ?? '';
+// Decoded last, so an escaped entity such as &amp;quot; stays as written.
 const decode = (text: string): string =>
-  text.replaceAll('&amp;', '&').replaceAll('&#39;', "'").replaceAll('&quot;', '"');
+  text.replaceAll('&#39;', "'").replaceAll('&quot;', '"').replaceAll('&amp;', '&');
 const ofType = (page: Page, type: string): Json[] => page.nodes.filter((n) => n['@type'] === type);
 
 describe('JSON-LD on every page', () => {
