@@ -24,6 +24,9 @@ export const SECURITY_HEADERS: Readonly<Record<string, string>> = {
   'Permissions-Policy': 'geolocation=(), camera=(), microphone=(), payment=(), usb=()',
 };
 
+const isToolData = (pathname: string): boolean =>
+  pathname.startsWith('/tool/') && pathname.endsWith('.json');
+
 export const isDataApi = (pathname: string): boolean => pathname.startsWith('/data-api/');
 
 // Any site may read the data files from a page, so every answer under /data-api/ allows it.
@@ -74,6 +77,9 @@ export function withHeaders(response: Response, pathname: string, method = 'GET'
     if (response.status === 200 && pathname.endsWith('.json')) {
       copy.headers.set('Content-Type', 'application/json; charset=utf-8');
     }
+  }
+  if (isToolData(pathname)) {
+    copy.headers.set('X-Robots-Tag', 'noindex');
   }
   const cache = cacheControl(pathname, response.status);
   if (cache !== undefined) {

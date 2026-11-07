@@ -3,6 +3,7 @@ import { z } from 'astro/zod';
 import {
   aboutSchema,
   areasSchema,
+  compareTemplateSchema,
   healthServiceTemplateSchema,
   dataPageSchema,
   gpSchema,
@@ -17,6 +18,7 @@ import {
   navigationSchema,
   pairTemplateSchema,
   pageSchema,
+  procedureSynonymsSchema,
   siteSchema,
   stateTemplateSchema,
   surgeryNamesSchema,
@@ -80,6 +82,8 @@ const surgeryTemplate = await single('surgery', 'surgery', surgeryTemplateSchema
 const pairTemplate = await single('pair', 'pair', pairTemplateSchema);
 const areas = await single('areas', 'areas', areasSchema);
 const surgeryNames = await single('surgery-names', 'surgery-names', surgeryNamesSchema);
+const synonyms = await single('procedure-synonyms', 'procedure-synonyms', procedureSynonymsSchema);
+const compareTemplate = await single('compare', 'compare', compareTemplateSchema);
 
 const stateTemplate = await single('state', 'state', stateTemplateSchema);
 const urgencyTemplate = await single('urgency', 'urgency', urgencyTemplateSchema);
@@ -99,6 +103,8 @@ export const getHomeTemplate = (): typeof homeTemplate => homeTemplate;
 export const getUrgencyTemplate = (): typeof urgencyTemplate => urgencyTemplate;
 export const getSurgeryTemplate = (): typeof surgeryTemplate => surgeryTemplate;
 export const getPairTemplate = (): typeof pairTemplate => pairTemplate;
+export const getCompareTemplate = (): typeof compareTemplate => compareTemplate;
+export const getSynonyms = (): typeof synonyms.synonyms => synonyms.synonyms;
 export const getAreas = (): typeof areas => areas;
 export const getSurgeryNames = (): typeof surgeryNames.names => surgeryNames.names;
 

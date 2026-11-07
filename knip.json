@@ -3,6 +3,7 @@
   "workspaces": {
     ".": {
       "entry": ["worker/index.ts", "worker/*.test.ts", "scripts/*.test.ts", "eslint/*.test.ts"],
+      "ignore": ["eslint/fixtures/**", "scripts/weight-fixtures/**"],
       "ignoreDependencies": ["astro", "vnu-jar"]
     },
     "site": {

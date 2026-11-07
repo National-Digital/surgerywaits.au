@@ -28,6 +28,7 @@ export default defineConfig(
       '**/node_modules/',
       'pipeline/',
       'eslint/fixtures/',
+      'scripts/weight-fixtures/',
       'worker/worker-configuration.d.ts',
     ],
   },
@@ -67,13 +68,20 @@ export default defineConfig(
   },
   { files: ['**/*.astro'], processor: astroStyles },
   {
+    // The tool's DOM names live in dom.ts; every other tool module holds no copy.
+    files: ['site/src/tool/*.ts', 'eslint/fixtures/text-*.ts'],
+    ignores: ['site/src/tool/dom.ts', 'site/src/tool/*.test.ts'],
+    plugins: { site: siteCss },
+    rules: { 'site/no-literal-text': 'error' },
+  },
+  {
     files: ['site/src/**/*.astro', 'eslint/fixtures/text-*.astro'],
     plugins: { site: siteCss },
     rules: { 'site/no-literal-text': 'error' },
   },
   {
     // Fixtures sit outside every tsconfig, so they are parsed without type information.
-    files: ['eslint/fixtures/text-*.astro'],
+    files: ['eslint/fixtures/text-*.astro', 'eslint/fixtures/text-*.ts'],
     extends: [tseslint.configs.disableTypeChecked],
     languageOptions: { parserOptions: { projectService: false, project: null } },
   },

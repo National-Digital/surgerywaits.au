@@ -1,0 +1,111 @@
+---
+import Base from '../layouts/Base.astro';
+import DataPassport from './DataPassport.astro';
+import IndexList from './IndexList.astro';
+import SafetyBlock from './SafetyBlock.astro';
+import { getCompareTemplate, getNavigation, getSite } from '../lib/content';
+import { HOSPITALS_PATH } from '../lib/hospital-page';
+import { surgeryStamp } from '../lib/index-pages';
+import { fill } from '../lib/slots';
+import { STATES_PATH } from '../lib/state-page';
+import { SURGERY_PATH } from '../lib/surgery-page';
+import { toolSources } from '../lib/tool-data';
+
+const t = getCompareTemplate();
+const { period } = surgeryStamp();
+const fallback = [
+  { name: t.fallback_surgery_name, href: SURGERY_PATH, notes: [t.fallback_surgery_note] },
+  { name: t.fallback_hospitals_name, href: HOSPITALS_PATH, notes: [t.fallback_hospitals_note] },
+  { name: t.fallback_states_name, href: STATES_PATH, notes: [t.fallback_states_note] },
+];
+---
+
+<Base
+  title={fill(t.title, { site: getSite().name })}
+  description={fill(t.description, { period })}
+  canonicalPath={getNavigation().compare.href}
+  compactFooter
+  compareBar={false}
+  printFooter={false}
+>
+  <section
+    class="c-tool"
+    aria-labelledby="compare-heading"
+    data-tool
+    data-src="/tool/index.json"
+    data-places="/tool/places.json"
+    data-figures="/tool/figures.json"
+    data-failed={t.load_failed}
+  >
+    <div class="o-columns u-no-print">
+      <h1 id="compare-heading">{t.heading}</h1>
+      <p>{fill(t.lede, { period })}</p>
+
+      <div class="js-tool-fallback">
+        <h2>{t.fallback_heading}</h2>
+        <p>{t.fallback_intro}</p>
+        <IndexList items={fallback} />
+      </div>
+
+      <form class="c-tool__form js-tool-form" aria-labelledby="form-heading" hidden>
+        <h2 id="form-heading">{t.form_heading}</h2>
+        <div class="c-field js-tool-field">
+          <label class="c-field__label" id="surgery-label" for="surgery">
+            {t.tool.surgery_label}
+          </label>
+          <p class="c-field__hint" id="surgery-hint">
+            {t.tool.surgery_hint}
+          </p>
+          <input
+            class="c-field__input js-combo-input"
+            id="surgery"
+            type="text"
+            autocomplete="off"
+            spellcheck={false}
+            aria-describedby="surgery-hint"
+          />
+          <ul class="c-combo js-combo-list" id="surgery-list" hidden></ul>
+        </div>
+        <div class="c-field js-tool-field">
+          <label class="c-field__label" id="place-label" for="place">
+            {t.tool.place_label}
+          </label>
+          <p class="c-field__hint" id="place-hint">
+            {t.tool.place_hint}
+          </p>
+          <input
+            class="c-field__input js-combo-input"
+            id="place"
+            type="text"
+            autocomplete="off"
+            spellcheck={false}
+            aria-describedby="place-hint"
+          />
+          <ul class="c-combo js-combo-list" id="place-list" hidden></ul>
+        </div>
+        <button class="c-button" type="submit">
+          {t.tool.submit}
+        </button>
+      </form>
+      <p class="c-tool__message js-tool-message" role="status"></p>
+    </div>
+  </section>
+
+  <div class="c-results-mount js-tool-results" id="results" tabindex="-1" hidden></div>
+
+  <div class="o-columns u-no-print">
+    <section aria-labelledby="privacy-heading">
+      <h2 id="privacy-heading">{t.privacy_heading}</h2>
+      <p>{t.privacy}</p>
+      <p>{t.distance_note}</p>
+      <p>{t.tool.closed_note}</p>
+    </section>
+    <DataPassport sources={toolSources()} />
+  </div>
+  <div class="o-columns c-tool__safety">
+    <SafetyBlock id="compare-safety-heading" />
+  </div>
+  <script>
+    import '../tool/tool';
+  </script>
+</Base>

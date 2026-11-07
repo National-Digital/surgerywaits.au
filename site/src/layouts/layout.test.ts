@@ -63,7 +63,9 @@ describe('Footer', () => {
 });
 
 describe('Compare bar', () => {
-  it('stays out of the page while its target page is not built', async () => {
-    expect(await render(CompareBar, {})).not.toContain('c-compare-bar');
+  it('links to the compare page, which is built', async () => {
+    const html = await render(CompareBar, {});
+    expect(html).toContain('c-compare-bar');
+    expect(html).toContain('href="/compare/"');
   });
 });

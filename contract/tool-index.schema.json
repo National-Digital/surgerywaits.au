@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://surgerywaits.au/contract/tool-index.schema.json",
+  "title": "Compare tool index",
+  "description": "/tool/index.json: what the compare tool loads when its page opens. The site build writes it from the dist. Each procedure lists the address of its figure file, /tool/procedures/<slug>.json. A hospital row is [slug, name, state, latitude, longitude], and a figure row in a procedure file points at a hospital by its place in this list. A reason code is -1 minus its place in reasons.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["hospitals", "neighbours", "procedures", "reasons", "strings"],
+  "properties": {
+    "hospitals": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "prefixItems": [
+          {
+            "$ref": "common.schema.json#/$defs/slug"
+          },
+          {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          {
+            "$ref": "common.schema.json#/$defs/state"
+          },
+          {
+            "$ref": "common.schema.json#/$defs/latitude"
+          },
+          {
+            "$ref": "common.schema.json#/$defs/longitude"
+          }
+        ],
+        "items": false,
+        "minItems": 5
+      }
+    },
+    "neighbours": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "procedures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "of", "path", "period", "slug", "surgery", "terms"],
+        "properties": {
+          "name": {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          "of": {
+            "description": "The number of hospitals the national rank is out of, or 0 when no hospital is ranked.",
+            "type": "integer",
+            "minimum": 0
+          },
+          "path": {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          "period": {
+            "$ref": "common.schema.json#/$defs/period"
+          },
+          "slug": {
+            "$ref": "common.schema.json#/$defs/slug"
+          },
+          "surgery": {
+            "description": "The surgery's address segment, which names its pair pages.",
+            "$ref": "common.schema.json#/$defs/slug"
+          },
+          "terms": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/text"
+            }
+          }
+        }
+      }
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/text"
+      }
+    },
+    "strings": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "common.schema.json#/$defs/text"
+      }
+    }
+  }
+}

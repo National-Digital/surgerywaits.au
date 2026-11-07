@@ -136,6 +136,7 @@ describe('Every health service page', () => {
   it('links only to pages that are built', () => {
     const built = new Set<string>([
       '/',
+      '/compare/',
       '/hospitals/',
       '/urgency/',
       '/urgency/category-1/',

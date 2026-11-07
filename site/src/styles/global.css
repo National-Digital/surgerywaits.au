@@ -9,5 +9,6 @@
 @import url('./objects/wrap.css');
 @import url('./objects/columns.css');
 @import url('./objects/table-scroll.css');
+@import url('./components/tool.css');
 @import url('./utilities/visually-hidden.css');
 @import url('./print/print.css');

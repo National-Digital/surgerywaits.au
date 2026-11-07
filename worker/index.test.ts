@@ -190,6 +190,24 @@ describe('methods and failures', () => {
   });
 });
 
+describe('the compare tool files', () => {
+  it('allows the tool to run and fetch from the site, and serves its files revalidated, closed to other sites and kept out of search', async () => {
+    const policy = SECURITY_HEADERS['Content-Security-Policy'] ?? '';
+    expect(policy).toMatch(/script-src 'self'/u);
+    expect(policy).toMatch(/connect-src 'self'/u);
+    for (const path of ['/tool/index.json', '/tool/places.json', '/tool/figures.json']) {
+      const response = await get(path);
+      expect(response.headers.get('Content-Security-Policy'), path).toBe(policy);
+      expect(response.headers.get('Cache-Control'), path).toBe(
+        'public, max-age=0, must-revalidate',
+      );
+      expect(response.headers.get('Access-Control-Allow-Origin'), path).toBeNull();
+      expect(response.headers.get('X-Robots-Tag'), path).toBe('noindex');
+    }
+    expect((await get('/compare/')).headers.get('X-Robots-Tag')).toBeNull();
+  });
+});
+
 describe('the data files', () => {
   it('lets any site read them and keeps them out of search', async () => {
     for (const path of [

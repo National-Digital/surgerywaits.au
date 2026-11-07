@@ -6,13 +6,14 @@ import OperatorLine from './OperatorLine.astro';
 
 interface Props {
   compact?: boolean;
+  printHidden?: boolean;
 }
 
-const { compact = false } = Astro.props;
+const { compact = false, printHidden = false } = Astro.props;
 const aboutLinks = builtLinks(getNavigation().about);
 ---
 
-<footer class="c-footer">
+<footer class:list={['c-footer', { 'is-print-hidden': printHidden }]}>
   <div class="c-footer__inner o-wrap o-wrap--flush">
     <h2 class="c-footer__heading">{label('footer_safety_heading')}</h2>
     <div class="c-footer__safety">

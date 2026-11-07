@@ -2,6 +2,7 @@ import { getViteConfig } from 'astro/config';
 import { configDefaults } from 'vitest/config';
 
 // The browser proofs need Chromium, so only the Accessibility job runs them, with A11Y_TEST=1.
+// The compare tool proof drives the built site in Chromium, so it needs a build and TOOL_TEST=1.
 // The built-CSS proof needs a build, so only the build job runs it, with BUILT_CSS=1.
 // The built-page proofs also need a build, and the same job runs them with BUILT_PAGES=1.
 // The HTML gate proofs need Java, so only the job that installs it runs them, with HTML_TEST=1.
@@ -9,6 +10,9 @@ import { configDefaults } from 'vitest/config';
 const exclude = [...configDefaults.exclude];
 if (process.env['A11Y_TEST'] !== '1') {
   exclude.push('scripts/a11y.test.ts', 'scripts/layout.test.ts');
+}
+if (process.env['TOOL_TEST'] !== '1') {
+  exclude.push('scripts/tool.test.ts');
 }
 if (process.env['BUILT_CSS'] !== '1') {
   exclude.push('site/src/styles/built-css.test.ts');

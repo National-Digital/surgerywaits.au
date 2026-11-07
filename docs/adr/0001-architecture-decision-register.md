@@ -94,8 +94,7 @@ either half disagrees with it. The schemas and the OpenAPI description are plann
 ### D6: The site is Astro with strict TypeScript
 
 `site/` is an Astro project with static output and TypeScript in strict mode. The compare tool is
-one vanilla TypeScript module that Astro loads as a script. It uses no framework. The empty site
-exists, and the compare tool is planned.
+one vanilla TypeScript module that Astro loads as a script. It uses no framework. The tool is built.
 
 Why: Astro renders each page to HTML at build time, so a static page needs no JavaScript to read. A
 single dependency-free module keeps the one interactive part small enough to audit for privacy
@@ -281,8 +280,7 @@ no framework and no islands runtime. Scripts find their elements through `js-` c
 attributes and never through styling classes, so a CSS rename cannot break behaviour. The tool keeps
 no storage, URL state or history, fetches only from its own site and sends nothing a person types
 ([D8][d8]). A weight check holds the module to a set byte budget and fails when it grows past it.
-Browser support follows Baseline "widely available", and newer APIs sit behind a feature check. The
-weight check is planned.
+Browser support follows Baseline "widely available", and newer APIs sit behind a feature check.
 
 Why: this records how the site works, so that adding a framework or a second script needs a new
 record. Pages that work without scripts are easier to make accessible and to read for tools that do

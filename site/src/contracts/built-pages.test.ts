@@ -89,6 +89,7 @@ interface Page extends Basic {
   footer: number;
   navLabels: (string | undefined)[];
   scripts: number;
+  scriptTags: { type?: string; src?: string }[];
   handlers: number;
   javascriptHref: boolean;
   footerText: string | undefined;
@@ -147,6 +148,15 @@ function analyse(path: string, html: string, bytes: number, skipped: boolean): P
       .filter((t) => t.tagName === 'nav')
       .map((t) => t.attrs.find((a) => a.name === 'aria-label')?.value),
     scripts: count('script'),
+    scriptTags: tags
+      .filter((t) => t.tagName === 'script')
+      .map(
+        (t) =>
+          Object.fromEntries(t.attrs.map((a) => [a.name, a.value])) as {
+            type?: string;
+            src?: string;
+          },
+      ),
     handlers: tags.flatMap((t) => t.attrs).filter((a) => /^on/i.test(a.name)).length,
     javascriptHref: /href="javascript:/i.test(html),
     footerText: footer && textOf(footer),
@@ -191,6 +201,8 @@ beforeAll(() => {
     }
   }
 }, 900_000);
+
+const TOOL_PAGE = 'compare/index.html';
 
 // Needs `npm run build` first, so only the build job runs it, with BUILT_PAGES=1.
 describe('Built pages', () => {
@@ -281,17 +293,26 @@ describe('Built pages', () => {
     }
   });
 
-  it('show the compare bar only when its page is built', () => {
+  it('show the compare bar only when its page is built, and never on that page', () => {
     const target = paths.includes('compare/index.html');
     for (const p of analysed()) {
-      expect([p.path, p.compareBar]).toEqual([p.path, target]);
+      expect([p.path, p.compareBar]).toEqual([p.path, target && p.path !== TOOL_PAGE]);
     }
   });
 
   it('ship zero JavaScript on every static page', () => {
-    for (const p of analysed()) {
+    for (const p of analysed().filter(({ path }) => path !== TOOL_PAGE)) {
       expect([p.path, p.scripts, p.handlers, p.javascriptHref]).toEqual([p.path, 0, 0, false]);
     }
+  });
+
+  it('load the compare tool as one module script from the site, with no inline script or handler', () => {
+    const page = analysed().find(({ path }) => path === TOOL_PAGE);
+    expect(page, 'the compare page is built').toBeDefined();
+    expect(page?.scriptTags).toHaveLength(1);
+    expect(page?.scriptTags[0]?.type).toBe('module');
+    expect(page?.scriptTags[0]?.src).toMatch(/^\/_astro\/[\w.-]+\.js$/);
+    expect([page?.handlers, page?.javascriptHref]).toEqual([0, false]);
   });
 });
 

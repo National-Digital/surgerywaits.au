@@ -15,6 +15,8 @@ interface Props {
   noindex?: boolean;
   compactFooter?: boolean;
   compareBar?: boolean;
+  // A page that prints as one sheet leaves the footer off it.
+  printFooter?: boolean;
 }
 
 const {
@@ -24,6 +26,7 @@ const {
   noindex = false,
   compactFooter = false,
   compareBar = true,
+  printFooter = true,
 } = Astro.props;
 const canonical = canonicalPath === undefined ? undefined : new URL(canonicalPath, getSite().url);
 ---
@@ -45,6 +48,6 @@ const canonical = canonicalPath === undefined ? undefined : new URL(canonicalPat
       <slot />
     </main>
     {compareBar && <CompareBar />}
-    <Footer compact={compactFooter} />
+    <Footer compact={compactFooter} printHidden={!printFooter} />
   </body>
 </html>
