@@ -28,6 +28,7 @@ export default defineConfig(
       '**/node_modules/',
       'pipeline/',
       'eslint/fixtures/',
+      'scripts/weight-fixtures/',
       'worker/worker-configuration.d.ts',
     ],
   },

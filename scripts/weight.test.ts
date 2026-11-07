@@ -3,7 +3,13 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { CEILING_BYTES, measurePages, overBudget, overScript, scriptWeight } from './page-weight.ts';
+import {
+  CEILING_BYTES,
+  measurePages,
+  overBudget,
+  overScript,
+  scriptWeight,
+} from './page-weight.ts';
 import type { Budget } from './page-weight.ts';
 
 // Each case is proven on a page built to fail it; the budget here is small so the fixtures stay small.
