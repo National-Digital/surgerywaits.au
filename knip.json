@@ -3,7 +3,7 @@
   "workspaces": {
     ".": {
       "entry": ["worker/index.ts", "worker/*.test.ts", "scripts/*.test.ts", "eslint/*.test.ts"],
-      "ignoreDependencies": ["astro"]
+      "ignoreDependencies": ["astro", "vnu-jar"]
     },
     "site": {
       "entry": ["src/**/*.test.ts", "src/dev/primitives.astro"],

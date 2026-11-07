@@ -77,6 +77,18 @@ jobs:
       - run: npx vitest run site/src/contracts/built-pages.test.ts site/src/contracts/sitemaps.test.ts site/src/contracts/redirects.test.ts
         env:
           BUILT_PAGES: '1'
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      # The W3C Nu Html Checker, with warnings as errors, over every built page.
+      - run: npm run html -- site/dist
+      # Every internal link, asset and fragment resolves; external addresses are listed, not fetched.
+      - run: npm run links -- site/dist --external
+      # Proves each gate fails a page built to fail it.
+      - run: npx vitest run scripts/html.test.ts scripts/links.test.ts
+        env:
+          HTML_TEST: '1'
       # Builds the site a second time and compares the checksum of every file.
       - run: npx vitest run site/src/contracts/determinism.test.ts
         env:
@@ -207,6 +219,14 @@ jobs:
         env:
           BUILT_PAGES: '1'
           SURGERYWAITS_DIST: ${{ github.workspace }}/pipeline/dist
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm run html -- site/dist
+        working-directory: .
+      - run: npm run links -- site/dist
+        working-directory: .
       - run: npx vitest run site/src/contracts/determinism.test.ts
         working-directory: .
         env:

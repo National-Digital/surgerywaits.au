@@ -48,6 +48,9 @@ npm run build:preview   # the same build plus the /dev/primitives/ page, written
 npm run a11y -- site/dist / /404.html   # the same checks on the built home and 404 pages
 npm run a11y            # accessibility checks on their fixture pages (npx playwright install chromium first)
 npm run a11y -- site/dist-preview /dev/primitives/   # the same checks on the preview page, after build:preview
+npm run html -- site/dist    # the W3C Nu Html Checker over the built pages, after npm run build; needs Java 21 (JAVA names the binary)
+npm run links -- site/dist   # internal links, assets and fragments on the built pages, after npm run build
+HTML_TEST=1 npx vitest run scripts/html.test.ts   # proves the HTML gate fails a bad page; needs Java
 npm run worker:types:check   # fails when worker/worker-configuration.d.ts is stale
 npm run worker:dry-run -- /tmp/worker-out   # wrangler deploy --dry-run, no credentials
 ```
@@ -241,22 +244,22 @@ refuses a remote connection, send or lookup.
 
 ## Checks on each pull request
 
-| Check                           | What it does                                                                                                     |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Check sign-off                  | Confirms every commit has a `Signed-off-by` line.                                                                |
-| Check title                     | Confirms the pull request title is a Conventional Commit.                                                        |
-| Secret scan (gitleaks)          | Scans the full history for credentials.                                                                          |
-| Workflow lint                   | Lints the workflow files under `.github/workflows/` and every shell file.                                        |
-| Review dependency changes       | Fails on a new dependency with a known high or critical vulnerability.                                           |
-| Analyze (actions)               | Runs CodeQL static analysis on the workflows.                                                                    |
-| Analyze (javascript-typescript) | Runs CodeQL static analysis on the TypeScript and JavaScript.                                                    |
-| Analyze (python)                | Runs CodeQL static analysis on the Python.                                                                       |
-| Site checks                     | Runs ESLint, Prettier, `astro check` and the TypeScript compiler, knip and vitest on the fixture dist.           |
-| Worker build                    | Builds the site, checks the generated Worker types are current and runs `wrangler deploy --dry-run`.             |
-| Pipeline checks                 | Runs ruff, pyright and pytest on the pipeline.                                                                   |
-| Data checks                     | Pulls the pinned publicdata.au files and runs the whole pipeline suite, with no unplanned skips.                 |
-| Accessibility                   | Proves each check fires on a page built to fail it, then audits the preview page, at two widths, light and dark. |
-| Repository tests                | Checks every workflow against the repository's rules, such as pinned actions and least-privilege permissions.    |
+| Check                           | What it does                                                                                                                                    |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Check sign-off                  | Confirms every commit has a `Signed-off-by` line.                                                                                               |
+| Check title                     | Confirms the pull request title is a Conventional Commit.                                                                                       |
+| Secret scan (gitleaks)          | Scans the full history for credentials.                                                                                                         |
+| Workflow lint                   | Lints the workflow files under `.github/workflows/` and every shell file.                                                                       |
+| Review dependency changes       | Fails on a new dependency with a known high or critical vulnerability.                                                                          |
+| Analyze (actions)               | Runs CodeQL static analysis on the workflows.                                                                                                   |
+| Analyze (javascript-typescript) | Runs CodeQL static analysis on the TypeScript and JavaScript.                                                                                   |
+| Analyze (python)                | Runs CodeQL static analysis on the Python.                                                                                                      |
+| Site checks                     | Runs ESLint, Prettier, `astro check` and the TypeScript compiler, knip and vitest on the fixture dist.                                          |
+| Worker build                    | Builds the site, runs the HTML and link gates, checks the Worker types are current and runs `wrangler deploy --dry-run`.                        |
+| Pipeline checks                 | Runs ruff, pyright and pytest on the pipeline.                                                                                                  |
+| Data checks                     | Pulls the pinned publicdata.au files, runs the whole pipeline suite with no unplanned skips, and runs the HTML and link gates on the real site. |
+| Accessibility                   | Proves each check fires on a page built to fail it, then audits the preview page, at two widths, light and dark.                                |
+| Repository tests                | Checks every workflow against the repository's rules, such as pinned actions and least-privilege permissions.                                   |
 
 More checks will join this list as the pipeline and the site are built, and each is added here
 when it starts to run.
