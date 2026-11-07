@@ -76,6 +76,10 @@
     padding-block: var(--space-4);
   }
 
+  .c-results__intro {
+    max-width: 40rem;
+  }
+
   .c-results {
     display: grid;
     gap: var(--space-4);
