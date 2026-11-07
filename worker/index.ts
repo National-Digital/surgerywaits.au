@@ -45,7 +45,9 @@ function serverError(pathname: string): Response {
   );
 }
 
-export async function handle(
+const PRODUCTION_HOSTS: ReadonlySet<string> = new Set(['surgerywaits.au', 'www.surgerywaits.au']);
+
+async function route(
   request: Request,
   env: Env,
   table: RedirectTable = redirects,
@@ -74,6 +76,19 @@ export async function handle(
   } catch {
     return serverError(url.pathname);
   }
+}
+
+// A preview or any other host must never be indexed, whatever it serves.
+export async function handle(
+  request: Request,
+  env: Env,
+  table: RedirectTable = redirects,
+): Promise<Response> {
+  const response = await route(request, env, table);
+  if (!PRODUCTION_HOSTS.has(new URL(request.url).hostname.replace(/\.$/u, ''))) {
+    response.headers.set('X-Robots-Tag', 'noindex');
+  }
+  return response;
 }
 
 // Content negotiation and the MCP route join here (ADR D7).
