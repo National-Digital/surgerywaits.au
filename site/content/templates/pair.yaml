@@ -11,7 +11,7 @@ figures_heading: Figures for this hospital
 figures_intro: 'Each tile shows one figure for {surgery} at {hospital}.'
 figures_none: '{hospital} did not publish a median wait for {surgery} in {period}.'
 tile_heading: '{measure}, {hospital}'
-ranking: A rank compares this hospital with every public hospital in Australia that published the same figure for the same period. The page shows a rank only on a current published figure. It never ranks a figure that is withheld or not reported.
+ranking: A rank compares this hospital with every public hospital in Australia that published the same figure for the same period. The page shows a rank only on a current published figure. It never ranks a withheld or unreported figure. It also never ranks a figure from an earlier period.
 compare_heading: Compared with the state and Australia
 compare_intro: 'The state and national rows cover every public hospital that reported {surgery}. They are never ranked.'
 compare_caption: '{surgery}: {hospital}, {state} and Australia'

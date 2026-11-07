@@ -455,7 +455,7 @@ number.
 - The site depends on publicdata.au being available at build time. A build that cannot reach a
   pinned version fails and publishes nothing new.
 
-See `docs/ARCHITECTURE.md` ("The planned shape", "Rules that decide the code"), `CONTRIBUTING.md`
+See `docs/ARCHITECTURE.md` ("The shape", "Rules that decide the code"), `CONTRIBUTING.md`
 ("Checks on each pull request") and `LICENSE-DATA.md`.
 
 [d2]: #d2-publicdataaus-stable-api-is-the-only-data-source

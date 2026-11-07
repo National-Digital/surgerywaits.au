@@ -10,9 +10,9 @@ import { readHospital, readHospitalIndex, readSurgeryIndex } from '../lib/dist';
 import { formatCount, formatDays } from '../lib/format';
 import { COMMON_COUNT, commonProcedures, homeStamps, midSentence } from '../lib/home-page';
 import { hospitalStamp, surgeryStamp } from '../lib/index-pages';
-import { stateFiles, statePath } from '../lib/state-page';
+import { stateFiles, statePath, statesStamp } from '../lib/state-page';
 import { surgeryPath, surgeryRefs } from '../lib/surgery-page';
-import { categories } from '../lib/urgency-page';
+import { categories, urgencyStamp } from '../lib/urgency-page';
 import { fill } from '../lib/slots';
 import { elementsOf, render, text, textsOf } from '../lib/test-render';
 
@@ -175,6 +175,11 @@ describe('Home page', () => {
       expect(named(Math.max(...waits))).toContain(longest);
     }
     expect(textsOf(html, 'c-plain-table__stamp')).toHaveLength(2);
+  });
+
+  it('gives the state and urgency counts the surgery counts period and release the copy states', () => {
+    expect(statesStamp()).toEqual(surgeryStamp());
+    expect(urgencyStamp()).toEqual(surgeryStamp());
   });
 
   it('says each release once, and one sentence for each scope', () => {

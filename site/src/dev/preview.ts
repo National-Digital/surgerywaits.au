@@ -257,7 +257,9 @@ export function sampleCharts(names: { hospital: string; national: string }): {
   gaps: ChartSample;
 } {
   let best: { series: ChartSeries; kind: string; slug: string; state: string } | undefined;
-  for (const code of listDist('hospitals')) {
+  // A real dist has no trend file for a hospital with no history.
+  const withTrend = new Set(listDist('trends'));
+  for (const code of listDist('hospitals').filter((c) => withTrend.has(c))) {
     const hospital = readHospital(code);
     const trend = readDist(`trends/${code}.json`) as {
       series: (Trend['series'][number] & { release: string; periods: string[] })[];
