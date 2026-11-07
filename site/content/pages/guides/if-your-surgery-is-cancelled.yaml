@@ -1,0 +1,33 @@
+title: 'If your planned surgery is cancelled or postponed: {site}'
+description: Surgery Waits holds no figure for cancelled or postponed surgery. This guide says what the published waiting times count and lists questions for a hospital.
+crumb_home: Home
+crumb: If your surgery is cancelled
+heading: If your planned surgery is cancelled or postponed
+summary: The site holds no figure for cancelled surgery. This guide says what a published wait counts and lists questions for a hospital.
+lede: Surgery Waits describes waiting times for surgery that has taken place. The site holds no figure for cancelled or postponed operations.
+sections:
+  - id: not-held
+    heading: What the site does not hold
+    paragraphs:
+      - Surgery Waits has no record of a cancellation, a postponement or a patient's waiting list entry. The site cannot say why an operation moved, how often it happens at a hospital or what a postponement does to a listing.
+  - id: counts
+    heading: What a published wait counts
+    paragraphs:
+      - A published waiting time counts the time a patient spends on the waiting list for surgery. The figures do not show how a hospital counts a postponement. A patient can ask the hospital how it counts one.
+  - id: long-waits
+    heading: Long waits in the published figures
+    paragraphs:
+      - 'A hospital and surgery page shows the share of patients who waited longer than 365 days when the hospital published it. A long wait raises that share even when the median is short.'
+    links:
+      - label: The longest published waits
+        href: /longest-waits/
+  - id: questions
+    heading: Questions to ask the hospital
+    paragraphs:
+      - A patient can put these questions to the hospital's booking office, to the treating specialist or to a general practitioner.
+    items:
+      - What is the new date, or when will the hospital give me one?
+      - Does my urgency category stay the same?
+      - How does the hospital count the time between the cancelled date and the new one?
+      - Does any pre-admission appointment need to be repeated?
+      - Whom do I contact if my condition changes before the new date?

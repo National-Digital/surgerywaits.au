@@ -10,6 +10,9 @@ import {
   homeTemplateSchema,
   aboutSchema,
   dataPageSchema,
+  gpSchema,
+  guideSchema,
+  guidesIndexSchema,
   methodologySchema,
   hospitalTemplateSchema,
   hospitalsIndexSchema,
@@ -476,11 +479,13 @@ describe('Copy', () => {
       'pages/methodology.yaml': methodologySchema,
       'pages/data.yaml': dataPageSchema,
       'pages/about.yaml': aboutSchema,
+      'pages/gp.yaml': gpSchema,
+      'pages/guides.yaml': guidesIndexSchema,
     };
     const files = readContent();
     expect(files.length).toBeGreaterThan(0);
     for (const { path, data } of files) {
-      const schema = schemas[path];
+      const schema = path.startsWith('pages/guides/') ? guideSchema : schemas[path];
       expect(schema, path + ' has no schema').toBeDefined();
       expect(schema?.safeParse(data).success, path).toBe(true);
     }

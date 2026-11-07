@@ -1,0 +1,32 @@
+---
+import ArticlePage from '../../components/ArticlePage.astro';
+import SafetyBlock from '../../components/SafetyBlock.astro';
+import { getGuidesIndex, getSite } from '../../lib/content';
+import { GUIDES_PATH, guideOf, guides } from '../../lib/guides';
+import { fill } from '../../lib/slots';
+
+interface Props {
+  slug: string;
+}
+
+export function getStaticPaths(): { params: { slug: string }; props: Props }[] {
+  return guides().map(({ slug }) => ({ params: { slug }, props: { slug } }));
+}
+
+const guide = guideOf(Astro.props.slug);
+const index = getGuidesIndex();
+---
+
+<ArticlePage
+  title={fill(guide.title, { site: getSite().name })}
+  description={guide.description}
+  path={guide.path}
+  crumbHome={guide.crumbHome}
+  crumb={guide.crumb}
+  trail={[{ label: index.crumb, href: GUIDES_PATH }]}
+  heading={guide.heading}
+  intro={[guide.lede]}
+  sections={guide.sections}
+>
+  <SafetyBlock id="guide-safety-heading" full />
+</ArticlePage>

@@ -759,3 +759,22 @@ export const dataPageSchema = z.strictObject({
 });
 
 export const aboutSchema = z.strictObject(article);
+
+export const gpSchema = z.strictObject({ ...article, stamp: slotted('period', 'release') });
+
+const slug = z.string().regex(/^[a-z]+(?:-[a-z]+)*$/, 'lower-case words joined by hyphens');
+
+export const guidesIndexSchema = z.strictObject({
+  title: slotted('site'),
+  description: slotted(),
+  crumb_home: text,
+  crumb: text,
+  heading: text,
+  lede: text,
+  list_heading: text,
+  order: z.array(slug).min(1),
+  after: z.array(section).min(1),
+});
+
+// A guide is an article with a summary for the index, and the file name gives its address.
+export const guideSchema = z.strictObject({ ...article, summary: text });

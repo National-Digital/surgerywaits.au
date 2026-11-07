@@ -19,11 +19,13 @@ interface Props {
   // Sections that follow whatever the page puts in the slot.
   after?: Section[];
   jump?: { heading: string; label: string };
+  // Pages between the home page and this one.
+  trail?: { label: string; href: string }[];
 }
 
-const { title, description, path, crumbHome, crumb, heading, intro, sections, after, jump } =
+const { title, description, path, crumbHome, crumb, heading, intro, sections, after, jump, trail } =
   Astro.props;
-const crumbs = [{ label: crumbHome, href: '/' }, { label: crumb }];
+const crumbs = [{ label: crumbHome, href: '/' }, ...(trail ?? []), { label: crumb }];
 const all = [...sections, ...(after ?? [])];
 ---
 

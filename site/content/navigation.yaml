@@ -10,11 +10,15 @@ site:
     href: /state/
   - label: Methodology
     href: /methodology/
+  - label: Guides
+    href: /guides/
 about:
   - label: About
     href: /about/
   - label: Data and attribution
     href: /data/
+  - label: For general practitioners
+    href: /gp/
   - label: Privacy
     href: /privacy/
   - label: Terms of use

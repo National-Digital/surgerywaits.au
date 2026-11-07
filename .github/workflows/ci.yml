@@ -127,7 +127,7 @@ jobs:
       - run: uv run --locked python tests/fixture_dist.py "$SURGERYWAITS_DIST"
         working-directory: pipeline
       - run: npm run build
-      - run: npm run a11y -- site/dist / /404.html /hospital/armidale-hospital/
+      - run: npm run a11y -- site/dist / /404.html /hospital/armidale-hospital/ /guides/ /guides/referral-to-another-hospital/ /gp/
       # The preview build adds the figure and tile page, which the published build leaves out.
       - run: npm run build:preview
       - run: npm run a11y -- site/dist-preview /dev/primitives/

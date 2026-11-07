@@ -6,6 +6,9 @@ import {
   areasSchema,
   healthServiceTemplateSchema,
   dataPageSchema,
+  gpSchema,
+  guideSchema,
+  guidesIndexSchema,
   homeTemplateSchema,
   hospitalsIndexSchema,
   hospitalTemplateSchema,
@@ -73,9 +76,13 @@ export const collections = {
   }),
   articles: defineCollection({
     loader: glob({
-      pattern: ['methodology.yaml', 'data.yaml', 'about.yaml'],
+      pattern: ['methodology.yaml', 'data.yaml', 'about.yaml', 'gp.yaml', 'guides.yaml'],
       base: './content/pages',
     }),
-    schema: z.union([methodologySchema, dataPageSchema, aboutSchema]),
+    schema: z.union([methodologySchema, dataPageSchema, aboutSchema, gpSchema, guidesIndexSchema]),
+  }),
+  guides: defineCollection({
+    loader: glob({ pattern: '*.yaml', base: './content/pages/guides' }),
+    schema: guideSchema,
   }),
 };

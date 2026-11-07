@@ -1,0 +1,28 @@
+title: 'Emergency department waiting times: {site}'
+description: Surgery Waits publishes no emergency department figures. This guide says what its waiting times measure instead.
+crumb_home: Home
+crumb: Emergency department waiting times
+heading: Emergency department waiting times
+summary: The site publishes no emergency department figures. This guide says what its waiting times measure instead.
+lede: Surgery Waits publishes waiting times for planned surgery and none for emergency departments.
+sections:
+  - id: emergency
+    heading: In an emergency
+    paragraphs:
+      - In an emergency, call 000. Nothing on this site tells a reader whether a condition is an emergency.
+  - id: different
+    heading: Two different waits
+    paragraphs:
+      - An emergency department wait is the time that a patient waits at an emergency department. The site holds no figure of this kind.
+      - A planned surgery wait is the time a patient spends on a waiting list for an operation. The site reports this wait in days, as a median for each surgery at each public hospital.
+  - id: covers
+    heading: What the site covers
+    paragraphs:
+      - 'The figures come from collections of planned surgery waiting times and cover {period}. The pages below show them by surgery, by hospital and by state.'
+    links:
+      - label: Surgery
+        href: /surgery/
+      - label: Hospitals
+        href: /hospitals/
+      - label: States
+        href: /state/

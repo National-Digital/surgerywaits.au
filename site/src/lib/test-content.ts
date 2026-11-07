@@ -33,9 +33,13 @@ function entries(collection: string): { id: string; data: unknown }[] {
     ) {
       return [{ id: collection, data }];
     }
-    const page = path.startsWith('pages/')
-      ? path.slice('pages/'.length).replace(/\.yaml$/, '')
-      : '';
+    if (collection === 'guides' && path.startsWith('pages/guides/')) {
+      return [{ id: path.slice('pages/guides/'.length).replace(/\.yaml$/, ''), data }];
+    }
+    const page =
+      path.startsWith('pages/') && !path.startsWith('pages/guides/')
+        ? path.slice('pages/'.length).replace(/\.yaml$/, '')
+        : '';
     if (page !== '' && collection === (page === 'not-found' ? 'pages' : 'articles')) {
       return [{ id: page, data }];
     }

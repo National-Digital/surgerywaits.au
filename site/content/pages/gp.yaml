@@ -1,0 +1,69 @@
+title: 'Information for general practitioners: {site}'
+description: How a general practitioner can read the published waiting times for planned surgery with a patient, and what the figures leave out.
+crumb_home: Home
+crumb: For general practitioners
+heading: Information for general practitioners
+lede: Surgery Waits publishes the waiting times that public hospitals reported for planned surgery. This page describes what each figure shows, so that a general practitioner can read the figures with a patient.
+stamp: 'The figures cover {period} and were released on {release}.'
+sections:
+  - id: pages
+    heading: What a hospital and surgery page shows
+    paragraphs:
+      - The page shows the median wait, the number of surgeries and the share of patients who waited longer than 365 days, for each figure the hospital published. It shows the state and national figures for the same surgery beside the hospital's figure.
+      - 'The page ranks the hospital on each published figure against every public hospital that published the same figure for the same period. It lists nearby public hospitals with a shorter median wait for the surgery, including hospitals in other states. It charts the median for each year the source published it.'
+    links:
+      - label: Surgery
+        href: /surgery/
+      - label: Hospitals
+        href: /hospitals/
+      - label: States
+        href: /state/
+      - label: Waits across state borders
+        href: /longest-waits/border/
+  - id: urgency
+    heading: Urgency categories
+    paragraphs:
+      - 'The urgency pages show how often each public hospital treated patients within the recommended time. The recommended time is {first_within} for category 1, {second_within} for category 2 and {third_within} for category 3.'
+      - A specialist assigns the category after assessing the patient, and the site cannot predict it. The publisher reports urgency figures by category and surgery figures by surgery, so the site shows the two sets apart.
+    links:
+      - label: Urgency categories
+        href: /urgency/
+  - id: reading
+    heading: Reading a figure with a patient
+    paragraphs:
+      - A median is the middle waiting time. Half of the patients treated waited less than the median, and half waited longer. The median does not show how long the longest waits ran, so the share of patients who waited longer than 365 days appears beside it.
+      - "A median that rests on fewer than {volume_floor} surgeries moves more when one patient's wait changes. The number of surgeries appears beside each median."
+      - The guides explain the same points in plain language for a patient.
+    links:
+      - label: Guides
+        href: /guides/
+      - label: Referral to a different hospital
+        href: /guides/referral-to-another-hospital/
+  - id: leave-out
+    heading: What the figures leave out
+    paragraphs:
+      - The published figures do not cover these points.
+    items:
+      - The wait to see a specialist. The figure counts the time on the surgery waiting list, so the time before a patient joins the list is outside it.
+      - A patient's own place on a list, and any prediction of one patient's wait.
+      - Private hospitals. The site holds no figure for a private hospital.
+      - The current state of a hospital's list. A figure describes a period that ended before the release.
+      - 'A figure that the publisher withholds. The site shows it as not published, gives it no rank and never shows it as 0.'
+      - 'A figure from an earlier period. The site shows it with its own period and gives it no rank.'
+  - id: queensland
+    heading: Queensland quarterly figures
+    paragraphs:
+      - Queensland Health publishes quarterly figures by urgency category and by specialty. The site shows them in a separate section on Queensland hospital pages. It does not rank them, add them to a national figure or compare them with one.
+  - id: source
+    heading: Where the figures come from
+    paragraphs:
+      - The waiting times come from the Australian Institute of Health and Welfare through its MyHospitals data. The data page lists each dataset with its version, release date and licence.
+    links:
+      - label: Data and attribution
+        href: /data/
+      - label: Methodology
+        href: /methodology/
+  - id: decision
+    heading: The decision
+    paragraphs:
+      - The site does not recommend a hospital, a doctor or a treatment. The choice of hospital rests with the patient and the treating doctors.
