@@ -86,12 +86,12 @@ browsers('each check fires on the fixture built to fail it', () => {
     T * PROOF.length,
   );
 
-  const axeAaaRules = async (scheme: Scheme): Promise<string[]> =>
+  const axeAaaRules = async (scheme: Scheme, path = '/fail/axe.html'): Promise<string[]> =>
     (
       await auditPage({
         browser: up(browser),
         base: up(server).base,
-        path: '/fail/axe.html',
+        path,
         scheme,
         viewport: { name: 'desktop', width: 1280, height: 900 },
         exceptions: [],
@@ -105,6 +105,13 @@ browsers('each check fires on the fixture built to fail it', () => {
       const rules = await axeAaaRules('light');
       expect(rules).toContain('axe:color-contrast-enhanced');
       expect(rules).not.toContain('axe:color-contrast');
+      // The scheme is applied: a pair that fails only in the light scheme fires, and one that fails only in the dark scheme does not.
+      expect(await axeAaaRules('light', '/fail/aaa-light-only.html')).toContain(
+        'axe:color-contrast-enhanced',
+      );
+      expect(await axeAaaRules('light', '/fail/aaa-dark-only.html')).not.toContain(
+        'axe:color-contrast-enhanced',
+      );
     },
     T,
   );
@@ -115,6 +122,13 @@ browsers('each check fires on the fixture built to fail it', () => {
       const rules = await axeAaaRules('dark');
       expect(rules).toContain('axe:color-contrast-enhanced');
       expect(rules).not.toContain('axe:color-contrast');
+      // The scheme is applied: a pair that fails only in the dark scheme fires, and one that fails only in the light scheme does not.
+      expect(await axeAaaRules('dark', '/fail/aaa-dark-only.html')).toContain(
+        'axe:color-contrast-enhanced',
+      );
+      expect(await axeAaaRules('dark', '/fail/aaa-light-only.html')).not.toContain(
+        'axe:color-contrast-enhanced',
+      );
     },
     T,
   );

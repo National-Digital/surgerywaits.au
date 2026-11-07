@@ -434,7 +434,10 @@ describe('Privacy', () => {
 
 describe('Accessibility', () => {
   it("every size is relative, so a reader's own browser text size applies", () => {
-    expect(absoluteTypeSizes(styleSources())).toEqual([]);
+    const sources = styleSources();
+    // An empty scan would pass on nothing.
+    expect(sources.length).toBeGreaterThan(10);
+    expect(absoluteTypeSizes(sources)).toEqual([]);
     expect(
       absoluteTypeSizes([
         'a{font-size:14px}',

@@ -18,6 +18,11 @@ if (dist === undefined) {
   throw new Error('usage: node scripts/weight.ts <dist> [--budget <file>]');
 }
 const budget = JSON.parse(await readFile(budgetFile, 'utf8')) as Budget;
+for (const key of ['documentBytes', 'pageBytes'] as const) {
+  if (!Number.isInteger(budget[key]) || budget[key] <= 0) {
+    throw new Error(`the budget needs a positive whole ${key}`);
+  }
+}
 const weights = await measurePages(resolve(dist));
 if (weights.length === 0) {
   out(`FAIL no built pages under ${dist}`);
