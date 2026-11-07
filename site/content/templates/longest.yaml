@@ -6,7 +6,7 @@ crumb_changes: Year on year
 stamp: 'The figures are for {period}. The data was released on {release}.'
 reading_heading: How to read these figures
 reading:
-  - A median wait describes surgery that already happened. It does not judge a hospital, because case mix, size and demand differ between hospitals.
+  - A median wait describes surgery that already happened. It does not judge a hospital, because hospitals differ in the cases they treat and in the number of people they serve.
   - This site calls no hospital best or worst. A figure that is not published never counts as a number.
 exclusion_heading: What these figures leave out
 exclusion: Private hospitals are excluded. These pages cover public hospitals only, so they show no private hospital. They also leave out closed hospitals and any figure that is not published.
