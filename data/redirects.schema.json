@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://surgerywaits.au/data/redirects.schema.json",
+  "title": "Permanent redirects",
+  "description": "Each entry sends an address that earlier releases published to the page that replaced it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["redirects"],
+  "properties": {
+    "redirects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from", "to"],
+        "properties": {
+          "from": { "$ref": "#/$defs/path" },
+          "to": { "$ref": "#/$defs/path" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "path": {
+      "description": "An absolute page path that starts and ends with a slash.",
+      "type": "string",
+      "pattern": "^/([a-z0-9._-]+/)*$"
+    }
+  }
+}

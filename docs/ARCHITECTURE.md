@@ -108,7 +108,7 @@ Cloudflare Worker    serves the static assets (planned)
   `npm run build:preview` adds a development page for the figure, the stat tile, the data table, the chart, the wait bars, the safety block, the breadcrumbs and the data passport at
   `/dev/primitives/` and writes to a `dist-preview` folder in `site/`, so the published build never holds it. The
   page is marked noindex and the `Accessibility` job audits it. The base layout holds the header with the site navigation inline, the footer and, on narrow screens, a "Compare near you" bar. A link in the header, the footer or the bar comes from `site/content/navigation.yaml` and is left out until its page is built.
-- **Worker (planned).** A Cloudflare Worker with static assets serves the built site.
+- **Worker.** A Cloudflare Worker with static assets serves the built site. It sets the security headers and the cache rules on every response, and answers each address in `data/redirects.json` with a 301. The build writes `sitemap.xml` and one `sitemap-<family>.xml` per page family (the pairs in files of 5,000) after the pages, listing each built page that is not marked noindex, dated with the newest data release. `site/public/robots.txt` points at the index.
 
 ## Rules that decide the code
 
@@ -167,6 +167,7 @@ planned marker that does not match the test.
 - **No snapshots.** No HTML snapshot file is committed and no TypeScript test uses a snapshot matcher, so each test asserts specific facts. — enforced by `pipeline/tests/test_testing_rules.py::test_no_snapshot_file_is_tracked`; `pipeline/tests/test_testing_rules.py::test_no_typescript_test_uses_a_snapshot_matcher`.
 - **Tests stay offline.** Tests never touch the network, and pytest refuses any connection except to localhost. — enforced by `pipeline/tests/test_testing_rules.py::test_a_connection_to_a_remote_address_is_refused`; `pipeline/tests/test_testing_rules.py::test_a_lookup_of_a_remote_name_is_refused`.
 - **No coverage gate.** No coverage percentage fails a build, in Vitest or in pytest. — enforced by `pipeline/tests/test_testing_rules.py::test_no_coverage_percentage_gate_is_configured`.
+- **Crawling and delivery.** A sitemap lists only the built pages that are not marked noindex, each once, within the protocol limits. Every response carries the security headers. A redirect has one hop, loops nowhere and starts from no built page. — enforced by `site/src/contracts/sitemaps.test.ts` › "lists exactly the indexable pages that were built, each once"; `site/src/contracts/sitemaps.test.ts` › "lists no page that is marked noindex and no page that was not built"; `site/src/contracts/sitemaps.test.ts` › "keeps every file inside the count and size limits and valid"; `worker/index.test.ts` › "sets every security header on a served page"; `site/src/contracts/redirects.test.ts` › "has no loop and no chain"; `site/src/contracts/sitemaps.test.ts` › "takes no source from a page that is built".
 - **Documents match the repository.** Document links, paths, npm scripts, CI job names and rule references all resolve, and a rule marks a pending test as planned. — enforced by `pipeline/tests/test_docs.py::test_every_rule_in_the_architecture_names_a_test_that_exists`; CI job `Repository tests`.
 
 Copy is written for a reading age of 12 to 14. No test enforces this yet, and reviewers apply it.

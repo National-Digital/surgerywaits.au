@@ -13,7 +13,7 @@ if (process.env['BUILT_CSS'] !== '1') {
   exclude.push('site/src/styles/built-css.test.ts');
 }
 if (process.env['BUILT_PAGES'] !== '1') {
-  exclude.push('site/src/contracts/built-pages.test.ts');
+  exclude.push('site/src/contracts/built-pages.test.ts', 'site/src/contracts/sitemaps.test.ts');
 }
 if (process.env['BUILD_TWICE'] !== '1') {
   exclude.push('site/src/contracts/determinism.test.ts');
