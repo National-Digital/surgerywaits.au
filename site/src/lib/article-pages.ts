@@ -26,7 +26,7 @@ export const ABOUT_PATH = '/about/';
 type Reason = Parameters<typeof formatNotPublished>[0];
 
 // The numbers and names the copy states, taken from the code that applies them.
-export function methodologyFacts(): Record<string, string> {
+function methodologyFacts(): Record<string, string> {
   const facts: Record<string, string> = {
     neighbours: String(rules.neighbours),
     start_radius: String(rules.start_radius_km),
