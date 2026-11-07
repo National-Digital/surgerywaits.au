@@ -287,6 +287,11 @@ describe('Built pages', () => {
       expect([p.path, p.scripts, p.handlers, p.javascriptHref]).toEqual([p.path, 0, 0, false]);
     }
   });
+
+  it('load no page-counting script, so the page-counting section of the privacy page stays true', () => {
+    const counting = /<script|cloudflareinsights|data-cf-beacon/i;
+    expect(paths.filter((path) => counting.test(read(path)))).toEqual([]);
+  });
 });
 
 describe('Built hospital pages', () => {
@@ -1069,8 +1074,16 @@ describe('Built health service pages', () => {
 });
 
 describe('Built content pages', () => {
-  it('hold the methodology, data and about pages at the earlier addresses', () => {
-    for (const path of ['methodology', 'data', 'about']) {
+  it('hold the content and policy pages at the earlier addresses', () => {
+    for (const path of [
+      'methodology',
+      'data',
+      'about',
+      'privacy',
+      'terms',
+      'accessibility',
+      'corrections',
+    ]) {
       expect(paths).toContain(`${path}/index.html`);
       expect(pageAt(`${path}/index.html`).h1).toBe(1);
     }

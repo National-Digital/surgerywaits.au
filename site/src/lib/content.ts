@@ -2,6 +2,8 @@ import { getCollection, getEntry } from 'astro:content';
 import { z } from 'astro/zod';
 import {
   aboutSchema,
+  correctionsSchema,
+  policySchema,
   areasSchema,
   healthServiceTemplateSchema,
   dataPageSchema,
@@ -49,6 +51,15 @@ const methodology = await single('articles', 'methodology', methodologySchema);
 const dataPage = await single('articles', 'data', dataPageSchema);
 const about = await single('articles', 'about', aboutSchema);
 
+const privacy = await single('articles', 'privacy', policySchema);
+const terms = await single('articles', 'terms', policySchema);
+const accessibility = await single('articles', 'accessibility', policySchema);
+const corrections = await single('articles', 'corrections', correctionsSchema);
+
+export const getPrivacy = (): typeof privacy => privacy;
+export const getTerms = (): typeof terms => terms;
+export const getAccessibility = (): typeof accessibility => accessibility;
+export const getCorrections = (): typeof corrections => corrections;
 export const getMethodology = (): typeof methodology => methodology;
 export const getDataPage = (): typeof dataPage => dataPage;
 export const getAbout = (): typeof about => about;

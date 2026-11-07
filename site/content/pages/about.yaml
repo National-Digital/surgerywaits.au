@@ -37,4 +37,4 @@ sections:
   - id: contact
     heading: Contact
     paragraphs:
-      - To report a problem with a figure or to ask a question, use the contact link at the foot of every page.
+      - To report a problem with a figure or to ask a question, use the contact link in the footer of every page.

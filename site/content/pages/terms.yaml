@@ -1,0 +1,65 @@
+title: 'Terms of use for {site}'
+description: The terms for using Surgery Waits, including that the site gives no medical advice, how its code, text and data are licensed, and what it does not warrant.
+crumb_home: Home
+crumb: Terms of use
+heading: Terms of use
+lede: These terms apply when you use Surgery Waits. {operator} operates the site and offers it free of charge.
+updated: '2026-11-07'
+updated_line: 'Last updated {date}.'
+sections:
+  - id: what
+    heading: What the site is
+    paragraphs:
+      - Surgery Waits republishes official statistics about how long patients waited for planned surgery at public hospitals in Australia. The statistics describe waits that have already happened. The site excludes private hospitals.
+    links:
+      - label: Methodology
+        href: /methodology/
+  - id: advice
+    heading: Not medical advice
+    paragraphs:
+      - The site gives general information. It is not medical advice and it does not recommend any hospital, doctor or treatment.
+      - A past waiting time does not predict your wait.
+      - Your general practitioner and your treating specialist can advise you about your own care. In an emergency, call 000.
+  - id: accuracy
+    heading: Accuracy and corrections
+    paragraphs:
+      - '{operator} takes care to reproduce each figure as the publisher released it. A publisher can revise a figure, and an error can occur in the source data or in how this site processes it.'
+      - To report a figure that looks wrong, follow the corrections page.
+    links:
+      - label: Corrections
+        href: /corrections/
+  - id: warranty
+    heading: No warranty
+    paragraphs:
+      - To the extent that Australian law allows, {operator} provides the site as it is and gives no warranty that the site is available, accurate or current.
+      - These terms do not exclude any right that Australian law does not allow to be excluded, including a consumer guarantee under the Australian Consumer Law.
+  - id: code
+    heading: Licence of the code
+    paragraphs:
+      - The source code of the site is published under the GNU Affero General Public Licence, version 3. The repository holds the licence text.
+    links:
+      - label: Code licence
+        href: https://github.com/National-Digital/surgerywaits.au/blob/main/LICENSE
+  - id: text
+    heading: Licence of the text
+    paragraphs:
+      - '{operator} licenses the text it writes for this site under the Creative Commons Attribution 4.0 International licence. The repository file on content and data licences gives the attribution to use.'
+      - The names and marks of Surgery Waits and {operator} are not licensed.
+    links:
+      - label: Content and data licences
+        href: https://github.com/National-Digital/surgerywaits.au/blob/main/LICENSE-DATA.md
+  - id: data
+    heading: Licence of the data
+    paragraphs:
+      - Each dataset on the site stays under the licence of its publisher. {operator} adds no rights to a publisher's data and takes none away. The data page names the licence of each dataset and gives the citation to use.
+    links:
+      - label: Data and attribution
+        href: /data/
+  - id: changes
+    heading: Changes to these terms
+    paragraphs:
+      - The date at the top of this page shows when the terms last changed. The repository history records every earlier version.
+  - id: contact
+    heading: Questions
+    paragraphs:
+      - To ask a question about these terms, use the contact link in the footer of every page.

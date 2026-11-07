@@ -1,0 +1,53 @@
+title: 'Accessibility of {site}'
+description: The accessibility target of Surgery Waits, the automated checks that hold each build to it, the gaps that remain and how to report a barrier.
+crumb_home: Home
+crumb: Accessibility
+heading: Accessibility
+lede: Surgery Waits aims to meet level AAA of the Web Content Accessibility Guidelines (WCAG) 2.2 and treats level AA as the minimum. This page states how the site is built, how it is checked and what the checks do not cover.
+updated: '2026-11-07'
+updated_line: 'Last updated {date}.'
+sections:
+  - id: built
+    heading: How the site is built
+    paragraphs:
+      - The pages are HTML and contain no JavaScript. Every link in the site navigation shows without script.
+    items:
+      - A figure that a publisher withheld is written in words on the page, so colour carries no meaning on its own.
+      - The text size is relative, so the text size set in your browser applies.
+      - The site follows your system setting for a light or a dark colour scheme.
+  - id: checks
+    heading: How the site is checked
+    paragraphs:
+      - "The accessibility check runs in the repository's continuous integration on every pull request. It loads built pages in a real browser, in a light and a dark colour scheme, at a width of 1280 pixels and a width of 390 pixels. A page that fails a check fails the build."
+      - The check covers the points below.
+    items:
+      - The axe-core engine tests the page against its rules for WCAG 2.2 levels A, AA and AAA, including enhanced contrast of 7 to 1.
+      - A separate test measures the contrast of text that axe-core cannot read, such as text over a gradient.
+      - The root text size grows when the viewport is 2560 pixels wide, so the type scales with the screen.
+      - Text that a person reads is at least 0.875 times the root text size, which is 14 pixels at a root size of 16 pixels. Any other visible text is at least 0.75 times the root text size.
+      - A paragraph averages at most 80 characters a line.
+      - Every link, button and field that is not inside a line of text is at least 44 pixels square, the target size for level AAA.
+      - A focused control shows an outline at least 2 pixels wide.
+      - No link is named only by a generic phrase such as here or read more.
+      - No page scrolls sideways at a width of 320 pixels.
+      - Text stays readable and uncut when the WCAG text spacing settings are forced.
+  - id: limits
+    heading: What the checks do not cover
+    paragraphs:
+      - An automated check cannot establish that a page meets WCAG. The project has not recorded a manual test with a screen reader or with keyboard-only use, and this page makes no claim of full conformance.
+      - The check runs on a sample of the built pages and does not yet run on every page. The check has no recorded exceptions.
+  - id: report
+    heading: Report a barrier
+    paragraphs:
+      - If you cannot use part of the site, open a bug report on GitHub. Give the address of the page, what you were trying to do, and the browser and assistive technology you used. A report is treated as a defect, and the fix is described in the pull request that makes it.
+      - GitHub issues are public. To write privately, use the contact link in the footer of every page.
+    links:
+      - label: Open a bug report
+        href: https://github.com/National-Digital/surgerywaits.au/issues/new?template=bug_report.yml
+  - id: complaints
+    heading: Complaints
+    paragraphs:
+      - The Australian Human Rights Commission accepts complaints about disability discrimination under the Disability Discrimination Act 1992.
+    links:
+      - label: Australian Human Rights Commission complaints
+        href: https://humanrights.gov.au/complaints

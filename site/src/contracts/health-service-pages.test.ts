@@ -143,6 +143,10 @@ describe('Every health service page', () => {
       '/methodology/',
       '/data/',
       '/about/',
+      '/privacy/',
+      '/terms/',
+      '/accessibility/',
+      '/corrections/',
     ]);
     for (const slug of slugs) {
       built.add(healthServicePath(slug));

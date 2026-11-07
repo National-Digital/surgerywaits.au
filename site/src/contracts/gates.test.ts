@@ -9,6 +9,8 @@ import {
   areasSchema,
   homeTemplateSchema,
   aboutSchema,
+  correctionsSchema,
+  policySchema,
   dataPageSchema,
   methodologySchema,
   hospitalTemplateSchema,
@@ -476,6 +478,10 @@ describe('Copy', () => {
       'pages/methodology.yaml': methodologySchema,
       'pages/data.yaml': dataPageSchema,
       'pages/about.yaml': aboutSchema,
+      'pages/privacy.yaml': policySchema,
+      'pages/terms.yaml': policySchema,
+      'pages/accessibility.yaml': policySchema,
+      'pages/corrections.yaml': correctionsSchema,
     };
     const files = readContent();
     expect(files.length).toBeGreaterThan(0);
