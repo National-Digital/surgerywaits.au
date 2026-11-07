@@ -1,8 +1,8 @@
 import { spawnSync } from 'node:child_process';
 import type { SpawnSyncReturns } from 'node:child_process';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { checkLinks, cssUrls, scan } from './link-checks.ts';
 import type { Report } from './link-checks.ts';
@@ -105,5 +105,57 @@ describe('the link check', () => {
     );
     expect(more.urls).toEqual(['/s.svg#i', '/t.png', '/o.png', '/w.png']);
     expect([...page.ids]).toEqual(['x', 'y']);
+  });
+
+  it('reads the places a link can hide', () => {
+    const page = scan(
+      '<noscript><a href="/n/"></a></noscript>' +
+        '<meta http-equiv="Refresh" content="0; url=/r/">' +
+        '<meta http-equiv="refresh" content="5">' +
+        '<input type="image" src="/i.png">' +
+        '<style>a{background:url(/s.png)}</style><p style="background:url(\'/t.png\')"></p>',
+    );
+    expect(page.urls).toEqual(['/n/', '/r/', '/i.png', '/s.png', '/t.png']);
+    expect(page.base).toBe(false);
+    expect(scan('<base href="/x/">').base).toBe(true);
+  });
+
+  const site = async (
+    files: Record<string, string>,
+    redirects: [string, string][],
+  ): Promise<Report> => {
+    const dir = await mkdtemp(join(tmpdir(), 'links-'));
+    try {
+      for (const [name, body] of Object.entries(files)) {
+        await mkdir(dirname(join(dir, name)), { recursive: true });
+        await writeFile(join(dir, name), body);
+      }
+      return await checkLinks(dir, origin, new Map(redirects));
+    } finally {
+      await rm(dir, { recursive: true });
+    }
+  };
+
+  it('fails a page that sets a base address', async () => {
+    const report = await site({ 'index.html': '<base href="/x/">' }, []);
+    expect(report.problems).toHaveLength(1);
+    expect(report.problems[0]).toMatchObject({ page: '/', url: '<base>' });
+  });
+
+  it('checks the fragment of a redirect source on the redirect target', async () => {
+    const files = {
+      'index.html': '<a href="/old/#here"></a><a href="/old/#nope"></a>',
+      'about/index.html': '<h1 id="here"></h1>',
+    };
+    const report = await site(files, [['/old/', '/about/']]);
+    expect(report.problems).toHaveLength(1);
+    expect(report.problems[0]).toMatchObject({ url: '/old/#nope' });
+    expect(report.problems[0]?.why).toContain('no element with id "nope"');
+  });
+
+  it('reports a fragment with a bad encoding instead of throwing', async () => {
+    const report = await site({ 'index.html': '<a href="/#%zz"></a>' }, []);
+    expect(report.problems).toHaveLength(1);
+    expect(report.problems[0]?.why).toContain('bad fragment encoding');
   });
 });

@@ -48,4 +48,14 @@ describe('the HTML gate', () => {
       await rm(dir, { recursive: true });
     }
   });
+
+  it('fails with a clear message when Java is missing', () => {
+    const r = spawnSync(
+      process.execPath,
+      ['scripts/html.ts', resolve(import.meta.dirname, 'html-fixtures', 'clean')],
+      { cwd: root, encoding: 'utf8', env: { ...process.env, JAVA: '/nonexistent' } },
+    );
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain('could not run Java (/nonexistent)');
+  });
 });

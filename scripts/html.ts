@@ -31,6 +31,9 @@ const result = spawnSync(
   { stdio: 'inherit' },
 );
 if (result.error) {
-  throw result.error;
+  process.stderr.write(
+    `could not run Java (${process.env['JAVA'] ?? 'java'}): ${result.error.message}. Install Java or set JAVA to its path.\n`,
+  );
+  process.exit(1);
 }
 process.exit(result.status ?? 1);

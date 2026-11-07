@@ -34,6 +34,7 @@ const URL_ATTRS: Record<string, string[]> = {
   embed: ['src'],
   object: ['data'],
   form: ['action'],
+  input: ['src'],
 };
 // SVG references and the social image metas carry an address in an attribute no other element uses.
 const SVG_REF_TAGS = new Set(['use', 'image']);
@@ -60,12 +61,18 @@ function walk(node: Node, visit: (el: Element) => void): void {
 interface Page {
   urls: string[];
   ids: Set<string>;
+  // The site never sets a base address, so one on a page would change how every other link reads.
+  base: boolean;
 }
+
+const REFRESH = /^\s*[\d.]*\s*[;,]?\s*(?:url\s*=\s*)?(?:"([^"]*)"|'([^']*)'|(.*?))\s*$/i;
 
 export function scan(html: string): Page {
   const urls: string[] = [];
   const ids = new Set<string>();
-  walk(parse(html), (el) => {
+  let base = false;
+  // Content inside noscript is parsed as markup, so its links are checked like any other.
+  walk(parse(html, { scriptingEnabled: false }), (el) => {
     const attr = (name: string): string | undefined => el.attrs.find((a) => a.name === name)?.value;
     const id = attr('id');
     if (id !== undefined) {
@@ -75,6 +82,27 @@ export function scan(html: string): Page {
     const name = attr('name');
     if (el.tagName === 'a' && name !== undefined) {
       ids.add(name);
+    }
+    if (el.tagName === 'base') {
+      base = true;
+    }
+    const style = attr('style');
+    if (style !== undefined) {
+      urls.push(...cssUrls(style));
+    }
+    if (el.tagName === 'style') {
+      for (const c of el.childNodes) {
+        if ('value' in c) {
+          urls.push(...cssUrls(c.value));
+        }
+      }
+    }
+    if (el.tagName === 'meta' && attr('http-equiv')?.trim().toLowerCase() === 'refresh') {
+      const m = REFRESH.exec(attr('content') ?? '');
+      const target = (m?.[1] ?? m?.[2] ?? m?.[3] ?? '').trim();
+      if (target !== '' && /url\s*=/i.test(attr('content') ?? '')) {
+        urls.push(target);
+      }
     }
     if (SVG_REF_TAGS.has(el.tagName)) {
       for (const a of ['href', 'xlink:href']) {
@@ -99,7 +127,7 @@ export function scan(html: string): Page {
       urls.push(...(a.endsWith('srcset') ? srcsetUrls(v) : [v.trim()]));
     }
   });
-  return { urls, ids };
+  return { urls, ids, base };
 }
 
 // Every url(...) reference in a stylesheet, other than data: URIs and fragments inside the sheet.
@@ -172,6 +200,11 @@ export async function checkLinks(
     ...[...scanned].map(([file, { urls }]): [string, string[]] => [pagePath(file.slice(1)), urls]),
     ...sheets,
   ];
+  for (const [file, { base }] of scanned) {
+    if (base) {
+      bad(pagePath(file.slice(1)), '<base>', 'sets a base address, which this site never uses');
+    }
+  }
   const builtPage = (path: string): boolean =>
     files.has(path.endsWith('/') ? `${path}index.html` : path);
   for (const [here, urls] of sources) {
@@ -207,19 +240,29 @@ export async function checkLinks(
         continue;
       }
       const redirect = redirects.get(path);
-      if (redirect !== undefined) {
+      let target: string;
+      if (redirect === undefined) {
+        target = path.endsWith('/') ? `${path}index.html` : path;
+        if (!files.has(target)) {
+          bad(here, raw, 'does not resolve to a built file or a redirect');
+          continue;
+        }
+      } else {
         if (!builtPage(redirect)) {
           bad(here, raw, `is a redirect to ${redirect}, which is not a built page`);
+          continue;
         }
-        continue;
-      }
-      const target = path.endsWith('/') ? `${path}index.html` : path;
-      if (!files.has(target)) {
-        bad(here, raw, 'does not resolve to a built file or a redirect');
-        continue;
+        // A fragment on a redirect source lands on the target page, so it is checked there.
+        target = redirect.endsWith('/') ? `${redirect}index.html` : redirect;
       }
       // An empty fragment and #top always resolve, as the HTML standard says.
-      const frag = decodeURIComponent(url.hash.slice(1));
+      let frag: string;
+      try {
+        frag = decodeURIComponent(url.hash.slice(1));
+      } catch {
+        bad(here, raw, 'has a bad fragment encoding');
+        continue;
+      }
       if (frag === '' || frag === 'top') {
         continue;
       }
