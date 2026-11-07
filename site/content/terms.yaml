@@ -21,3 +21,9 @@ quotes:
   - page: data
     term: elective
     reason: The data passport gives each dataset's title and citation as the publisher wrote them.
+  - page: llms-full
+    term: elective surgery
+    reason: The plain-text file repeats the methodology and the data page, which quote the source's name and each dataset's title.
+  - page: llms-full
+    term: elective
+    reason: The plain-text file repeats the methodology and the data page, which quote the source's name and each dataset's title.

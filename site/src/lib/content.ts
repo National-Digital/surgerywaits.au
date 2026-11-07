@@ -2,6 +2,7 @@ import { getCollection, getEntry } from 'astro:content';
 import { z } from 'astro/zod';
 import {
   aboutSchema,
+  agentsSchema,
   areasSchema,
   compareTemplateSchema,
   healthServiceTemplateSchema,
@@ -53,6 +54,7 @@ const pages = new Map(
 const methodology = await single('articles', 'methodology', methodologySchema);
 const dataPage = await single('articles', 'data', dataPageSchema);
 const about = await single('articles', 'about', aboutSchema);
+const agents = await single('articles', 'agents', agentsSchema);
 
 const gp = await single('articles', 'gp', gpSchema);
 const guidesIndex = await single('articles', 'guides', guidesIndexSchema);
@@ -70,6 +72,7 @@ export const getGuides = (): Map<string, z.output<typeof guideSchema>> => guides
 export const getMethodology = (): typeof methodology => methodology;
 export const getDataPage = (): typeof dataPage => dataPage;
 export const getAbout = (): typeof about => about;
+export const getAgents = (): typeof agents => agents;
 
 const hospitalTemplate = await single('templates', 'hospital', hospitalTemplateSchema);
 const hospitalsIndex = await single('templates', 'hospitals', hospitalsIndexSchema);
