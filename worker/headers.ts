@@ -81,6 +81,8 @@ export function withHeaders(response: Response, pathname: string, method = 'GET'
   if (isToolData(pathname)) {
     copy.headers.set('X-Robots-Tag', 'noindex');
   }
+  // The site keeps no session, so no answer may set a cookie.
+  copy.headers.delete('Set-Cookie');
   const cache = cacheControl(pathname, response.status);
   if (cache !== undefined) {
     copy.headers.set('Cache-Control', cache);

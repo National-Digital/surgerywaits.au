@@ -133,7 +133,7 @@ jobs:
       # The preview build adds the figure and tile page, which the published build leaves out.
       - run: npm run build:preview
       - run: npm run a11y -- site/dist-preview /dev/primitives/
-      - run: npx vitest run scripts/a11y.test.ts scripts/layout.test.ts scripts/tool.test.ts
+      - run: npx vitest run scripts/a11y.test.ts scripts/layout.test.ts scripts/tool.test.ts scripts/privacy.test.ts
         env:
           A11Y_TEST: '1'
           TOOL_TEST: '1'

@@ -71,6 +71,37 @@ describe('worker responses', () => {
   });
 });
 
+describe('cookies', () => {
+  it('sends no Set-Cookie on a page, a redirect, a 404, a refused method or an error', async () => {
+    const cookie = { 'Set-Cookie': 'id=1; Path=/', 'Content-Type': 'text/html' };
+    const bait = {
+      ASSETS: { fetch: () => Promise.resolve(new Response('x', { headers: cookie })) },
+    } as unknown as Env;
+    const request = (path: string, method = 'GET'): Request =>
+      new Request(`https://example.test${path}`, { method });
+    const answers = [
+      await handle(request('/state/nsw/'), bait, table),
+      await handle(request('/old/'), bait, table),
+      await handle(request('/missing/'), env, table),
+      await send('/state/nsw/', 'POST'),
+      await handle(request('/data-api/x.json', 'OPTIONS'), bait, table),
+      await handle(
+        request('/x/'),
+        {
+          ASSETS: { fetch: () => Promise.reject(new Error('down')) },
+        } as unknown as Env,
+        table,
+      ),
+    ];
+    for (const response of answers) {
+      expect(response.headers.has('Set-Cookie')).toBe(false);
+    }
+    expect((await handle(request('/state/nsw/'), bait, table)).headers.has('Set-Cookie')).toBe(
+      false,
+    );
+  });
+});
+
 describe('caching', () => {
   it('revalidates pages, caches hashed files for a year and crawler files for an hour', () => {
     expect(cacheControl('/hospital/x/', 200)).toBe('public, max-age=0, must-revalidate');

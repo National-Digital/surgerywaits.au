@@ -121,8 +121,7 @@ previews, no Cloudflare credential sits in the repository until the site is read
 
 The site counts page views with Cloudflare Web Analytics. The count sets no cookie. Nothing a person
 types is sent anywhere. The beacon and report hosts are the only other hosts in the
-Content-Security-Policy, and the privacy check in CI allows exactly those. The
-Content-Security-Policy and the privacy check are planned.
+Content-Security-Policy, and the privacy check in CI allows exactly those.
 
 Why: the site needs to know which pages are read so it can improve them. A page-view count with no
 cookie answers that without identifying anyone. The compare tool stays stateless, as

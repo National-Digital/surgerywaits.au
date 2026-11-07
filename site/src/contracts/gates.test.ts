@@ -68,7 +68,16 @@ import { formatDate, formatFigure, formatStamp } from '../lib/format';
 import type { NotPublishedReason, Role } from '../lib/format';
 import { nearRoutes, stateRoutes, surgeryRefs } from '../lib/surgery-page';
 import { cleanUpCopies, withNearbyPair } from '../lib/test-dist';
+import {
+  historyUses,
+  pageProblems,
+  policyHosts,
+  policyProblems,
+  sendingUses,
+  storageUses,
+} from '../lib/privacy';
 import { render, text, textsOf } from '../lib/test-render';
+import { SECURITY_HEADERS } from '../../../worker/headers';
 
 const contractDir = new URL('../../../contract/', import.meta.url);
 const siteSrc = new URL('../', import.meta.url).pathname;
@@ -427,11 +436,121 @@ describe('Static pages', () => {
   }, 120_000);
 });
 
+// The code a reader's browser or the Worker runs: every non-test source under these folders.
+function shippedSources(folders: string[]): { file: string; text: string }[] {
+  return folders.flatMap((folder) =>
+    readdirSync(folder, { recursive: true, encoding: 'utf8' })
+      .filter(
+        (f) => /\.(?:ts|astro|js)$/.test(f) && !f.endsWith('.test.ts') && !f.startsWith('dev/'),
+      )
+      .map((f) => ({ file: f, text: readFileSync(join(folder, f), 'utf8') })),
+  );
+}
+const toolSources = (): { file: string; text: string }[] => shippedSources([`${siteSrc}tool`]);
+const siteSources = (): { file: string; text: string }[] =>
+  shippedSources([siteSrc]).filter(
+    ({ file }) => !file.startsWith('contracts/') && file !== 'lib/privacy.ts',
+  );
+const workerSources = (): { file: string; text: string }[] =>
+  shippedSources([join(repoRoot, 'worker')]).filter(({ file }) => !file.endsWith('.d.ts'));
+const policy = SECURITY_HEADERS['Content-Security-Policy'] ?? '';
+
 describe('Privacy', () => {
-  it.todo('the site sets no cookies and uses no localStorage or sessionStorage');
-  it.todo('the compare tool puts no search state in the URL or history');
-  it.todo('the page-view count sets no cookie and sends nothing a person enters');
-  it.todo('the privacy check allows exactly the Web Analytics beacon and report hosts');
+  it('the site sets no cookies and uses no localStorage or sessionStorage', () => {
+    const sources = [...siteSources(), ...workerSources()];
+    expect(sources.length, 'the scan reads files').toBeGreaterThan(20);
+    expect(
+      sources.flatMap(({ file, text }) => storageUses(text).map((u) => `${file}: ${u}`)),
+    ).toEqual([]);
+    for (const fixture of [
+      'document.cookie = "a=1";',
+      "localStorage.setItem('a', '1');",
+      "window['sessionStorage'].clear(); sessionStorage.length;",
+      "indexedDB.open('a');",
+      "headers.set('Set-Cookie', 'a=1');",
+    ]) {
+      expect(storageUses(fixture), fixture).not.toEqual([]);
+    }
+    expect(storageUses("headers.delete('Set-Cookie');")).toEqual([]);
+  });
+
+  it('the compare tool puts no search state in the URL or history', () => {
+    const sources = toolSources();
+    expect(sources.length, 'the scan reads the tool').toBeGreaterThan(4);
+    expect(
+      sources.flatMap(({ file, text }) => historyUses(text).map((u) => `${file}: ${u}`)),
+    ).toEqual([]);
+    for (const fixture of [
+      "history.pushState({}, '', '?q=1');",
+      "history.replaceState(null, '', '#a');",
+      "location.hash = 'a';",
+      "location.href = '/compare/?q=1';",
+      "location.assign('/x');",
+      "addEventListener('hashchange', f);",
+    ]) {
+      expect(historyUses(fixture), fixture).not.toEqual([]);
+    }
+    expect(historyUses('const history = chart(row); const x = location.origin;')).toEqual([]);
+  });
+
+  it('the page-view count sets no cookie and sends nothing a person enters', () => {
+    expect(policyProblems(policy)).toEqual([]);
+    expect(policyHosts(policy)).toEqual([
+      'connect-src https://cloudflareinsights.com',
+      'script-src https://static.cloudflareinsights.com',
+    ]);
+    expect(policy).toContain("form-action 'none'");
+    expect(
+      toolSources().flatMap(({ file, text }) => sendingUses(text).map((u) => `${file}: ${u}`)),
+    ).toEqual([]);
+    expect(
+      workerSources().flatMap(({ file, text }) => storageUses(text).map((u) => `${file}: ${u}`)),
+    ).toEqual([]);
+    expect(sendingUses('navigator.sendBeacon("/x", name)')).not.toEqual([]);
+    expect(pageProblems('<script>track()</script>')).toEqual(['script: inline']);
+    expect(
+      pageProblems(
+        '<script src="https://static.cloudflareinsights.com/beacon.min.js" defer></script>',
+      ),
+    ).toEqual(['script: https://static.cloudflareinsights.com/beacon.min.js', 'beacon']);
+    expect(pageProblems('<script type="module" src="/_astro/a.js"></script><p>hi</p>')).toEqual([]);
+  });
+
+  it('the privacy check allows exactly the Web Analytics beacon and report hosts', () => {
+    expect(policyProblems(policy)).toEqual([]);
+    const third = policy.replace(
+      "img-src 'self' data:",
+      "img-src 'self' data: https://pixel.example",
+    );
+    const script = policy.replace(
+      'https://static.cloudflareinsights.com',
+      'https://static.cloudflareinsights.com https://cdn.example',
+    );
+    const report = policy.replace(
+      'https://cloudflareinsights.com',
+      'https://cloudflareinsights.com https://stats.example',
+    );
+    const swapped = policy.replace(
+      'connect-src',
+      'connect-src https://static.cloudflareinsights.com',
+    );
+    const wild = policy.replace("font-src 'self'", "font-src 'self' *");
+    const missing = policy.replace(' https://cloudflareinsights.com', '');
+    for (const [name, fixture, expected] of [
+      ['an image host', third, 'extra: img-src https://pixel.example'],
+      ['a script host', script, 'extra: script-src https://cdn.example'],
+      ['a report host', report, 'extra: connect-src https://stats.example'],
+      [
+        'the beacon host in the wrong directive',
+        swapped,
+        'extra: connect-src https://static.cloudflareinsights.com',
+      ],
+      ['a wildcard', wild, 'wildcard or unsafe'],
+      ['a missing report host', missing, 'missing: connect-src https://cloudflareinsights.com'],
+    ] as const) {
+      expect(policyProblems(fixture), name).toContain(expected);
+    }
+  });
 });
 
 describe('Accessibility', () => {

@@ -48,6 +48,7 @@ import {
   nearPath,
   refOf,
 } from '../lib/surgery-page';
+import { historyUses, pageProblems, sendingUses, storageUses } from '../lib/privacy';
 import { fill } from '../lib/slots';
 import { elementsOf, plain, textsOf } from '../lib/test-render';
 import type { Found } from '../lib/test-render';
@@ -313,6 +314,30 @@ describe('Built pages', () => {
     expect(page?.scriptTags[0]?.type).toBe('module');
     expect(page?.scriptTags[0]?.src).toMatch(/^\/_astro\/[\w.-]+\.js$/);
     expect([page?.handlers, page?.javascriptHref]).toEqual([0, false]);
+  });
+});
+
+describe('Built pages and privacy', () => {
+  const bundles = (): string[] =>
+    readdirSync(new URL('_astro/', dist), { encoding: 'utf8' }).filter((f) => f.endsWith('.js'));
+
+  it('hold no cookie, storage or history code in any page or script', () => {
+    expect(bundles().length, 'the tool script is built').toBeGreaterThan(0);
+    const files = [...paths.map(read), ...bundles().map((f) => read(`_astro/${f}`))];
+    expect(files.flatMap((text) => [...storageUses(text), ...historyUses(text)])).toEqual([]);
+    expect(storageUses('x.localStorage.getItem("a")')).toEqual(['localstorage']);
+  });
+
+  it('carry no beacon and no script from another host, and the tool script reaches no other host', () => {
+    expect(paths.flatMap((p) => pageProblems(read(p)).map((x) => `${p}: ${x}`))).toEqual([]);
+    for (const file of bundles()) {
+      const text = read(`_astro/${file}`);
+      expect(
+        text.match(/https?:\/\/[^\s"'`)]+/gu)?.filter((u) => !u.startsWith('http://www.w3.org/')) ??
+          [],
+      ).toEqual([]);
+      expect(sendingUses(text)).toEqual([]);
+    }
   });
 });
 
