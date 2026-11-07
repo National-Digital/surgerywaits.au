@@ -9,7 +9,11 @@ export const SEL = {
   input: '.js-combo-input',
   list: '.js-combo-list',
   item: 'li',
+  label: 'label',
 } as const;
+
+export const LOAD = { idle: 'idle', loading: 'loading', done: 'done', failed: 'failed' } as const;
+export type Load = (typeof LOAD)[keyof typeof LOAD];
 
 export const ATTR = {
   src: 'data-src',
@@ -54,6 +58,7 @@ export const CLS = {
   facts: 'c-result__facts',
   note2: 'c-result__note',
   history: 'c-result__note c-result__history',
+  withheld: 'c-result__note c-result__note--withheld',
   spark: 'c-spark',
   sparkLine: 'c-spark__line',
   sparkDot: 'c-spark__dot',
@@ -123,8 +128,11 @@ export function enhanceInput(input: HTMLInputElement, listId: string): void {
   input.setAttribute('aria-controls', listId);
 }
 
-export function enhanceList(list: HTMLElement): void {
+export function enhanceList(list: HTMLElement, labelId: string): void {
   list.setAttribute('role', 'listbox');
+  if (labelId !== '') {
+    list.setAttribute('aria-labelledby', labelId);
+  }
 }
 
 export function markSelected(node: HTMLElement, selected: boolean): void {
@@ -155,13 +163,8 @@ export interface SparkPoint {
   y: number | null;
 }
 
-// A line over each run of published points and a dot on every one, in a 100 by 28 box.
-export function sparkline(className: string, label: string, points: SparkPoint[]): SVGSVGElement {
-  const svg = document.createElementNS(SVG_NS, 'svg');
-  svg.setAttribute('class', className);
-  svg.setAttribute('viewBox', '0 0 100 28');
-  svg.setAttribute('role', 'img');
-  svg.setAttribute('aria-label', label);
+// The runs of published points, which a gap of any size ends.
+export function splitRuns(points: SparkPoint[]): SparkPoint[][] {
   const runs: SparkPoint[][] = [[]];
   for (const point of points) {
     if (point.y === null) {
@@ -170,7 +173,17 @@ export function sparkline(className: string, label: string, points: SparkPoint[]
       runs.at(-1)?.push(point);
     }
   }
-  for (const run of runs.filter((r) => r.length > 1)) {
+  return runs.filter((run) => run.length > 0);
+}
+
+// A line over each run of published points and a dot on every one, in a 100 by 28 box.
+export function sparkline(className: string, label: string, points: SparkPoint[]): SVGSVGElement {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('class', className);
+  svg.setAttribute('viewBox', '0 0 100 28');
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', label);
+  for (const run of splitRuns(points).filter((r) => r.length > 1)) {
     const line = document.createElementNS(SVG_NS, 'path');
     line.setAttribute('class', CLS.sparkLine);
     line.setAttribute(

@@ -41,7 +41,7 @@ export function combo(field: HTMLElement, hooks: Hooks): Combo | null {
     return null;
   }
   enhanceInput(input, list.id);
-  enhanceList(list);
+  enhanceList(list, field.querySelector(SEL.label)?.id ?? '');
   let options: Option[] = [];
   let active = -1;
   let picked: Option | null = null;

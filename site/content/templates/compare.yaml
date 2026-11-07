@@ -43,6 +43,7 @@ tool:
   rank: 'Ranked {rank} for {period} among the public hospitals in Australia that published a median wait for this surgery. The shortest median wait ranks first.'
   earlier_period: This figure is from an earlier period than the latest figures, so it carries no rank.
   withheld_rank: This hospital carries no rank because it has no published median wait.
+  no_figures: No figures are held for this surgery.
   closed_note: Closed hospitals are not listed.
   print: Print this sheet
   print_source: These figures come from published government data through publicdata.au. Each figure shows the period it covers and the date it was released.

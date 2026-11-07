@@ -843,6 +843,7 @@ export const compareTemplateSchema = z.strictObject({
     rank: slotted('rank', 'period'),
     earlier_period: slotted(),
     withheld_rank: slotted(),
+    no_figures: slotted(),
     closed_note: slotted(),
     print: slotted(),
     print_source: slotted(),

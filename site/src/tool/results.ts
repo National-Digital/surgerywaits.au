@@ -9,7 +9,7 @@ import {
 } from '../lib/format';
 import type { Figure, NotPublishedReason } from '../lib/format';
 import { fill } from '../lib/slots';
-import type { FigureRow, Procedure, ToolIndex, ToolProcedure, Value } from './data';
+import type { FigureRow, HistoryRow, Procedure, ToolIndex, ToolProcedure, Value } from './data';
 import {
   CLS,
   EVENT,
@@ -41,6 +41,17 @@ const figureOf = (value: Value, reasons: string[], period: string, release: stri
     : { state: NAMES.notPublished, reason: reason as NotPublishedReason, period, release };
 };
 
+// One spot for each year of the run, with no height for a year with no published figure.
+export function historySpots(run: HistoryRow): SparkPoint[] {
+  const [, ...values] = run;
+  const top = Math.max(...values.flatMap((v) => (v !== null && v >= 0 ? [v] : [])), 1);
+  const span = Math.max(values.length - 1, 1);
+  return values.map((value, i) => ({
+    x: 4 + (i / span) * 92,
+    y: value !== null && value >= 0 ? 26 - (value / top) * 24 : null,
+  }));
+}
+
 function history(
   data: ToolIndex,
   row: FigureRow,
@@ -57,16 +68,7 @@ function history(
   const figures = years.map(({ year, value }) =>
     figureOf(value, data.reasons, formatPeriodStartingIn(year), release),
   );
-  const published = figures.flatMap((f) => (f.state === NAMES.published ? [f.value] : []));
-  const top = Math.max(...published, 1);
-  const span = Math.max(values.length - 1, 1);
-  const spots: SparkPoint[] = years.map(({ year }, i) => {
-    const figure = figures[i];
-    return {
-      x: 4 + ((year - first) / span) * 92,
-      y: figure?.state === NAMES.published ? 26 - (figure.value / top) * 24 : null,
-    };
-  });
+  const spots = historySpots(run);
   const label = fill(t.history_label, {
     hospital: name,
     points: joinPoints(
@@ -114,7 +116,7 @@ function card(data: ToolIndex, file: ToolProcedure, hit: Hit, procedure: Procedu
       make.p(CLS.note2, fill(t.rank, { rank: formatRank(rank, of), period: formatPeriod(period) })),
     );
   } else if (!isPublished(median)) {
-    item.append(make.p(CLS.history, t.withheld_rank));
+    item.append(make.p(CLS.withheld, t.withheld_rank));
   } else if (period !== newest) {
     item.append(make.p(CLS.note2, t.earlier_period));
   }

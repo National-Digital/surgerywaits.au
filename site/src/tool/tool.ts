@@ -1,7 +1,8 @@
 import { combo } from './combo';
 import type { Combo, Option } from './combo';
 import type { PlaceRow, ToolFigures, ToolIndex, ToolPlaces } from './data';
-import { ATTR, EVENT, SEL, attr } from './dom';
+import { ATTR, EVENT, LOAD, SEL, attr } from './dom';
+import type { Load } from './dom';
 import { normalise, rank, rankPlaces } from './match';
 import type { Candidate, Place } from './match';
 import { nearest } from './nearest';
@@ -59,35 +60,67 @@ function wire(root: HTMLElement, data: ToolIndex): void {
   let place: Combo | null = null;
   let places: (Place & { value: number })[] = [];
   let spots: PlaceRow[] = [];
-  let loading: Promise<void> | null = null;
+  let lastQuery = '';
+  let submits = 0;
   const failed = (): void => {
     say(attr(root, ATTR.failed));
+    fallback.hidden = false;
   };
-  const loadPlaces = (): void => {
-    loading ??= load<ToolPlaces>(attr(root, ATTR.places)).then((file) => {
-      spots = file.places;
-      places = spots.map((p, i) => ({
-        value: i,
-        state: p[1],
-        name: normalise(p[0]),
-        fields: [normalise(p[0]), normalise(`${p[0]} ${p[1]}`)],
-      }));
-      place?.refresh();
-    }, failed);
+  // A failed file loads again only when asked to, on the next focus or submit and not each keystroke.
+  let placesState: Load = LOAD.idle;
+  const loadPlaces = (again = false): void => {
+    if (
+      placesState === LOAD.loading ||
+      placesState === LOAD.done ||
+      (placesState === LOAD.failed && !again)
+    ) {
+      return;
+    }
+    placesState = LOAD.loading;
+    load<ToolPlaces>(attr(root, ATTR.places)).then(
+      (file) => {
+        spots = file.places;
+        places = spots.map((p, i) => ({
+          value: i,
+          state: p[1],
+          name: normalise(p[0]),
+          fields: [normalise(p[0]), normalise(`${p[0]} ${p[1]}`)],
+        }));
+        placesState = LOAD.done;
+        place?.refresh();
+      },
+      () => {
+        placesState = LOAD.failed;
+        failed();
+      },
+    );
   };
   let figures: Promise<ToolFigures> | null = null;
+  let figuresFailed = false;
   // One file for every surgery, so no request depends on what a person chose.
-  const loadFigures = (): Promise<ToolFigures> => {
-    figures ??= load<ToolFigures>(attr(root, ATTR.figures));
-    figures.catch(() => {
-      figures = null;
+  const loadFigures = (again = false): Promise<ToolFigures> => {
+    if (figures !== null && !(again && figuresFailed)) {
+      return figures;
+    }
+    figuresFailed = false;
+    const next = load<ToolFigures>(attr(root, ATTR.figures));
+    next.catch(() => {
+      figuresFailed = true;
     });
-    return figures;
+    figures = next;
+    return next;
+  };
+  const askFigures = (again = false): void => {
+    const before = figures;
+    const next = loadFigures(again);
+    if (next !== before) {
+      next.catch(failed);
+    }
   };
 
   const surgery: Combo | null = combo(surgeryField, {
     used: () => {
-      loadFigures().catch(failed);
+      askFigures();
     },
     search: (query): Option[] =>
       rank(procedures, query, LISTED).map(({ item, field }): Option => {
@@ -103,13 +136,15 @@ function wire(root: HTMLElement, data: ToolIndex): void {
       say(n < 0 ? '' : count(n));
     },
     changed: () => {
+      submits += 1;
       say('');
     },
   });
   place = combo(placeField, {
     used: loadPlaces,
-    search: (query): Option[] =>
-      normalise(query).length < MIN_PLACE_LETTERS
+    search: (query): Option[] => {
+      lastQuery = normalise(query);
+      return lastQuery.length < MIN_PLACE_LETTERS
         ? []
         : rankPlaces(places, query, LISTED).map((item): Option => {
             const row = spots[item.value];
@@ -117,11 +152,14 @@ function wire(root: HTMLElement, data: ToolIndex): void {
               id: String(item.value),
               ...(row === undefined ? { label: '' } : placeLabel(row)),
             };
-          }),
+          });
+    },
     listed: (n) => {
-      say(n < 0 ? '' : count(n));
+      const ready = placesState === LOAD.done && lastQuery.length >= MIN_PLACE_LETTERS;
+      say(n < 0 || !ready ? '' : count(n));
     },
     changed: () => {
+      submits += 1;
       say('');
     },
   });
@@ -129,8 +167,20 @@ function wire(root: HTMLElement, data: ToolIndex): void {
     return;
   }
 
+  const focusRetry = (field: HTMLElement, retry: () => void): void => {
+    field.querySelector(SEL.input)?.addEventListener(EVENT.focus, retry);
+  };
+  focusRetry(surgeryField, () => {
+    askFigures(true);
+  });
+  focusRetry(placeField, () => {
+    loadPlaces(true);
+  });
+
   form.addEventListener(EVENT.submit, (event) => {
     event.preventDefault();
+    askFigures(true);
+    loadPlaces(true);
     const chosenSurgery = surgery.picked();
     const chosenPlace = place.picked();
     if (chosenSurgery === null || chosenPlace === null) {
@@ -142,9 +192,15 @@ function wire(root: HTMLElement, data: ToolIndex): void {
     if (procedure === undefined || spot === undefined) {
       return;
     }
+    submits += 1;
+    const mine = submits;
     loadFigures().then(({ procedures: byslug }) => {
+      if (mine !== submits) {
+        return;
+      }
       const file = byslug[procedure.slug];
       if (file === undefined) {
+        say(t.no_figures);
         return;
       }
       const rows = file.rows.flatMap((row) => {

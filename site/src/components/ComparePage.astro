@@ -49,7 +49,7 @@ const fallback = [
       <form class="c-tool__form js-tool-form" aria-labelledby="form-heading" hidden>
         <h2 id="form-heading">{t.form_heading}</h2>
         <div class="c-field js-tool-field">
-          <label class="c-field__label" for="surgery">
+          <label class="c-field__label" id="surgery-label" for="surgery">
             {t.tool.surgery_label}
           </label>
           <p class="c-field__hint" id="surgery-hint">
@@ -65,7 +65,7 @@ const fallback = [
           <ul class="c-combo js-combo-list" id="surgery-list" hidden></ul>
         </div>
         <div class="c-field js-tool-field">
-          <label class="c-field__label" for="place">
+          <label class="c-field__label" id="place-label" for="place">
             {t.tool.place_label}
           </label>
           <p class="c-field__hint" id="place-hint">

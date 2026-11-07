@@ -85,6 +85,7 @@ interface Strings {
   rank: string;
   earlier_period: string;
   withheld_rank: string;
+  no_figures: string;
   closed_note: string;
   print: string;
   print_source: string;
