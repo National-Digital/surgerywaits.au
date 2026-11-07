@@ -29,15 +29,26 @@ const isToolData = (pathname: string): boolean =>
 
 export const isDataApi = (pathname: string): boolean => pathname.startsWith('/data-api/');
 
-// Any site may read the data files from a page, so every answer under /data-api/ allows it.
-const CORS_HEADERS: Readonly<Record<string, string>> = {
-  'Access-Control-Allow-Origin': '*',
+const isContractSchema = (pathname: string): boolean =>
+  pathname.startsWith('/contract/') && pathname.endsWith('.schema.json');
+
+export const ALLOWED_DATA_API = 'GET, HEAD, OPTIONS';
+export const JSON_CONTENT_TYPE = 'application/json; charset=utf-8';
+export const DATA_CACHE_CONTROL = 'public, max-age=3600';
+export const MISSING_CACHE_CONTROL = 'no-store';
+
+// Any site may read the data files and the schemas from a page, so each answer carries this.
+export const ALLOW_ANY_ORIGIN = { 'Access-Control-Allow-Origin': '*' } as const;
+
+// Data files stay out of search results.
+export const DATA_API_HEADERS: Readonly<Record<string, string>> = {
+  ...ALLOW_ANY_ORIGIN,
   'X-Robots-Tag': 'noindex',
 };
 
 export function cacheControl(pathname: string, status: number): string | undefined {
   if (status === 404) {
-    return 'no-store';
+    return MISSING_CACHE_CONTROL;
   }
   if (status !== 200 && status !== 304) {
     return undefined;
@@ -46,7 +57,7 @@ export function cacheControl(pathname: string, status: number): string | undefin
     return 'public, max-age=31536000, immutable';
   }
   if (isDataApi(pathname)) {
-    return 'public, max-age=3600';
+    return DATA_CACHE_CONTROL;
   }
   if (pathname === '/robots.txt') {
     return 'public, max-age=14400';
@@ -58,7 +69,7 @@ export function cacheControl(pathname: string, status: number): string | undefin
 function dataApiNotFound(method: string): Response {
   return new Response(method === 'HEAD' ? null : '{"error":"not found"}', {
     status: 404,
-    headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    headers: { 'Content-Type': JSON_CONTENT_TYPE },
   });
 }
 
@@ -71,12 +82,18 @@ export function withHeaders(response: Response, pathname: string, method = 'GET'
     copy.headers.set(name, value);
   }
   if (isDataApi(pathname)) {
-    for (const [name, value] of Object.entries(CORS_HEADERS)) {
+    for (const [name, value] of Object.entries(DATA_API_HEADERS)) {
       copy.headers.set(name, value);
     }
     if (response.status === 200 && pathname.endsWith('.json')) {
-      copy.headers.set('Content-Type', 'application/json; charset=utf-8');
+      copy.headers.set('Content-Type', JSON_CONTENT_TYPE);
     }
+  }
+  if (isContractSchema(pathname)) {
+    copy.headers.set(
+      'Access-Control-Allow-Origin',
+      ALLOW_ANY_ORIGIN['Access-Control-Allow-Origin'],
+    );
   }
   if (isToolData(pathname)) {
     copy.headers.set('X-Robots-Tag', 'noindex');

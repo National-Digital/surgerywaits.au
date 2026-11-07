@@ -82,7 +82,7 @@ import {
   storageUses,
 } from '../lib/privacy';
 import { render, text, textsOf, withoutJsonLd } from '../lib/test-render';
-import { SECURITY_HEADERS } from '../../../worker/headers';
+import { SECURITY_HEADERS, withHeaders } from '../../../worker/headers';
 
 const contractDir = new URL('../../../contract/', import.meta.url);
 const siteSrc = new URL('../', import.meta.url).pathname;
@@ -1014,6 +1014,41 @@ describe('OpenAPI', () => {
     expect(result.errors).toBeUndefined();
     expect(result.valid).toBe(true);
     expect(validator.version).toBe('3.1');
+    const ids = Object.values(
+      (document as { paths: Record<string, Record<string, { operationId: string }>> }).paths,
+    ).flatMap((item) => Object.values(item).map((operation) => operation.operationId));
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('describes the headers the Worker sends for a 200, a 404 and a preflight', async () => {
+    const { handle } = await import('../../../worker/index');
+    const doc = openApiDocument() as {
+      info: { description: string };
+      components: { headers: Record<string, { schema: { const: string } }> };
+    };
+    const value = (name: string): string | undefined => doc.components.headers[name]?.schema.const;
+    const sent = (response: Response): (string | null)[] => [
+      response.headers.get('Access-Control-Allow-Origin'),
+      response.headers.get('X-Robots-Tag'),
+      response.headers.get('Cache-Control'),
+    ];
+    const answer = (status: number): Response =>
+      withHeaders(new Response('x', { status }), '/data-api/index.json');
+    const origin = value('AccessControlAllowOrigin');
+    const robots = value('XRobotsTag');
+    expect(sent(answer(200))).toEqual([origin, robots, value('CacheControlFile')]);
+    expect(sent(answer(404))).toEqual([origin, robots, value('CacheControlMissing')]);
+    const env = { ASSETS: { fetch: () => Promise.resolve(new Response('x')) } } as never;
+    const preflight = await handle(
+      new Request('https://surgerywaits.au/data-api/index.json', { method: 'OPTIONS' }),
+      env,
+    );
+    expect(preflight.status).toBe(204);
+    expect(preflight.headers.get('Access-Control-Allow-Methods')).toBe('GET, HEAD, OPTIONS');
+    expect(doc.info.description).toContain('the methods GET, HEAD and OPTIONS');
+    expect(doc.info.description).toContain('X-Robots-Tag: noindex');
+    expect(doc.info.description).toContain('keep a file for an hour');
+    expect(value('CacheControlFile')).toContain('max-age=3600');
   });
 
   it('gives each path a GET and a HEAD with a 200 and a 404', () => {

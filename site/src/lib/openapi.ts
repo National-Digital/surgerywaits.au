@@ -1,3 +1,10 @@
+import {
+  ALLOW_ANY_ORIGIN,
+  DATA_API_HEADERS,
+  DATA_CACHE_CONTROL,
+  JSON_CONTENT_TYPE,
+  MISSING_CACHE_CONTROL,
+} from '../../../worker/headers';
 import { contractSchemas, FOLDERS, ROOT_FILES } from './dist';
 import type { SchemaName } from './dist';
 import { SITE } from './robots';
@@ -31,7 +38,7 @@ const PARAMETERS: Record<string, Json> = {
     name: 'slug',
     in: 'path',
     required: true,
-    description: 'The slug the matching list file gives the entry.',
+    description: "The slug in the file's address.",
     schema: { type: 'string', pattern: definition('slug')['pattern'] },
   },
   code: {
@@ -53,20 +60,25 @@ const PARAMETERS: Record<string, Json> = {
 const HEADERS: Record<string, Json> = {
   AccessControlAllowOrigin: {
     description: 'Any origin may read the file from a page.',
-    schema: { type: 'string', const: '*' },
+    schema: { type: 'string', const: ALLOW_ANY_ORIGIN['Access-Control-Allow-Origin'] },
   },
   XRobotsTag: {
     description: 'Search engines are told not to index the file.',
-    schema: { type: 'string', const: 'noindex' },
+    schema: { type: 'string', const: DATA_API_HEADERS['X-Robots-Tag'] },
   },
   CacheControlFile: {
     description: 'A browser or cache may keep the file for an hour.',
-    schema: { type: 'string', const: 'public, max-age=3600' },
+    schema: { type: 'string', const: DATA_CACHE_CONTROL },
   },
   CacheControlMissing: {
     description: 'A missing file is never cached.',
-    schema: { type: 'string', const: 'no-store' },
+    schema: { type: 'string', const: MISSING_CACHE_CONTROL },
   },
+};
+
+const contentTypeHeader: Json = {
+  description: 'The body is JSON in UTF-8.',
+  schema: { type: 'string', const: JSON_CONTENT_TYPE },
 };
 
 const ref = (kind: string, name: string): Json => ({ $ref: `#/components/${kind}/${name}` });
@@ -91,7 +103,7 @@ function operation(
       }
     : {
         description: 'The file, which is valid against the schema its family has in /contract/.',
-        headers: sharedHeaders('CacheControlFile'),
+        headers: { ...sharedHeaders('CacheControlFile'), 'Content-Type': contentTypeHeader },
         content: {
           'application/json': { schema: { $ref: schemaUrl(name) } },
         },
