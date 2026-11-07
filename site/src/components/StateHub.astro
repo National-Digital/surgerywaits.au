@@ -13,6 +13,7 @@ import StatTiles from './StatTiles.astro';
 import { getSite, getStateTemplate, label } from '../lib/content';
 import { hospitalPath } from '../lib/hospital-page';
 import { formatCount, formatHospitals } from '../lib/format';
+import { longWaitDays } from '../lib/dist';
 import { fill } from '../lib/slots';
 import {
   STATES_PATH,
@@ -68,7 +69,7 @@ const others = stateFiles()
 const columns = surgeryColumns([
   fill(t.column_state_median, { state: name }),
   t.column_national_median,
-  fill(t.column_state_long_wait, { state: name }),
+  fill(t.column_state_long_wait, { state: name, long_wait_days: longWaitDays() }),
   fill(t.column_state_volume, { state: name }),
 ]);
 const hospitalCols = hospitalColumns(hospitals?.categories ?? [], (category) =>

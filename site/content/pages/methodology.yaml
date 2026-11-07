@@ -29,7 +29,7 @@ sections:
   - id: median
     heading: What a median shows
     paragraphs:
-      - A median is the middle waiting time. Half of the patients waited less than the median, and half waited longer. The median does not show how long the longest waits ran, so the share of patients who waited longer than 365 days appears beside it.
+      - A median is the middle waiting time. Half of the patients waited less than the median, and half waited longer. The median does not show how long the longest waits ran, so the share of patients who waited longer than {long_wait_days} days appears beside it.
       - A specialty figure covers many operations. Hospitals perform different mixes of them, so two specialty figures can describe different work.
       - A procedure figure covers one operation and suits a comparison between hospitals.
   - id: counted-time
@@ -70,7 +70,7 @@ sections:
     heading: How ranks work
     paragraphs:
       - 'The site ranks hospitals on one measure at a time. A rank compares public hospitals within one surgery or one urgency category, in the newest period of its table.'
-      - 'A lower median wait ranks first, and so does a lower share of patients who waited longer than 365 days. A higher share of patients treated within the recommended time ranks first. The number of surgeries is a count and is never ranked.'
+      - 'A lower median wait ranks first, and so does a lower share of patients who waited longer than {long_wait_days} days. A higher share of patients treated within the recommended time ranks first. The number of surgeries is a count and is never ranked.'
       - 'Ties share a rank. If two hospitals tie for 2nd place, both rank 2nd and the next hospital ranks 4th.'
       - 'A figure is ranked only when it is current and published. The site does not rank a figure that is not published, not reported, from an earlier period or from a closed hospital. It does not rank a state or national figure.'
       - The site orders hospitals by the measured number and uses no other criterion. It does not describe any hospital as the best.
@@ -126,7 +126,7 @@ sections:
     heading: Pages that search engines skip
     paragraphs:
       - A hospital and surgery page is marked so that search engines do not list it when it carries little beyond one figure. The page is still built and linked.
-      - 'A page is marked when its median is not published. A page is also marked when it has none of these four things: an earlier published year of the same median, an open hospital on its nearby list that also has a current published median for the surgery, a share of patients who waited longer than 365 days beside a national share, or a nearest suburb in its state.'
+      - 'A page is marked when its median is not published. A page is also marked when it has none of these four things: an earlier published year of the same median, an open hospital on its nearby list that also has a current published median for the surgery, a share of patients who waited longer than {long_wait_days} days beside a national share, or a nearest suburb in its state.'
   - id: longest
     heading: The longest waits pages
     paragraphs:

@@ -175,6 +175,10 @@
     {
       "from": "/attribution/",
       "to": "/data/"
+    },
+    {
+      "from": "/elective-surgery/",
+      "to": "/methodology/#terms"
     }
   ]
 }

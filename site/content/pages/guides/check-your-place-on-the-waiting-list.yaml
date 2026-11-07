@@ -1,0 +1,48 @@
+title: 'How to check your place on a surgery waiting list: {site}'
+description: Surgery Waits holds no patient's place on a waiting list. This guide says what the published figures show and which questions a hospital can answer.
+crumb_home: Home
+crumb: Check your place on the list
+heading: How to check your place on a surgery waiting list
+summary: Surgery Waits cannot show a place on a list. This guide says what the figures show and lists questions for a hospital.
+lede: A hospital keeps the waiting list for its own patients. Surgery Waits has no access to any hospital's list or to any information about a patient, so the site cannot show a place on a list.
+sections:
+  - id: figures
+    heading: What the published figures show
+    paragraphs:
+      - 'The figures describe surgery that has already happened. The median wait is the middle waiting time of the patients treated in {period}. Half of those patients waited less than the median, and half waited longer.'
+      - A median is not a forecast for one patient. The wait of a person who joins a list today can differ from the published figure.
+    links:
+      - label: Methodology
+        href: /methodology/
+  - id: counted
+    heading: What the waiting time counts
+    paragraphs:
+      - The figure counts the time a patient spends on the waiting list for surgery. The time before a patient joins the list is outside the figure, so the wait to see a specialist is outside it too.
+  - id: category
+    heading: Urgency category
+    paragraphs:
+      - A treating specialist assigns an urgency category after assessing a patient. The recommended time for each category is a target.
+    items:
+      - 'Category 1: surgery is recommended within {first_within}.'
+      - 'Category 2: surgery is recommended within {second_within}.'
+      - 'Category 3: surgery is recommended within {third_within}.'
+  - id: on-time
+    heading: How often hospitals meet the recommended time
+    paragraphs:
+      - Each public hospital reports the share of patients it treated within the recommended time. The urgency pages show that share hospital by hospital.
+    links:
+      - label: Urgency categories
+        href: /urgency/
+  - id: questions
+    heading: Questions to ask the hospital
+    paragraphs:
+      - A hospital holds the details of a patient's own listing. A patient can put these questions to the hospital's booking office or to the treating specialist.
+    items:
+      - On what date did I join the waiting list?
+      - What urgency category have I been given?
+      - What is the recommended time for that category?
+      - Does the hospital record any period when I was not available for surgery, and how does it count that period?
+      - Whom do I contact if my condition changes while I wait?
+    links:
+      - label: Public hospitals
+        href: /hospitals/

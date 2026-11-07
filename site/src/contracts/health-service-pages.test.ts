@@ -142,6 +142,8 @@ describe('Every health service page', () => {
       HEALTH_SERVICES_PATH,
       '/methodology/',
       '/data/',
+      '/guides/',
+      '/gp/',
       '/about/',
     ]);
     for (const slug of slugs) {

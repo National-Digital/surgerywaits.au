@@ -122,6 +122,6 @@ describe('the redirects, against the pages built', () => {
 
   // The Tweed targets exist only in the real data, so the fixture dist cannot hold them.
   it.runIf(onRealDist)('ends every redirect at a page that is built', () => {
-    expect(redirects.filter((r) => !built.has(r.to))).toEqual([]);
+    expect(redirects.filter((r) => !built.has(r.to.split('#')[0] ?? ''))).toEqual([]);
   });
 });

@@ -15,7 +15,7 @@
         "required": ["from", "to"],
         "properties": {
           "from": { "$ref": "#/$defs/path" },
-          "to": { "$ref": "#/$defs/path" }
+          "to": { "$ref": "#/$defs/target" }
         }
       }
     }
@@ -25,6 +25,11 @@
       "description": "An absolute page path that starts and ends with a slash.",
       "type": "string",
       "pattern": "^/([a-z0-9._-]+/)*$"
+    },
+    "target": {
+      "description": "An absolute page path that starts and ends with a slash, with an optional fragment that names an element on that page.",
+      "type": "string",
+      "pattern": "^/([a-z0-9._-]+/)*(#[a-z][a-z0-9_-]*)?$"
     }
   }
 }

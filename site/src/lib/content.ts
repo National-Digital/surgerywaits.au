@@ -5,6 +5,9 @@ import {
   areasSchema,
   healthServiceTemplateSchema,
   dataPageSchema,
+  gpSchema,
+  guideSchema,
+  guidesIndexSchema,
   homeTemplateSchema,
   hospitalsIndexSchema,
   hospitalTemplateSchema,
@@ -48,6 +51,19 @@ const pages = new Map(
 const methodology = await single('articles', 'methodology', methodologySchema);
 const dataPage = await single('articles', 'data', dataPageSchema);
 const about = await single('articles', 'about', aboutSchema);
+
+const gp = await single('articles', 'gp', gpSchema);
+const guidesIndex = await single('articles', 'guides', guidesIndexSchema);
+const guides = new Map(
+  z
+    .array(z.object({ id: z.string(), data: guideSchema }))
+    .parse((await getCollection('guides')) as unknown)
+    .map(({ id, data }) => [id, data]),
+);
+
+export const getGp = (): typeof gp => gp;
+export const getGuidesIndex = (): typeof guidesIndex => guidesIndex;
+export const getGuides = (): Map<string, z.output<typeof guideSchema>> => guides;
 
 export const getMethodology = (): typeof methodology => methodology;
 export const getDataPage = (): typeof dataPage => dataPage;

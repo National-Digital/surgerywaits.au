@@ -1,0 +1,40 @@
+title: 'Referral to a different hospital: {site}'
+description: How Surgery Waits lists nearby public hospitals, including hospitals across a state border, and what the figures leave out.
+crumb_home: Home
+crumb: Referral to a different hospital
+heading: Referral to a different hospital
+summary: The site lists nearby public hospitals, including hospitals across a state border. This guide says what the lists hold and what the figures leave out.
+lede: Each hospital and surgery page lists nearby public hospitals that published a shorter median wait for the same surgery. The lists include hospitals in other states. A referral is a decision for a patient and the treating doctors, and the site does not make it.
+sections:
+  - id: nearby
+    heading: How the site lists nearby hospitals
+    paragraphs:
+      - 'Each hospital with a recorded location has a list of its {neighbours} nearest open public hospitals. The distance is a straight line between two recorded locations. The site measures no road distance and no travel time.'
+      - The search ignores state borders, so a hospital near a border can list hospitals in the next state. The hospital and surgery page shows the hospitals on that list that published a shorter median wait for the surgery.
+    links:
+      - label: Public hospitals
+        href: /hospitals/
+  - id: border
+    heading: Hospitals across a state border
+    paragraphs:
+      - 'The border page compares hospitals in different states that lie within {border_radius} km of each other. It ranks the {border_count} largest differences between two medians for one procedure.'
+    links:
+      - label: Waits across state borders
+        href: /longest-waits/border/
+  - id: leave-out
+    heading: What the figures leave out
+    paragraphs:
+      - The published figures do not cover these points.
+    items:
+      - The figures leave out the wait to see a specialist, which comes before a patient joins the surgery list.
+      - The figures do not say whether a hospital accepts a referral from outside its own area.
+      - The figures give no travel time or travel cost.
+      - 'The figures do not give the wait of any one patient. A median describes the patients treated in {period}.'
+  - id: questions
+    heading: Questions to bring to a referral discussion
+    paragraphs:
+      - A patient can put these questions to a general practitioner or a specialist. The decision rests with the patient and the treating doctors.
+    items:
+      - Which public hospitals offer this surgery?
+      - How long is the wait to see the specialist at each of those hospitals, before the surgery list starts?
+      - What follow-up care would the surgery need, and where would that care take place?

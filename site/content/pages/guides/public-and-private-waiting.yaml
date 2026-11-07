@@ -1,0 +1,30 @@
+title: 'Public and private waiting times: {site}'
+description: Surgery Waits covers public hospitals only. This guide says what that means for a comparison with a private hospital.
+crumb_home: Home
+crumb: Public and private waiting
+heading: Public and private waiting times
+summary: The figures cover public hospitals only. This guide says what that means for a comparison.
+lede: Surgery Waits covers public hospitals only. The site removes every private hospital from its register, so it holds no waiting time for one.
+sections:
+  - id: private
+    heading: Private hospitals
+    paragraphs:
+      - Private hospitals are excluded. The site shows no figure for a private hospital and no estimate in its place. No private hospital figure is therefore available for comparison.
+  - id: covers
+    heading: What the public figures cover
+    paragraphs:
+      - The figures cover planned surgery at public hospitals. They count the time a patient spends on the waiting list for surgery. They leave out the wait to see a specialist before the patient joins the list.
+    links:
+      - label: Methodology
+        href: /methodology/
+  - id: questions
+    heading: Questions to ask a provider
+    paragraphs:
+      - A patient who is comparing a public hospital with a private one can put the same questions to each provider.
+    items:
+      - What is the total cost, including the surgeon, the anaesthetist and the hospital?
+      - How long is the wait to see the specialist, and how long is the wait for the surgery after that?
+      - Which waiting time does the provider quote, and what does that time count?
+    links:
+      - label: Public hospitals
+        href: /hospitals/

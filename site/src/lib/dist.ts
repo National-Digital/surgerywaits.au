@@ -346,6 +346,7 @@ export interface Rules {
   start_radius_km: number;
   max_period_age_years: number;
   max_qld_lag_days: number;
+  long_wait_days: number;
   hand_matched_facilities: number;
   measures: Record<Role, string>;
   // AIHW's code for a withheld figure, with the reason the pipeline gives it.
@@ -356,6 +357,8 @@ export interface Rules {
 export function readRules(): Rules {
   return readDist('rules.json') as Rules;
 }
+
+export const longWaitDays = (): string => String(readRules().long_wait_days);
 
 export function readSuburbs(): [string, string, State, number, number][] {
   return (readDist('suburbs.json') as { suburbs: [string, string, State, number, number][] })

@@ -47,13 +47,17 @@ class Expected:
     unit: str
 
 
+# The long-wait measure counts patients who waited longer than this many days.
+LONG_WAIT_DAYS = 365
+
+
 # The only hand-written part: which publisher measure plays which role, and what it must say.
 MAPPINGS: dict[str, Expected] = {
     "MYH0009": Expected(Role.MEDIAN_WAIT, "Median waiting time for elective surgery", "days"),
     "MYH0006": Expected(Role.VOLUME, "Number of elective surgeries", "surgeries"),
     "MYH0007": Expected(
         Role.LONG_WAIT,
-        "Percentage of patients who waited longer than 365 days for elective surgery",
+        f"Percentage of patients who waited longer than {LONG_WAIT_DAYS} days for elective surgery",
         "percent",
     ),
     "MYH0008": Expected(

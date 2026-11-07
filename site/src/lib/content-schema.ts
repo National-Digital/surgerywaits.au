@@ -21,6 +21,16 @@ export const siteSchema = z.strictObject({
 });
 
 // A key here is the only way to name a label, so a stray or missing key fails the build.
+const slots = (text_: string): string[] => [...new Set(text_.match(/\{[a-z_]+\}/g) ?? [])].sort();
+
+// A sentence names exactly the slots its page fills, so a missing or unknown one fails the build.
+const slotted = (...names: string[]): z.ZodString => {
+  const want = names.map((n) => `{${n}}`).sort();
+  return text.refine((value) => slots(value).join() === want.join(), {
+    message: `the text must hold exactly the slots ${want.join(', ') || '(none)'}`,
+  });
+};
+
 export const labelsSchema = z.strictObject({
   skip_link: text,
   nav_site: text,
@@ -55,7 +65,7 @@ export const labelsSchema = z.strictObject({
   change_caption: text,
   role_median_wait: text,
   role_volume: text,
-  role_long_wait: text,
+  role_long_wait: slotted('long_wait_days'),
   role_on_time: text,
   qld_treated: text,
   qld_percent_treated_in_time: text,
@@ -107,16 +117,6 @@ export const termsSchema = z.strictObject({
   terms: z.array(z.strictObject({ preferred: text, replaces: z.array(text).min(1) })).min(1),
   quotes: z.array(z.strictObject({ page: text, term: text, reason: text })),
 });
-
-const slots = (text_: string): string[] => [...new Set(text_.match(/\{[a-z_]+\}/g) ?? [])].sort();
-
-// A sentence names exactly the slots its page fills, so a missing or unknown one fails the build.
-const slotted = (...names: string[]): z.ZodString => {
-  const want = names.map((n) => `{${n}}`).sort();
-  return text.refine((value) => slots(value).join() === want.join(), {
-    message: `the text must hold exactly the slots ${want.join(', ') || '(none)'}`,
-  });
-};
 
 const states = z.strictObject({
   NSW: text,
@@ -319,7 +319,7 @@ export const stateTemplateSchema = z.strictObject({
   surgeries_row_heading: slotted(),
   column_state_median: slotted('state'),
   column_national_median: slotted(),
-  column_state_long_wait: slotted('state'),
+  column_state_long_wait: slotted('state', 'long_wait_days'),
   column_state_volume: slotted('state'),
   hospitals_heading: slotted('state'),
   hospitals_intro: slotted('state'),
@@ -759,3 +759,22 @@ export const dataPageSchema = z.strictObject({
 });
 
 export const aboutSchema = z.strictObject(article);
+
+export const gpSchema = z.strictObject({ ...article, stamp: slotted('period', 'release') });
+
+const slug = z.string().regex(/^[a-z]+(?:-[a-z]+)*$/, 'lower-case words joined by hyphens');
+
+export const guidesIndexSchema = z.strictObject({
+  title: slotted('site'),
+  description: slotted(),
+  crumb_home: text,
+  crumb: text,
+  heading: text,
+  lede: text,
+  list_heading: text,
+  order: z.array(slug).min(1),
+  after: z.array(section).min(1),
+});
+
+// A guide is an article with a summary for the index, and the file name gives its address.
+export const guideSchema = z.strictObject({ ...article, summary: text });

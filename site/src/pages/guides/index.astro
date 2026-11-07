@@ -1,0 +1,30 @@
+---
+import ArticlePage from '../../components/ArticlePage.astro';
+import IndexList from '../../components/IndexList.astro';
+import SafetyBlock from '../../components/SafetyBlock.astro';
+import { getGuidesIndex, getSite } from '../../lib/content';
+import { fillSections } from '../../lib/article-pages';
+import { GUIDES_PATH, guides } from '../../lib/guides';
+import { fill } from '../../lib/slots';
+
+const t = getGuidesIndex();
+const items = guides().map((g) => ({ name: g.heading, href: g.path, notes: [g.summary] }));
+---
+
+<ArticlePage
+  title={fill(t.title, { site: getSite().name })}
+  description={t.description}
+  path={GUIDES_PATH}
+  crumbHome={t.crumb_home}
+  crumb={t.crumb}
+  heading={t.heading}
+  intro={[t.lede]}
+  sections={[]}
+  after={fillSections(t.after, {})}
+>
+  <section id="guides" aria-labelledby="guides-heading">
+    <h2 id="guides-heading">{t.list_heading}</h2>
+    <IndexList {items} />
+  </section>
+  <SafetyBlock id="guides-safety-heading" full />
+</ArticlePage>

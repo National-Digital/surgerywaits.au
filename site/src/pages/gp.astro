@@ -1,0 +1,25 @@
+---
+import ArticlePage from '../components/ArticlePage.astro';
+import SafetyBlock from '../components/SafetyBlock.astro';
+import { getGp, getSite } from '../lib/content';
+import { fillSections, fillText } from '../lib/article-pages';
+import { GP_PATH, guideFacts } from '../lib/guides';
+import { surgeryStamp } from '../lib/index-pages';
+import { fill } from '../lib/slots';
+
+const t = getGp();
+const facts = guideFacts();
+---
+
+<ArticlePage
+  title={fill(t.title, { site: getSite().name })}
+  description={t.description}
+  path={GP_PATH}
+  crumbHome={t.crumb_home}
+  crumb={t.crumb}
+  heading={fillText(t.heading, facts)}
+  intro={[fillText(t.lede, facts), fill(t.stamp, surgeryStamp())]}
+  sections={fillSections(t.sections, facts)}
+>
+  <SafetyBlock id="gp-safety-heading" full />
+</ArticlePage>

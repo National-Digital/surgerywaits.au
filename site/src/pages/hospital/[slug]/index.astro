@@ -33,6 +33,7 @@ import {
 import { networkPath } from '../../../lib/health-service-page';
 import { isBuilt } from '../../../lib/links';
 import { fill } from '../../../lib/slots';
+import { roleLabels } from '../../../lib/surgery-page';
 import type { Role } from '../../../lib/format';
 
 interface Props {
@@ -50,12 +51,7 @@ const { hospital, queensland } = data;
 const state = t.states[hospital.state];
 const site = getSite().name;
 
-const roleLabel: Record<Role, string> = {
-  median_wait: label('role_median_wait'),
-  volume: label('role_volume'),
-  long_wait: label('role_long_wait'),
-  on_time: label('role_on_time'),
-};
+const roleLabel: Record<Role, string> = roleLabels(label);
 
 const title = fill(hospital.closed ? t.title_closed : t.title, { hospital: hospital.name, site });
 const description = hospital.closed

@@ -1076,6 +1076,21 @@ describe('Built content pages', () => {
     }
   });
 
+  it('hold the guides and the page for general practitioners at the earlier addresses', () => {
+    for (const path of [
+      'guides',
+      'guides/check-your-place-on-the-waiting-list',
+      'guides/emergency-department-waiting-times',
+      'guides/if-your-surgery-is-cancelled',
+      'guides/public-and-private-waiting',
+      'guides/referral-to-another-hospital',
+      'gp',
+    ]) {
+      expect(paths).toContain(`${path}/index.html`);
+      expect(pageAt(`${path}/index.html`).h1).toBe(1);
+    }
+  });
+
   it('credit every dataset pinned in the manifest on the data page', () => {
     const manifest = JSON.parse(
       readFileSync(new URL('../../../data/manifest.json', import.meta.url), 'utf8'),

@@ -1,0 +1,25 @@
+title: 'Guides to planned surgery waiting times: {site}'
+description: Plain explanations of what a planned surgery waiting time measures, what the figures leave out and which questions a patient can put to a hospital.
+crumb_home: Home
+crumb: Guides
+heading: Guides
+lede: Each guide answers one question that patients bring to a waiting time. The guides describe the figures and rules of this site and give no medical advice.
+list_heading: The guides
+order:
+  - check-your-place-on-the-waiting-list
+  - referral-to-another-hospital
+  - public-and-private-waiting
+  - if-your-surgery-is-cancelled
+  - emergency-department-waiting-times
+after:
+  - id: related
+    heading: Related pages
+    paragraphs:
+      - The urgency pages, the methodology and the page for general practitioners cover subjects that the guides refer to.
+    links:
+      - label: Urgency categories
+        href: /urgency/
+      - label: Methodology
+        href: /methodology/
+      - label: Information for general practitioners
+        href: /gp/

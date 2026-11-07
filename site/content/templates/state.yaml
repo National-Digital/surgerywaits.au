@@ -25,7 +25,7 @@ specialties_caption: 'Planned surgery specialties in {state}, beside the nationa
 surgeries_row_heading: Surgery
 column_state_median: 'Median wait, {state}'
 column_national_median: Median wait, Australia
-column_state_long_wait: 'Waiting more than 365 days, {state}'
+column_state_long_wait: 'Waiting more than {long_wait_days} days, {state}'
 column_state_volume: 'Patients treated, {state}'
 hospitals_heading: 'Hospitals in {state} by median wait'
 hospitals_intro: 'Each row is a public hospital in {state}. The columns show the median wait for all planned surgery in one urgency category. The shortest median wait for category 1 comes first. A hospital with no published figure follows, in name order, and has no rank.'
