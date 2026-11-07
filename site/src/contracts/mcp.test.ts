@@ -233,6 +233,25 @@ describe('the MCP route', () => {
     expect(asked).toHaveLength(fetched);
   });
 
+  it('never makes one request wait on a fetch that another request started', async () => {
+    const stalled: string[] = [];
+    // The first request's fetches never settle, as if its client had gone.
+    const hung = {
+      ASSETS: {
+        fetch: (r: Request): Promise<Response> => {
+          stalled.push(new URL(r.url).pathname);
+          return new Promise<Response>(() => undefined);
+        },
+      },
+    };
+    const args = { procedure: 'cataract', locality: 'Armidale' };
+    void handle(call('surgerywaits_compare_hospitals', args), hung);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(stalled.length).toBeGreaterThan(0);
+    const answer = await handle(call('surgerywaits_compare_hospitals', args), env);
+    expect(answer.status).toBe(200);
+  });
+
   it('accepts a notification with 202 and no body', async () => {
     const response = await handle(rpc('notifications/initialized', {}, {}, null), env);
     expect(response.status).toBe(202);

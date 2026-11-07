@@ -222,41 +222,40 @@ async function readBody(request: Request): Promise<string | null> {
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-// Parsed data files by path. They are fixed for a deployment, and no request data is stored.
-const parsed = new Map<string, Promise<unknown>>();
+// Parsed data files by path, held only once settled, so no request waits on another's fetch.
+const parsed = new Map<string, unknown>();
 export const clearDataCache = (): void => {
   parsed.clear();
 };
 
 function readerFor(env: Env, request: Request): Reader {
   const origin = new URL(request.url).origin;
+  // A file asked for twice in one request is fetched once.
+  const pending = new Map<string, Promise<unknown>>();
   return (path) => {
     if (!/^\/data-api\/[a-z0-9/-]+\.json$/u.test(path)) {
       throw new RangeError(`not a data file: ${path}`);
     }
-    const cached = parsed.get(path);
-    if (cached !== undefined) {
-      return cached;
+    if (parsed.has(path)) {
+      return Promise.resolve(parsed.get(path));
     }
-    const found = env.ASSETS.fetch(new Request(`${origin}${path}`)).then((response) => {
+    const inFlight = pending.get(path);
+    if (inFlight !== undefined) {
+      return inFlight;
+    }
+    const found = env.ASSETS.fetch(new Request(`${origin}${path}`)).then(async (response) => {
       if (response.status === 404) {
         return null;
       }
       if (!response.ok) {
         throw new Error(`data file ${path} answered ${String(response.status)}`);
       }
-      return response.json();
+      const value: unknown = await response.json();
+      // A missing or failed file is asked for again next time.
+      parsed.set(path, value);
+      return value;
     });
-    parsed.set(path, found);
-    // A missing or failed file is asked for again next time.
-    found.then(
-      (value) => {
-        if (value === null) {
-          parsed.delete(path);
-        }
-      },
-      () => parsed.delete(path),
-    );
+    pending.set(path, found);
     return found;
   };
 }
