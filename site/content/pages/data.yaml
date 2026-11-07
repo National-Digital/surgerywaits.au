@@ -18,7 +18,7 @@ sections:
   - id: use
     heading: What each dataset supplies
     paragraphs:
-      - The Australian Institute of Health and Welfare (AIHW) supplies the waiting times by urgency category, by procedure and by specialty. It also supplies the register of hospitals with their names, states, health networks and locations, and the lists of measures and reporting units that describe them.
+      - The Australian Institute of Health and Welfare (AIHW) supplies three tables of waiting times, one for urgency categories, one for procedures and one for specialties. It also supplies the register of hospitals with their names, states, health networks and locations, and the lists of measures and reporting units that describe them.
       - Queensland Health supplies quarterly figures by urgency category and by specialty. The Australian Bureau of Statistics supplies the suburb and locality boundaries that give each suburb a centre.
 after:
   - id: reuse
@@ -26,3 +26,7 @@ after:
     paragraphs:
       - Each dataset keeps its publisher's licence, which its entry above names. These licences require a person who reuses the data to credit the publisher. The entry gives a citation to use.
       - The publishers do not endorse this site and have no involvement in it. The site excludes private hospitals.
+  - id: typeface
+    heading: Typeface
+    paragraphs:
+      - The site sets its text in Newsreader, a typeface that is copyright 2020 The Newsreader Project Authors and is licensed under the SIL Open Font License, Version 1.1.

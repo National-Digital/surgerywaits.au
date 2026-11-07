@@ -15,3 +15,9 @@ quotes:
   - page: methodology
     term: elective
     reason: The methodology explains the source's word, and quotes it in the measure names.
+  - page: data
+    term: elective surgery
+    reason: The data passport gives each dataset's title and citation as the publisher wrote them.
+  - page: data
+    term: elective
+    reason: The data passport gives each dataset's title and citation as the publisher wrote them.

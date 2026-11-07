@@ -2,7 +2,7 @@
 import ArticlePage from '../components/ArticlePage.astro';
 import { getMethodology, getSite } from '../lib/content';
 import { surgeryStamp } from '../lib/index-pages';
-import { METHODOLOGY_PATH } from '../lib/article-pages';
+import { fillSections, METHODOLOGY_PATH } from '../lib/article-pages';
 import { fill } from '../lib/slots';
 
 const t = getMethodology();
@@ -16,6 +16,6 @@ const t = getMethodology();
   crumb={t.crumb}
   heading={t.heading}
   intro={[t.lede, fill(t.stamp, surgeryStamp())]}
-  sections={t.sections}
+  sections={fillSections(t.sections)}
   jump={{ heading: t.jump_heading, label: t.jump_label }}
 />

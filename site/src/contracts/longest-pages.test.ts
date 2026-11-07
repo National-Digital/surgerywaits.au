@@ -373,7 +373,7 @@ function located(row: HospitalIndexRow | undefined): {
 
 describe('The border page', () => {
   // A copy in which a Queensland and a New South Wales hospital sit 60 kilometres apart.
-  function nearBorder(): void {
+  function nearBorder(km?: number): void {
     const copy = copyDist();
     const file = join(copy, 'hospitals.json');
     const index = JSON.parse(readFileSync(file, 'utf8')) as { hospitals: HospitalIndexRow[] };
@@ -382,7 +382,9 @@ describe('The border page', () => {
     if (nsw === undefined || qld === undefined || nsw.latitude === null) {
       throw new RangeError('the fixture lacks the hospitals this test moves');
     }
-    qld.latitude = nsw.latitude + 0.5;
+    // One degree of latitude spans the same distance everywhere on the sphere.
+    const perDegree = distanceKm({ latitude: 0, longitude: 0 }, { latitude: 1, longitude: 0 });
+    qld.latitude = nsw.latitude + (km === undefined ? 0.5 : km / perDegree);
     qld.longitude = nsw.longitude;
     writeFileSync(file, JSON.stringify(index));
   }
@@ -419,6 +421,19 @@ describe('The border page', () => {
     expect(pairs.map((p) => p.difference)).toEqual(
       [...pairs.map((p) => p.difference)].sort((a, b) => b - a),
     );
+  });
+
+  it('pairs two hospitals just inside the radius and leaves out two just beyond it', () => {
+    const joins = (): boolean =>
+      borderPairs(1000).some((p) =>
+        [p.from.row.slug, p.to.row.slug].every((slug) =>
+          ['wollongong-hospital', 'mater-adult-hospital'].includes(slug),
+        ),
+      );
+    nearBorder(BORDER_RADIUS_KM - 0.1);
+    expect(joins()).toBe(true);
+    nearBorder(BORDER_RADIUS_KM + 0.1);
+    expect(joins()).toBe(false);
   });
 
   it('shows each pair with both medians, the distance and the difference', async () => {

@@ -381,7 +381,7 @@ describe('Copy', () => {
       );
     expect(found).toEqual([]);
     expect(terms.some((t) => t.replaces.includes('elective'))).toBe(true);
-    expect(quotes.every((q) => q.page === 'methodology')).toBe(true);
+    expect(quotes.every((q) => ['methodology', 'data'].includes(q.page))).toBe(true);
   });
   it('the terminology check catches a replaced term and honours a quote listed for its page', () => {
     const terms = [{ preferred: 'planned surgery', replaces: ['elective surgery', 'elective'] }];

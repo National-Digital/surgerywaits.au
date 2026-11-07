@@ -1,15 +1,15 @@
-import { readFileSync } from 'node:fs';
 import { parseFragment } from 'parse5';
 import type { DefaultTreeAdapterTypes } from 'parse5';
 import { describe, expect, it } from 'vitest';
 
-import { ABOUT_PATH, DATA_PATH, METHODOLOGY_PATH } from '../lib/article-pages';
+import { ABOUT_PATH, DATA_PATH, METHODOLOGY_PATH, fillSections } from '../lib/article-pages';
 import aboutPage from '../pages/about.astro';
 import dataPage from '../pages/data.astro';
 import methodologyPage from '../pages/methodology.astro';
 import { getAbout, getDataPage, getMethodology, getSite } from '../lib/content';
+import { termsSchema } from '../lib/content-schema';
 import { readCredits } from '../lib/credits';
-import { pageStrings } from '../lib/content-files';
+import { decode, pageStrings, readContent, replacedTerms } from '../lib/content-files';
 import { formatDate, formatNotPublished } from '../lib/format';
 import { isBuilt } from '../lib/links';
 import {
@@ -21,22 +21,9 @@ import {
 } from '../lib/longest-page';
 import { surgeryStamp } from '../lib/index-pages';
 import { fill } from '../lib/slots';
+import rules from '../lib/pipeline-rules.json';
+import { MAX_SPREAD_KM, MIN_PLACE_PAGES, NEAR_RADIUS_KM } from '../lib/surgery-page';
 import { render, text, textsOf } from '../lib/test-render';
-
-const read = (path: string): string => readFileSync(new URL(path, import.meta.url), 'utf8');
-const pipeline = (file: string): string => read(`../../../pipeline/src/surgerywaits/${file}`);
-const library = (file: string): string => read(`../lib/${file}`);
-
-// The number a source file gives a named constant, so the copy is held to the code.
-function constant(source: string, name: string): string {
-  const found = new RegExp(`^(?:export )?(?:const )?${name}(?::[^=]+)? = ([0-9.]+)`, 'm').exec(
-    source,
-  );
-  if (found?.[1] === undefined) {
-    throw new RangeError(`no number named ${name}`);
-  }
-  return String(Number(found[1]));
-}
 
 const methodology = getMethodology();
 const sectionText = (id: string): string => {
@@ -44,7 +31,8 @@ const sectionText = (id: string): string => {
   if (found === undefined) {
     throw new RangeError(`no section ${id}`);
   }
-  return [...found.paragraphs, ...(found.items ?? [])].join(' ');
+  const [filled] = fillSections([found]);
+  return [...(filled?.paragraphs ?? []), ...(filled?.items ?? [])].join(' ');
 };
 
 const methodologyHtml = await render(methodologyPage, {});
@@ -104,10 +92,32 @@ describe('Content pages', () => {
     }
   });
 
-  it('use the word elective only on the methodology page', () => {
+  it('use the word elective on the methodology page and in quoted source titles only', () => {
+    const { terms, quotes } = termsSchema.parse(
+      readContent().find(({ path }) => path === 'terms.yaml')?.data,
+    );
+    const quoted = (slug: string): { terms: typeof terms; quotes: typeof quotes } => ({
+      terms,
+      quotes: quotes.filter((q) => q.page === slug),
+    });
     expect(pageStrings(methodologyHtml).some((t) => /elective/i.test(t))).toBe(true);
-    expect(pageStrings(dataHtml, true).some((t) => /elective/i.test(t))).toBe(false);
-    expect(pageStrings(aboutHtml).some((t) => /elective/i.test(t))).toBe(false);
+    expect(
+      replacedTerms('methodology', pageStrings(methodologyHtml), quoted('methodology')),
+    ).toEqual([]);
+    expect(replacedTerms('about', pageStrings(aboutHtml), quoted('about'))).toEqual([]);
+    // Each place the data page says elective is a title or citation copied from a publisher.
+    const sourceText = readCredits().flatMap((c) => [c.title, c.citation].map(decode));
+    const onData = pageStrings(dataHtml).filter((t) => /elective/i.test(t));
+    for (const found of onData) {
+      expect(
+        sourceText.some((source) => source.includes(decode(found))),
+        found,
+      ).toBe(true);
+    }
+    expect(replacedTerms('data', pageStrings(dataHtml), quoted('data'))).toEqual([]);
+    expect(replacedTerms('data', pageStrings(dataHtml), quoted('about')).length > 0).toBe(
+      onData.length > 0,
+    );
   });
 
   it('state the private hospital exclusion', () => {
@@ -116,62 +126,37 @@ describe('Content pages', () => {
   });
 });
 
-describe('Methodology numbers', () => {
-  const nearby = pipeline('nearby.py');
-  const places = library('surgery-page.ts');
+describe('Methodology copy', () => {
+  const all = (): string => methodology.sections.map((x) => sectionText(x.id)).join(' ');
 
-  it('states the number of nearby hospitals and the search radius the pipeline uses', () => {
-    const copy = sectionText('nearby');
-    expect(copy).toContain(`${constant(nearby, 'NEIGHBOURS')} nearest open public hospitals`);
-    expect(copy).toContain(`starts at ${constant(nearby, 'START_RADIUS_KM')} km`);
-    expect(copy).toContain(`until ${constant(nearby, 'NEIGHBOURS')} open hospitals`);
-    expect(nearby).toContain('radius * 2');
-    expect(nearby).toContain('distance_km(origin, p)');
-    expect(nearby).toContain('round(d)');
+  it('fills every slot, so no brace reaches a reader', () => {
+    expect(all()).not.toMatch(/[{}]/);
+    expect(text(methodologyHtml)).not.toMatch(/[{}]/);
   });
 
-  it('states the radius, spread and page counts the nearby places use', () => {
-    const copy = sectionText('places');
-    const radius = constant(places, 'NEAR_RADIUS_KM');
-    expect(copy).toContain(`within ${radius} km of the main hospital`);
-    expect(copy).toContain(`within ${radius} km of a listed hospital`);
-    expect(copy).toContain(`up to ${constant(places, 'MAX_OUTSIDE')} hospitals`);
-    expect(copy).toContain(`more than ${constant(places, 'MAX_SPREAD_KM')} km apart`);
-    expect(copy).toContain(`at least ${constant(places, 'MIN_RANKED')} hospitals`);
-    expect(copy).toContain(`at least ${constant(places, 'MIN_PLACE_PAGES')} surgeries`);
-  });
-
-  it('states the freshness limits the build enforces', () => {
-    const gates = pipeline('gates.py');
-    const copy = sectionText('freshness');
-    expect(copy).toContain(`more than ${constant(gates, 'MAX_PERIOD_AGE_YEARS')} years before`);
-    expect(copy).toContain(`more than ${constant(gates, 'MAX_QLD_LAG_DAYS')} days after`);
-  });
-
-  it('names the four measures as AIHW does, with the long wait threshold the pipeline checks', () => {
-    const catalogue = pipeline('catalogue.py');
-    const names = [...catalogue.matchAll(/Expected\(\s*Role\.[A-Z_]+,\s*"([^"]+)"/g)].map(
-      (m) => m[1] ?? '',
+  it('states the figures the code exports', () => {
+    expect(sectionText('nearby')).toContain(
+      `${String(rules.neighbours)} nearest open public hospitals`,
     );
-    expect(names).toHaveLength(4);
-    const copy = sectionText('measures');
-    for (const name of names) {
-      expect(copy, name).toContain(name);
-    }
-    expect(copy).toContain('longer than 365 days');
-    expect(names.some((n) => n.includes('longer than 365 days'))).toBe(true);
+    expect(sectionText('places')).toContain(
+      `within ${String(NEAR_RADIUS_KM)} km of the main hospital`,
+    );
+    expect(sectionText('places')).toContain(`more than ${String(MAX_SPREAD_KM)} km apart`);
+    expect(sectionText('place-pages')).toContain(`at least ${String(MIN_PLACE_PAGES)} surgeries`);
+    expect(sectionText('longest')).toContain(`holds the ${String(LONGEST_COUNT)} longest medians`);
+    expect(sectionText('longest')).toContain(`within ${String(BORDER_RADIUS_KM)} km of each other`);
+    expect(sectionText('longest')).toContain(
+      `ranks the ${String(BORDER_COUNT)} largest differences`,
+    );
+    expect(sectionText('longest')).toContain(
+      `the ${String(CHANGE_COUNT)} biggest rises or the ${String(CHANGE_COUNT)} biggest falls`,
+    );
+    expect(sectionText('longest')).toContain(`at least ${String(MOVE_VOLUME_FLOOR)} surgeries`);
   });
 
   it('gives each withheld-figure code the wording the site shows for it', () => {
     const copy = sectionText('not-published');
-    const codes = pipeline('suppression.py');
-    for (const [marker, reason] of [
-      ['<5', 'too_few_patients'],
-      ['-', 'no_patients_reported'],
-      ['NP', 'not_published_by_aihw'],
-      ['Not peered', 'no_peer_group_comparison'],
-    ] as const) {
-      expect(codes).toContain(`"${marker}": Reason.`);
+    for (const [marker, reason] of Object.entries(rules.withheld_codes)) {
       expect(copy).toContain(`"${marker}"`);
       expect(copy).toContain(
         formatNotPublished(reason as Parameters<typeof formatNotPublished>[0]),
@@ -182,58 +167,34 @@ describe('Methodology numbers', () => {
     );
   });
 
-  it('describes the rank rules the pipeline applies', () => {
-    const derive = pipeline('derive.py');
+  it('names the four measures as the pipeline pins them', () => {
+    const copy = sectionText('measures');
+    expect(Object.keys(rules.measures)).toHaveLength(4);
+    for (const name of Object.values(rules.measures)) {
+      expect(copy, name).toContain(name);
+    }
+    expect(rules.measures.long_wait).toContain('longer than 365 days');
+  });
+
+  it('describes the rank order the pipeline pins', () => {
     const copy = sectionText('ranks');
-    expect(derive).toContain('Role.MEDIAN_WAIT: True');
-    expect(derive).toContain('Role.LONG_WAIT: True');
-    expect(derive).toContain('Role.ON_TIME: False');
-    expect(derive).toContain('Role.VOLUME: None');
-    expect(copy).toContain('rank 2nd and the next hospital ranks 4th');
-    for (const blocked of ['not published', 'not reported', 'earlier period', 'closed']) {
-      expect(copy).toContain(blocked);
-    }
-  });
-
-  it('names the four matched Queensland facilities the pipeline lists', () => {
-    const queensland = pipeline('queensland.py');
-    const overrides = queensland.split('OVERRIDES')[1]?.split('\n}\n')[0] ?? '';
-    expect([...overrides.matchAll(/Override\(/g)]).toHaveLength(4);
-    expect(sectionText('queensland')).toContain('four named facilities');
-  });
-});
-
-describe('Methodology longest waits numbers', () => {
-  const code = library('longest-page.ts');
-  const copy = sectionText('longest');
-
-  it('states the list sizes, radius and volume floor the pages use', () => {
-    expect(copy).toContain(`holds the ${String(LONGEST_COUNT)} longest medians`);
-    expect(copy).toContain(`within ${String(BORDER_RADIUS_KM)} km of each other`);
-    expect(copy).toContain(`ranks the ${String(BORDER_COUNT)} largest differences`);
+    expect(rules.lower_is_better).toEqual({
+      median_wait: true,
+      long_wait: true,
+      on_time: false,
+      volume: null,
+    });
+    expect(copy).toContain('A lower median wait ranks first');
     expect(copy).toContain(
-      `the ${String(CHANGE_COUNT)} biggest rises or the ${String(CHANGE_COUNT)} biggest falls`,
+      'A higher share of patients treated within the recommended time ranks first',
     );
-    expect(copy).toContain(`at least ${String(MOVE_VOLUME_FLOOR)} surgeries`);
+    expect(copy).toContain('rank 2nd and the next hospital ranks 4th');
   });
 
-  it('describes the rules the code applies', () => {
-    expect(code).toContain('entries.length < 2');
-    expect(copy).toContain('at least 2 hospitals');
-    expect(code).toContain('km <= BORDER_RADIUS_KM');
-    expect(code).toContain('a.state === b.state');
-    expect(code).toContain('distanceKm(a, b)');
-    expect(code).toContain('difference <= 0');
-    expect(code).toContain('now[0] !== before[0] + 1');
-    expect(code).toContain('volume.value < MOVE_VOLUME_FLOOR');
-    expect(code).toContain('key(item) === edge');
-    expect(code).toContain('!h.closed');
-    expect(code).toContain('isCurrent(row, surgery)');
-    expect(code).toContain("figure?.state === 'published'");
-    expect(code).toContain("ref.kind === 'procedure'");
-    for (const rule of ['ties the last row shown', 'closed hospitals', 'earlier period']) {
-      expect(copy).toContain(rule);
-    }
+  it('explains the median, the specialty figure and planned surgery', () => {
+    expect(sectionText('median')).toContain('Half of the patients waited less than the median');
+    expect(sectionText('median')).toContain('A specialty figure covers many operations');
+    expect(sectionText('terms')).toContain('Planned surgery is still necessary surgery');
   });
 });
 
@@ -262,5 +223,12 @@ describe('Data page', () => {
     const body = text(dataHtml.split('<main')[1] ?? dataHtml);
     expect(body).toContain(fill(getDataPage().stamp, surgeryStamp()));
     expect(body).toMatch(/public hospitals, and the site covers [\d,]+ surgeries and specialties/);
+  });
+
+  it('credits the typeface the site ships under its licence', () => {
+    const body = text(dataHtml.split('<main')[1] ?? dataHtml);
+    expect(body).toContain('Newsreader');
+    expect(body).toContain('SIL Open Font License, Version 1.1');
+    expect(body).toContain('copyright 2020 The Newsreader Project Authors');
   });
 });

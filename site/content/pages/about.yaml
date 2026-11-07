@@ -24,7 +24,7 @@ sections:
   - id: independence
     heading: Independence from the publishers
     paragraphs:
-      - Surgery Waits has no connection with any government, health department, hospital, health service or data publisher. The publishers of the data have no involvement in the site and do not endorse it.
+      - Surgery Waits has no connection with a government body or a data publisher. The publishers of the data have no involvement in the site and do not endorse it.
       - An error in how the site presents a figure is an error in this site.
   - id: data
     heading: How the data reaches the page
@@ -37,4 +37,4 @@ sections:
   - id: contact
     heading: Contact
     paragraphs:
-      - To report a problem with a figure, ask a question or ask about reusing something, use the contact link at the foot of every page.
+      - To report a problem with a figure or to ask a question, use the contact link at the foot of every page.

@@ -35,14 +35,14 @@ export interface Route {
 
 const DIRECTORY: Record<PageKind, string> = { procedure: '/surgery/', specialty: '/specialty/' };
 
-const NEAR_RADIUS_KM = 25;
+export const NEAR_RADIUS_KM = 25;
 // The widest the hospitals on one page may spread, edge to edge, so every one is a real option for the others.
-const MAX_SPREAD_KM = 120;
-const MIN_RANKED = 2;
-const MAX_OUTSIDE = 2;
+export const MAX_SPREAD_KM = 120;
+export const MIN_RANKED = 2;
+export const MAX_OUTSIDE = 2;
 // A place with fewer pages than this is too thin to stand as a place of its own.
-const MIN_PLACE_PAGES = 3;
-const SMALL_STATE = 5;
+export const MIN_PLACE_PAGES = 3;
+export const SMALL_STATE = 5;
 
 const stateSlug = (state: string): string => state.toLowerCase();
 
