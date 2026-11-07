@@ -10,7 +10,8 @@ const quarter = { period: 'July to September 2025', release: '2025-10-28' };
 const words: Record<NotPublishedReason, string> = {
   too_few_patients: 'not published: too few patients',
   no_patients_reported: 'not published: no patients reported',
-  not_published_by_aihw: 'not published: AIHW did not publish a figure',
+  not_published_by_aihw:
+    'not published: the Australian Institute of Health and Welfare did not publish a figure',
   no_peer_group_comparison: 'not published: no peer group comparison',
   not_given_by_queensland_health: 'not published: Queensland Health gave no figure',
 };

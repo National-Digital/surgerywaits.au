@@ -14,18 +14,21 @@ import {
   readHealthService,
   readHealthServiceIndex,
   readHospital,
+  readHospitalIndex,
 } from '../lib/dist';
-import { formatDate, formatFigure, formatPeriod } from '../lib/format';
+import { formatCount, formatDate, formatFigure, formatPeriod } from '../lib/format';
 import {
   HEALTH_SERVICES_PATH,
   healthServicePath,
   healthServiceRoutes,
   healthServiceSlugs,
+  indexGroups,
   memberTable,
 } from '../lib/health-service-page';
 import { hospitalPath } from '../lib/hospital-page';
 import type { HealthService } from '../lib/dist';
 import { fill } from '../lib/slots';
+import { getHospitalTemplate } from '../lib/content';
 import { render, text, textsOf } from '../lib/test-render';
 
 const t = getHealthServiceTemplate();
@@ -170,16 +173,17 @@ afterEach(() => {
 });
 
 // A copy of the dist that a test may edit, which the site then reads instead.
-function editedService(change: (service: HealthService) => void): string {
+function editedService(change: (service: HealthService) => void, minMembers = 1): string {
+  const chosen = slugs.find((slug) => readHealthService(slug).hospitals.length >= minMembers) ?? '';
   const copy = mkdtempSync(join(tmpdir(), 'dist-'));
   copies.push(copy);
   cpSync(distDirectory(), copy, { recursive: true });
   vi.stubEnv(DIST_ENV, copy);
-  const file = join(copy, `health-services/${slugs[0] ?? ''}.json`);
+  const file = join(copy, `health-services/${chosen}.json`);
   const service = JSON.parse(readFileSync(file, 'utf8')) as HealthService;
   change(service);
   writeFileSync(file, JSON.stringify(service));
-  return slugs[0] ?? '';
+  return chosen;
 }
 
 describe('A member with no urgent figure', () => {
@@ -196,8 +200,7 @@ describe('A member with no urgent figure', () => {
 
   it('stops the build when a count is not for the newest period', () => {
     const slug = editedService((service) => {
-      const first = service.hospitals.find((m) => m.surgeries.current.length > 0);
-      const entry = first?.surgeries.current[0];
+      const entry = service.hospitals[0]?.surgeries.procedures;
       if (entry !== undefined) {
         entry.period = '2019–20';
       }
@@ -205,3 +208,145 @@ describe('A member with no urgent figure', () => {
     expect(() => memberTable(readHealthService(slug))).toThrow(/newest period/);
   });
 });
+
+describe('The surgery type count', () => {
+  it('lists members by name, with state first only for a network that spans states', () => {
+    const collator = new Intl.Collator('en-AU');
+    for (const slug of slugs) {
+      const service = readHealthService(slug);
+      const names = memberTable(service).rows.map((row) => row.name.replace(/ \(closed\)$/, ''));
+      const expected = [...service.hospitals]
+        .sort(
+          (a, b) =>
+            (service.states.length > 1 ? collator.compare(a.state, b.state) : 0) ||
+            collator.compare(a.name, b.name),
+        )
+        .map((m) => m.name);
+      expect(names, slug).toEqual(expected);
+    }
+    expect(Object.values(t).join(' ')).not.toMatch(/more categories come first/);
+  });
+
+  it('shows the procedure count, and a plain sentence in place of a 0', () => {
+    const slug = editedService((service) => {
+      const [first, second] = service.hospitals;
+      if (first !== undefined) {
+        first.surgeries.procedures.count = 0;
+      }
+      if (second !== undefined) {
+        second.surgeries.procedures.count = 7;
+      }
+    }, 2);
+    const service = readHealthService(slug);
+    const rows = memberTable(service).rows;
+    const byHref = (m: { slug: string }): (typeof rows)[number] | undefined =>
+      rows.find((r) => r.href === hospitalPath(m.slug));
+    const [first, second] = service.hospitals;
+    expect(byHref(first ?? { slug: '' })?.cells[1]).toEqual({
+      text: t.no_types_cell,
+      withheld: true,
+    });
+    expect(byHref(second ?? { slug: '' })?.cells[1]).toEqual({ text: '7', withheld: false });
+    expect(JSON.stringify(rows)).not.toMatch(/"text":"0"/);
+  });
+
+  it('does not use the unexpanded abbreviation in a cell', () => {
+    for (const slug of slugs) {
+      for (const row of memberTable(readHealthService(slug)).rows) {
+        expect(row.cells.map((c) => c.text).join(' '), slug).not.toMatch(/AIHW/);
+      }
+    }
+  });
+});
+
+describe('The index of networks that span states', () => {
+  it("lists the network under each state with that state's own count", () => {
+    const states = Object.keys(getHospitalTemplate().states);
+    const slug = editedService((service) => {
+      const [first, second] = service.hospitals;
+      const other = states.find((s) => !service.states.includes(s as never));
+      if (first === undefined || second === undefined || other === undefined) {
+        throw new RangeError('the fixture network needs two hospitals');
+      }
+      second.state = other as never;
+      service.states = [first.state, other as never].sort();
+      const copy = distDirectory();
+      const file = join(copy, 'health-services.json');
+      const index = JSON.parse(readFileSync(file, 'utf8')) as {
+        networks: { slug: string; states: string[] }[];
+      };
+      const row = index.networks.find((r) => r.slug === service.slug);
+      if (row !== undefined) {
+        row.states = service.states;
+      }
+      writeFileSync(file, JSON.stringify(index));
+    }, 2);
+    const service = readHealthService(slug);
+    const home = service.hospitals[0]?.state ?? '';
+    const away = service.hospitals[1]?.state ?? '';
+    const found = indexGroups(states).flatMap((g) =>
+      g.networks
+        .filter((n) => n.href === healthServicePath(slug))
+        .map((n) => ({ ...n, state: g.state })),
+    );
+    const homeCount = service.hospitals.filter((m) => m.state === home).length;
+    expect(found.map((f) => [f.state, f.hospitals, f.spansStates]).sort()).toEqual(
+      [
+        [home, homeCount, true],
+        [away, service.hospitals.length - homeCount, true],
+      ].sort(),
+    );
+  });
+});
+
+// Each member's counts and urgent figure, worked out again from its own hospital file.
+describe.skipIf(process.env[DIST_ENV] === undefined)(
+  'Health service pages against the hospital files',
+  () => {
+    it('show each member with the counts and urgent figure its hospital file gives', () => {
+      let zero = 0;
+      let stale = 0;
+      const procedures = new Map(
+        readHospitalIndex().map((row) => [row.slug, readHospital(row.slug).surgeries]),
+      );
+      for (const { slug, html } of pages) {
+        const service = readHealthService(slug);
+        const body = main(html);
+        const rows = memberTable(service).rows;
+        for (const member of service.hospitals) {
+          const surgeries = procedures.get(member.slug) ?? [];
+          const countOf = (kind: string): number =>
+            surgeries.filter((s) => s.kind === kind && !s.stale).length;
+          expect(member.surgeries.urgency.count, member.slug).toBe(countOf('urgency'));
+          expect(member.surgeries.procedures.count, member.slug).toBe(countOf('procedure'));
+          expect(member.surgeries.specialties.count, member.slug).toBe(countOf('specialty'));
+          const row = rows.find((r) => r.href === hospitalPath(member.slug));
+          const expected = countOf('procedure');
+          if (expected === 0) {
+            zero += 1;
+            expect(row?.cells[1]?.text, member.slug).toBe(t.no_types_cell);
+            expect(row?.cells[1]?.withheld, member.slug).toBe(true);
+          } else {
+            expect(row?.cells[1]?.text, member.slug).toBe(formatCount(expected));
+          }
+          expect(body, member.slug).toContain(row?.cells[1]?.text ?? '');
+          const urgent = surgeries.find(
+            (s) => s.kind === 'urgency' && s.slug === 'urgent-elective-surgery',
+          );
+          const u = member.urgent_on_time;
+          if (urgent === undefined) {
+            expect(u.status, member.slug).toBe('missing');
+          } else if (urgent.stale) {
+            stale += 1;
+            expect(u.status, member.slug).toBe('stale');
+            expect(u.figure, member.slug).toBeNull();
+          } else {
+            expect(u.figure, member.slug).toEqual(urgent.measures.on_time?.figure);
+          }
+        }
+      }
+      expect(zero).toBeGreaterThan(0);
+      expect(stale).toBeGreaterThan(0);
+    });
+  },
+);

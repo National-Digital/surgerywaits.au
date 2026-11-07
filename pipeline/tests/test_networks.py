@@ -175,6 +175,45 @@ def test_a_network_file_rejects_an_unknown_field_and_a_missing_slug() -> None:
         validate("health-service", page)
 
 
+def test_a_member_carries_a_count_and_a_stamp_for_each_kind() -> None:
+    docs = _docs()
+    for _, (k, d) in sorted(docs.items()):
+        if k != "health-service":
+            continue
+        for m in d["hospitals"]:
+            assert set(m["surgeries"]) == {"urgency", "procedures", "specialties"}
+            for entry in m["surgeries"].values():
+                assert set(entry) == {"count", "period", "release"}
+                assert isinstance(entry["count"], int)
+
+
+@pytest.mark.parametrize("field", ["urgency", "procedures", "specialties"])
+def test_a_member_rejects_a_missing_extra_or_negative_kind_field(field: str) -> None:
+    page = _docs()[_network_path(_docs())][1]
+    member = page["hospitals"][0]["surgeries"]
+    validate("health-service", page)
+    for bad in (
+        {**member[field], "count": -1},
+        {**member[field], "extra": 1},
+        {k: v for k, v in member[field].items() if k != "release"},
+    ):
+        page = _docs()[_network_path(_docs())][1]
+        page["hospitals"][0]["surgeries"][field] = bad
+        with pytest.raises(ContractError):
+            validate("health-service", page)
+    page = _docs()[_network_path(_docs())][1]
+    del page["hospitals"][0]["surgeries"][field]
+    with pytest.raises(ContractError):
+        validate("health-service", page)
+
+
+def test_the_old_single_count_is_no_longer_accepted() -> None:
+    page = _docs()[_network_path(_docs())][1]
+    page["hospitals"][0]["surgeries"] = {"count": 3, "current": []}
+    with pytest.raises(ContractError):
+        validate("health-service", page)
+
+
 def test_a_stale_urgent_figure_carries_no_value() -> None:
     docs = _docs()
     path = next(

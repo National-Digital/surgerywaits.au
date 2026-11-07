@@ -197,7 +197,7 @@ describe('change values', () => {
       'no earlier figure to compare',
     );
     expect(format.formatTrendChange('median_wait', firstPoint)).toBe(
-      'not published: AIHW did not publish a figure',
+      'not published: the Australian Institute of Health and Welfare did not publish a figure',
     );
   });
 });
@@ -286,7 +286,8 @@ describe('not published reasons', () => {
   const words: Record<NotPublishedReason, string> = {
     too_few_patients: 'not published: too few patients',
     no_patients_reported: 'not published: no patients reported',
-    not_published_by_aihw: 'not published: AIHW did not publish a figure',
+    not_published_by_aihw:
+      'not published: the Australian Institute of Health and Welfare did not publish a figure',
     no_peer_group_comparison: 'not published: no peer group comparison',
     not_given_by_queensland_health: 'not published: Queensland Health gave no figure',
   };
@@ -348,7 +349,7 @@ describe('formatFigure', () => {
 
   it('writes a not published figure with its reason', () => {
     expect(format.formatFigure('median_wait', notPublished)).toBe(
-      'not published: AIHW did not publish a figure',
+      'not published: the Australian Institute of Health and Welfare did not publish a figure',
     );
   });
 
@@ -372,7 +373,8 @@ describe('formatFigure', () => {
       unit: null,
     });
     expect(format.formatFigureParts('volume', notPublished)).toEqual({
-      amount: 'not published: AIHW did not publish a figure',
+      amount:
+        'not published: the Australian Institute of Health and Welfare did not publish a figure',
       unit: null,
     });
   });

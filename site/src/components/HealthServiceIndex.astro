@@ -18,6 +18,16 @@ const t = getHealthServiceTemplate();
 const names = getHospitalTemplate().states;
 const groups = indexGroups(Object.keys(names));
 const networks = new Set(groups.flatMap((g) => g.networks.map((n) => n.href))).size;
+
+function hospitalsNote(n: { hospitals: number; spansStates: boolean }, state: string): string {
+  const count = formatCount(n.hospitals);
+  if (n.spansStates) {
+    return n.hospitals === 1
+      ? fill(t.hospitals_state_one, { state })
+      : fill(t.hospitals_state_many, { count, state });
+  }
+  return n.hospitals === 1 ? t.hospitals_one : fill(t.hospitals_many, { count });
+}
 ---
 
 <Base
@@ -45,11 +55,7 @@ const networks = new Set(groups.flatMap((g) => g.networks.map((n) => n.href))).s
             items={group.networks.map((n) => ({
               name: n.name,
               href: n.href,
-              notes: [
-                n.hospitals === 1
-                  ? t.hospitals_one
-                  : fill(t.hospitals_many, { count: formatCount(n.hospitals) }),
-              ],
+              notes: [hospitalsNote(n, names[group.state as keyof typeof names])],
             }))}
           />
         </section>

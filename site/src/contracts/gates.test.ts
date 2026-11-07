@@ -122,7 +122,10 @@ describe('Suppressed values', () => {
     const byMarker = {
       '<5': ['too_few_patients', 'not published: too few patients'],
       '-': ['no_patients_reported', 'not published: no patients reported'],
-      NP: ['not_published_by_aihw', 'not published: AIHW did not publish a figure'],
+      NP: [
+        'not_published_by_aihw',
+        'not published: the Australian Institute of Health and Welfare did not publish a figure',
+      ],
     };
     for (const [reason, words] of Object.values(byMarker)) {
       const html = await render(Figure, {

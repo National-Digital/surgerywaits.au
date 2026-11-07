@@ -1,6 +1,11 @@
 import { getHealthServiceTemplate, getHospitalTemplate } from './content';
-import { listDist, readHealthServiceIndex, readHealthServiceIndexSources } from './dist';
-import type { HealthService } from './dist';
+import {
+  listDist,
+  readHealthService,
+  readHealthServiceIndex,
+  readHealthServiceIndexSources,
+} from './dist';
+import type { HealthService, HealthServiceIndexRow } from './dist';
 import {
   formatCount,
   formatDate,
@@ -61,10 +66,10 @@ export interface MemberTable {
 
 const collator = new Intl.Collator('en-AU');
 
-// The newest period and release of any urgent figure or counted category, whatever its status.
+// The newest period and release of any urgent figure or procedure count, whatever its status.
 function newestStamp(service: HealthService): { period: string; release: string } {
   const stamps = service.hospitals.flatMap(({ urgent_on_time: u, surgeries }) => [
-    ...surgeries.current,
+    surgeries.procedures,
     ...(u.period === null || u.release === null ? [] : [{ period: u.period, release: u.release }]),
   ]);
   const newest = stamps.sort((a, b) => a.period.localeCompare(b.period)).at(-1);
@@ -92,17 +97,19 @@ export function memberTable(service: HealthService): MemberTable {
   const t = getHealthServiceTemplate();
   const newest = newestStamp(service);
   const rows = [...service.hospitals]
-    .sort((a, b) => b.surgeries.count - a.surgeries.count || collator.compare(a.name, b.name))
+    .sort(
+      (a, b) =>
+        (service.states.length > 1 ? collator.compare(a.state, b.state) : 0) ||
+        collator.compare(a.name, b.name) ||
+        collator.compare(a.code, b.code),
+    )
     .map((member): MemberRow => {
       const u = member.urgent_on_time;
+      const count = member.surgeries.procedures;
       // The caption's stamp covers the count, so a table with another period or release cannot share it.
-      if (
-        member.surgeries.current.some(
-          (c) => c.period !== newest.period || c.release !== newest.release,
-        )
-      ) {
+      if (count.period !== newest.period || count.release !== newest.release) {
         throw new RangeError(
-          `${member.slug}: a category count is not for the newest period and release`,
+          `${member.slug}: the surgery type count is not for the newest period and release`,
         );
       }
       let urgent: MemberCell;
@@ -121,7 +128,9 @@ export function memberTable(service: HealthService): MemberTable {
         href: hospitalPath(member.slug),
         cells: [
           { text: getHospitalTemplate().states[member.state], withheld: false },
-          { text: formatCount(member.surgeries.count), withheld: false },
+          count.count === 0
+            ? { text: t.no_types_cell, withheld: true }
+            : { text: formatCount(count.count), withheld: false },
           urgent,
         ],
       };
@@ -146,10 +155,10 @@ export const urgentCategory = (): ReturnType<typeof categories>[number] => {
 export interface IndexGroup {
   state: string;
   id: string;
-  networks: { name: string; href: string; hospitals: number }[];
+  networks: { name: string; href: string; hospitals: number; spansStates: boolean }[];
 }
 
-// A network that spans states is listed under each; states follow the content's order.
+// A network that spans states is listed under each, with the number of its hospitals in that state.
 export function indexGroups(order: readonly string[]): IndexGroup[] {
   const rows = readHealthServiceIndex();
   const known = new Set(order);
@@ -157,6 +166,10 @@ export function indexGroups(order: readonly string[]): IndexGroup[] {
   if (stray !== undefined) {
     throw new RangeError(`no name in content for the state ${stray}`);
   }
+  const inState = (row: HealthServiceIndexRow, state: string): number =>
+    row.states.length === 1
+      ? row.hospitals
+      : readHealthService(row.slug).hospitals.filter((member) => member.state === state).length;
   return order
     .map((state) => ({
       state,
@@ -167,7 +180,8 @@ export function indexGroups(order: readonly string[]): IndexGroup[] {
         .map((row) => ({
           name: row.display_name,
           href: healthServicePath(row.slug),
-          hospitals: row.hospitals,
+          hospitals: inState(row, state),
+          spansStates: row.states.length > 1,
         })),
     }))
     .filter((group) => group.networks.length > 0);

@@ -1,7 +1,7 @@
 crumb_home: Home
 crumb_index: Health services
 title: '{network} planned surgery waiting times: {site}'
-description: 'This page lists the public hospitals of {network} in {states} that report planned surgery waiting times. It shows how many categories each hospital reports and how often it treated urgent patients on time.'
+description: 'This page lists the public hospitals of {network} in {states} that report planned surgery waiting times. It shows how many surgery types each hospital reported and how often it treated urgent patients on time.'
 heading: '{network} surgery waiting times'
 lede: 'This page lists the public hospitals that report planned surgery waiting times under {network} in {states}.'
 count_one: '1 public hospital reports under {network}.'
@@ -12,14 +12,15 @@ grouping:
   - This site shows the source's grouping as published and does not change it.
 source_name: 'The source publishes this network as {name}.'
 hospitals_heading: 'Hospitals of {network}'
-hospitals_intro: Hospitals with more categories come first. Hospitals with the same number are in name order. Each name links to that hospital's page.
+hospitals_intro: The hospitals are in name order. Each name links to that hospital's page.
 hospitals_caption: 'Public hospitals of {network}'
 row_heading: Hospital
 col_state: State or territory
-col_categories: Categories with a published figure
+col_types: Surgery types reported
 col_urgent: Urgent patients treated on time
 closed_name: '{name} (closed)'
-categories_note: The category count covers urgency categories, procedures and specialties. A category counts when the hospital has a published figure for it in the newest period of its table.
+types_note: A surgery type counts when the hospital reported it for the newest period, including a surgery type for which the source did not publish every figure. The count covers procedures only. It leaves out specialties and urgency categories.
+no_types_cell: No surgery type reported for the newest period.
 urgent_note: 'The urgent share is the share of category 1 patients treated within {within}. It covers all planned surgery at the hospital and is never combined with a procedure figure.'
 table_stamp: 'Figures are for {period}, released {release}, unless a cell gives its own period.'
 cell_stamp: '{text} ({stamp})'
@@ -40,6 +41,8 @@ index_states_heading: By state and territory
 index_state_intro: 'The networks in {state} are in name order.'
 hospitals_one: 1 public hospital
 hospitals_many: '{count} public hospitals'
+hospitals_state_one: '1 public hospital in {state}'
+hospitals_state_many: '{count} public hospitals in {state}'
 index_links_heading: Related pages
 index_hospitals_link: All public hospitals
 index_urgency_link: Urgency categories explained

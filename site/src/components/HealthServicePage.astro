@@ -72,11 +72,11 @@ const stateLinks = service.states
       caption={fill(t.hospitals_caption, { network })}
       stamp={table.stamp}
       rowHeading={t.row_heading}
-      headings={[t.col_state, t.col_categories, t.col_urgent]}
+      headings={[t.col_state, t.col_types, t.col_urgent]}
       rows={table.rows}
     />
     <div class="o-columns">
-      <p>{t.categories_note}</p>
+      <p>{t.types_note}</p>
       <p>{fill(t.urgent_note, { within: urgent.within })}</p>
     </div>
   </section>

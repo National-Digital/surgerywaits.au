@@ -106,7 +106,7 @@ Cloudflare Worker    serves the static assets (planned)
   only when the dist carries them. These are the addresses the earlier site used. Copy is in `templates/state.yaml` and
   `templates/urgency.yaml`, and `/surgery/` links each urgency category to its page.
   `/health-service/` lists each local hospital network that has a network file, by state or territory, and
-  `/health-service/<slug>/` lists its public hospitals with their state, the count of categories each has a published figure for,
+  `/health-service/<slug>/` lists its public hospitals in name order with their state, the number of surgery types each reported in the newest period,
   and the share of urgent patients treated on time. A member whose latest urgent figures are older than the newest period shows
   no value and its own period and release, and a member with no urgent figure says so. The page ranks nothing. Each member links
   to its hospital page, and a hospital page links to its network. These are the addresses the earlier site used, and the copy is in
