@@ -48,7 +48,7 @@ interface Procedure {
 const cache = new Map<string, Procedure[]>();
 
 // Only procedures are ranked here, since a specialty groups many procedures under one figure.
-export function procedures(): Procedure[] {
+function procedures(): Procedure[] {
   const key = distDirectory();
   const found = cache.get(key);
   if (found !== undefined) {

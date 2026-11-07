@@ -134,7 +134,7 @@ const stamped = (figure: Move['from']): RankCell => ({
   figure,
 });
 
-export function movesTable(moves: readonly Move[], hospitals: boolean): RankingModel {
+function movesTable(moves: readonly Move[], hospitals: boolean): RankingModel {
   const c = t();
   const { raw } = longestStamp();
   const previous = moves[0]?.from.period ?? raw.period;
