@@ -1,5 +1,6 @@
 ---
 import { label } from '../lib/content';
+import { serialise } from '../lib/json-ld';
 
 const text = label('skip_link');
 const href = '/';
@@ -35,4 +36,4 @@ const margin = { top: 1 };
     }
   }
 </style>
-<script type="application/ld+json" set:html={text} />
+<script type="application/ld+json" set:html={serialise([{ name: text }])} />

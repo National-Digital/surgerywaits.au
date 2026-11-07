@@ -32,3 +32,5 @@ import Foo from './Foo.astro';
 <Foo {...{ title: 'Spread text' }} />
 <p>{['Mapped text'].map((x) => x)}</p>
 <p>{String('Call text')}</p>
+<script type="application/ld+json" set:html={'{"name":"x"}'} />
+<script type="application/ld+json" set:html={text} />
