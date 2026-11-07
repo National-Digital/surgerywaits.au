@@ -53,10 +53,19 @@ async function route(
   table: RedirectTable = redirects,
 ): Promise<Response> {
   const url = new URL(request.url);
-  if (url.pathname === MCP_PATH || url.pathname === MCP_CARD_PATH) {
+  if (
+    url.pathname === MCP_PATH ||
+    url.pathname === `${MCP_PATH}/` ||
+    url.pathname === MCP_CARD_PATH
+  ) {
     const answer =
-      url.pathname === MCP_PATH ? await handleMcp(request, env) : await handleCard(request);
-    return withHeaders(answer, url.pathname, request.method);
+      url.pathname !== MCP_CARD_PATH ? await handleMcp(request, env) : await handleCard(request);
+    // The slash form takes the headers of the route itself.
+    return withHeaders(
+      answer,
+      url.pathname === `${MCP_PATH}/` ? MCP_PATH : url.pathname,
+      request.method,
+    );
   }
   if (request.method === 'OPTIONS' && isDataApi(url.pathname)) {
     return preflight(url.pathname);

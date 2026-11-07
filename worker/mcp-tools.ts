@@ -6,6 +6,8 @@ import { SITE } from '../site/src/lib/robots';
 const MAX_RADIUS_KM = 250;
 const DEFAULT_RADIUS_KM = 120;
 const MAX_LIMIT = 50;
+// The suburb centres that compare_hospitals measures from.
+export const SUBURBS_SOURCE = 'abs-suburbs-localities-2021';
 const DEFAULT_LIMIT = 10;
 
 // Reads one published data file by path; null when the build has no such file.
@@ -425,14 +427,18 @@ async function source(read: Reader, slugs: string[], stamp: Stamp): Promise<Sour
   return {
     period: formatPeriod(stamp.period),
     release_date: stamp.release,
-    credits: credits.sources
-      .filter((entry) => slugs.includes(entry.slug))
-      .map((entry) => ({
+    credits: slugs.map((slug) => {
+      const entry = credits.sources.find((candidate) => candidate.slug === slug);
+      if (entry === undefined) {
+        throw new Error(`no credit for ${slug}`);
+      }
+      return {
         title: entry.title,
         attribution: entry.attribution,
         licence: entry.licence,
         dataset_url: entry.dataset_url,
-      })),
+      };
+    }),
   };
 }
 
@@ -683,7 +689,7 @@ export async function compareHospitals(
       .map((found) => ({ reason: reason(found.row), ...describe(found) })),
     ninetieth_percentile: NINETIETH,
     data_url: `${SITE}${surgeryFile(surgery.kind, surgery.slug)}`,
-    source: await source(read, surgery.sources, surgery),
+    source: await source(read, [...surgery.sources, SUBURBS_SOURCE], surgery),
   };
 }
 

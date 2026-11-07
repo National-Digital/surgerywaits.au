@@ -1,9 +1,10 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { handle } from '../../../worker/index';
 import { assetsOver } from './mcp-fixture';
 import {
   BROWSER_ORIGINS,
+  clearDataCache,
   MAX_BODY_BYTES,
   MODERN_VERSION,
   PROTOCOL_VERSIONS,
@@ -16,7 +17,10 @@ const env = {
   ASSETS: assetsOver(new URL('../../../pipeline/dist-fixture/', import.meta.url), asked),
 } as never;
 const URL_MCP = 'https://surgerywaits.au/mcp';
-const meta = { 'io.modelcontextprotocol/protocolVersion': MODERN_VERSION };
+const meta = {
+  'io.modelcontextprotocol/protocolVersion': MODERN_VERSION,
+  'io.modelcontextprotocol/clientCapabilities': {},
+};
 
 function rpc(
   method: string,
@@ -66,6 +70,7 @@ interface Reply {
 const json = async (response: Response): Promise<Reply> =>
   JSON.parse(await response.text()) as Reply;
 
+beforeEach(clearDataCache);
 afterEach(() => vi.restoreAllMocks());
 
 describe('the MCP route', () => {
@@ -162,6 +167,72 @@ describe('the MCP route', () => {
     }
   });
 
+  it('rejects a modern request whose _meta lacks the version or the client capabilities with 400 and -32602', async () => {
+    const send = (metaValue: unknown): Promise<Response> =>
+      handle(
+        new Request(URL_MCP, {
+          method: 'POST',
+          headers: { 'MCP-Protocol-Version': MODERN_VERSION, 'Mcp-Method': 'ping' },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'ping',
+            params: metaValue === undefined ? {} : { _meta: metaValue },
+          }),
+        }),
+        env,
+      );
+    const version = 'io.modelcontextprotocol/protocolVersion';
+    const capabilities = 'io.modelcontextprotocol/clientCapabilities';
+    for (const bad of [
+      undefined,
+      {},
+      { [capabilities]: {} },
+      { [version]: MODERN_VERSION },
+      { [version]: MODERN_VERSION, [capabilities]: 'none' },
+    ]) {
+      const response = await send(bad);
+      expect(response.status).toBe(400);
+      expect((await json(response)).error.code).toBe(-32602);
+    }
+    const mismatched = await send({ [version]: '2025-11-25', [capabilities]: {} });
+    expect(mismatched.status).toBe(400);
+    expect((await json(mismatched)).error.code).toBe(-32020);
+  });
+
+  it('answers initialize under a modern header with an error that names the supported versions', async () => {
+    const response = await handle(rpc('initialize'), env);
+    expect(response.status).toBe(400);
+    const { error } = (await json(response)) as unknown as {
+      error: { code: number; data: { supported: string[] } };
+    };
+    expect(error.code).toBe(-32602);
+    expect(error.data.supported).toEqual(PROTOCOL_VERSIONS);
+  });
+
+  it('serves /mcp/ as it serves /mcp', async () => {
+    const request = new Request(`${URL_MCP}/`, rpc('tools/list'));
+    const response = await handle(request, env);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
+    expect((await json(response)).result.tools).toHaveLength(4);
+    expect((await handle(new Request(`${URL_MCP}/`), env)).status).toBe(405);
+  });
+
+  it('reads each data file once and answers the next call from memory', async () => {
+    const run = (): Promise<Response> =>
+      handle(
+        call('surgerywaits_compare_hospitals', { procedure: 'cataract', locality: 'Armidale' }),
+        env,
+      );
+    asked.length = 0;
+    const first = await (await run()).text();
+    const fetched = asked.length;
+    expect(fetched).toBeGreaterThan(0);
+    expect(await (await run()).text()).toBe(first);
+    expect(asked).toHaveLength(fetched);
+  });
+
   it('accepts a notification with 202 and no body', async () => {
     const response = await handle(rpc('notifications/initialized', {}, {}, null), env);
     expect(response.status).toBe(202);
@@ -191,6 +262,12 @@ describe('the MCP route', () => {
       ),
     );
     expect(same.result.content).toHaveLength(1);
+    const upper = `=?BASE64?${btoa('surgerywaits_explain_urgency')}?=`;
+    const raw = await handle(
+      call('surgerywaits_explain_urgency', { category: '1' }, { 'Mcp-Name': upper }),
+      env,
+    );
+    expect(raw.status).toBe(400);
     const other = `=?base64?${btoa('surgerywaits_get_wait')}?=`;
     const response = await handle(
       call('surgerywaits_explain_urgency', { category: '1' }, { 'Mcp-Name': other }),

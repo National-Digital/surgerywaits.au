@@ -222,25 +222,41 @@ async function readBody(request: Request): Promise<string | null> {
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-function readerFor(env: Env, request: Request, seen: Map<string, Promise<unknown>>): Reader {
+// Parsed data files by path. They are fixed for a deployment, and no request data is stored.
+const parsed = new Map<string, Promise<unknown>>();
+export const clearDataCache = (): void => {
+  parsed.clear();
+};
+
+function readerFor(env: Env, request: Request): Reader {
   const origin = new URL(request.url).origin;
   return (path) => {
     if (!/^\/data-api\/[a-z0-9/-]+\.json$/u.test(path)) {
       throw new RangeError(`not a data file: ${path}`);
     }
-    let found = seen.get(path);
-    if (found === undefined) {
-      found = env.ASSETS.fetch(new Request(`${origin}${path}`)).then((response) => {
-        if (response.status === 404) {
-          return null;
-        }
-        if (!response.ok) {
-          throw new Error(`data file ${path} answered ${String(response.status)}`);
-        }
-        return response.json();
-      });
-      seen.set(path, found);
+    const cached = parsed.get(path);
+    if (cached !== undefined) {
+      return cached;
     }
+    const found = env.ASSETS.fetch(new Request(`${origin}${path}`)).then((response) => {
+      if (response.status === 404) {
+        return null;
+      }
+      if (!response.ok) {
+        throw new Error(`data file ${path} answered ${String(response.status)}`);
+      }
+      return response.json();
+    });
+    parsed.set(path, found);
+    // A missing or failed file is asked for again next time.
+    found.then(
+      (value) => {
+        if (value === null) {
+          parsed.delete(path);
+        }
+      },
+      () => parsed.delete(path),
+    );
     return found;
   };
 }
@@ -255,7 +271,7 @@ const SERVER_INFO_META = {
 
 // The spec sends a header value that is not plain ASCII as =?base64?...?=.
 function decodeHeaderValue(value: string | null): string | null {
-  const match = value === null ? null : /^=\?base64\?([A-Za-z0-9+/]*={0,2})\?=$/iu.exec(value);
+  const match = value === null ? null : /^=\?base64\?([A-Za-z0-9+/]*={0,2})\?=$/u.exec(value);
   if (match === null || value === null) {
     return value;
   }
@@ -471,10 +487,38 @@ async function serve(request: Request, env: Env, origin: string | null): Promise
     };
   }
   if (isModern) {
+    if (method === 'initialize') {
+      return {
+        response: withCors(
+          rpcError(
+            400,
+            id,
+            ERR.params,
+            `initialize is not used with protocol version ${MODERN_VERSION}. Send server/discover.`,
+            { supported: PROTOCOL_VERSIONS },
+          ),
+        ),
+        call: { method, outcome: 'rpc_error' as const, code: ERR.params },
+      };
+    }
     const meta = isObject(params['_meta']) ? params['_meta'] : {};
+    const sent = meta['io.modelcontextprotocol/protocolVersion'];
+    if (typeof sent !== 'string' || !isObject(meta['io.modelcontextprotocol/clientCapabilities'])) {
+      return {
+        response: withCors(
+          rpcError(
+            400,
+            id,
+            ERR.params,
+            'The _meta needs io.modelcontextprotocol/protocolVersion and io.modelcontextprotocol/clientCapabilities.',
+          ),
+        ),
+        call: { method, outcome: 'rpc_error' as const, code: ERR.params },
+      };
+    }
     const named = method === 'tools/call' ? params['name'] : undefined;
     const mismatch =
-      meta['io.modelcontextprotocol/protocolVersion'] !== MODERN_VERSION
+      sent !== MODERN_VERSION
         ? 'The _meta protocol version does not match the header.'
         : request.headers.get('mcp-method') !== method
           ? 'The Mcp-Method header does not match the body.'
@@ -488,7 +532,7 @@ async function serve(request: Request, env: Env, origin: string | null): Promise
       };
     }
   }
-  const done = await dispatch(method, params, id, isModern, readerFor(env, request, new Map()));
+  const done = await dispatch(method, params, id, isModern, readerFor(env, request));
   return {
     response: withCors(done.response),
     call: {
