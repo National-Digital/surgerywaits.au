@@ -22,6 +22,7 @@ export function guideFacts(): Record<string, string> {
     border_radius: String(LIVE_LIMITS.borderRadiusKm),
     border_count: String(LIVE_LIMITS.borderCount),
     volume_floor: String(LIVE_LIMITS.volumeFloor),
+    long_wait_days: base['long_wait_days'] ?? '',
     first_within: one.within,
     second_within: two.within,
     third_within: three.within,

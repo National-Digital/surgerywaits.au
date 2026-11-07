@@ -9,7 +9,7 @@ sections:
   - id: pages
     heading: What a hospital and surgery page shows
     paragraphs:
-      - The page shows the median wait, the number of surgeries and the share of patients who waited longer than 365 days, for each figure the hospital published. It shows the state and national figures for the same surgery beside the hospital's figure.
+      - The page shows the median wait, the number of surgeries and the share of patients who waited longer than {long_wait_days} days, for each figure the hospital published. It shows the state and national figures for the same surgery beside the hospital's figure.
       - 'The page ranks the hospital on each published figure against every public hospital that published the same figure for the same period. It lists nearby public hospitals with a shorter median wait for the surgery, including hospitals in other states. It charts the median for each year the source published it.'
     links:
       - label: Surgery
@@ -31,7 +31,7 @@ sections:
   - id: reading
     heading: Reading a figure with a patient
     paragraphs:
-      - A median is the middle waiting time. Half of the patients treated waited less than the median, and half waited longer. The median does not show how long the longest waits ran, so the share of patients who waited longer than 365 days appears beside it.
+      - A median is the middle waiting time. Half of the patients treated waited less than the median, and half waited longer. The median does not show how long the longest waits ran, so the share of patients who waited longer than {long_wait_days} days appears beside it.
       - "A median that rests on fewer than {volume_floor} surgeries moves more when one patient's wait changes. The number of surgeries appears beside each median."
       - The guides explain the same points in plain language for a patient.
     links:

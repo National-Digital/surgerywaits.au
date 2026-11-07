@@ -165,6 +165,17 @@ describe('the link check', () => {
     expect(report.problems[0]?.why).toContain('no element with id "nope"');
   });
 
+  it('checks the fragment a redirect target names, and lets it replace the link fragment', async () => {
+    const files = {
+      'index.html': '<a href="/old/#ignored"></a>',
+      'about/index.html': '<h1 id="here"></h1>',
+    };
+    expect((await site(files, [['/old/', '/about/#here']])).problems).toEqual([]);
+    const report = await site(files, [['/old/', '/about/#gone']]);
+    expect(report.problems.map((p) => p.url)).toEqual(['/old/#ignored', '/about/#gone']);
+    expect(report.problems[1]?.why).toContain('no element with id "gone"');
+  });
+
   it('reports a fragment with a bad encoding instead of throwing', async () => {
     const report = await site({ 'index.html': '<a href="/#%zz"></a>' }, []);
     expect(report.problems).toHaveLength(1);

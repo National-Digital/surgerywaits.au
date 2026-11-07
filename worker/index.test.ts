@@ -100,6 +100,12 @@ describe('redirects', () => {
     expect(response.body).toBeNull();
   });
 
+  it('keeps the fragment of a target and the query of the request', async () => {
+    const withFragment = new Map([['/old/', '/new/#part']]);
+    const response = await handle(new Request('https://example.test/old/?a=1'), env, withFragment);
+    expect(response.headers.get('Location')).toBe('https://example.test/new/?a=1#part');
+  });
+
   it('finds a listed path given without its slash, in one hop', async () => {
     expect(redirectFor('/old', table)).toBe('/new/');
     expect((await get('/old')).headers.get('Location')).toBe('https://example.test/new/');

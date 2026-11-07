@@ -6,8 +6,10 @@ import {
   readHospitalIndex,
   readSurgery,
   readSurgeryIndex,
+  longWaitDays,
 } from './dist';
 import type { Benchmark, BenchmarkSeries, Kind, Surgery, SurgeryRow } from './dist';
+import { fill } from './slots';
 import { distanceKm } from './geo';
 import { isPublished } from './format';
 import type { Figure, Role } from './format';
@@ -426,7 +428,7 @@ export function roleLabels(label: (key: LabelKey) => string): Record<Role, strin
   return {
     median_wait: label('role_median_wait'),
     volume: label('role_volume'),
-    long_wait: label('role_long_wait'),
+    long_wait: fill(label('role_long_wait'), { long_wait_days: longWaitDays() }),
     on_time: label('role_on_time'),
   };
 }

@@ -237,6 +237,7 @@ const FAKE_RULES: Rules = {
   start_radius_km: 102,
   max_period_age_years: 103,
   max_qld_lag_days: 104,
+  long_wait_days: 106,
   hand_matched_facilities: 105,
   measures: {
     median_wait: 'Fake median name',
@@ -307,7 +308,7 @@ describe('Methodology slots', () => {
   it('holds only the slots the table lists, and every slot the copy uses', () => {
     const wording = Object.keys(fake).filter((k) => k.startsWith('wording_'));
     expect(wording).toHaveLength(4);
-    expect(Object.keys(fake)).toHaveLength(28 + wording.length + 1);
+    expect(Object.keys(fake)).toHaveLength(29 + wording.length + 1);
     const used = new Set(
       rawTexts(methodology).flatMap((t) =>
         [...t.matchAll(/\{([a-z_]+)\}/g)].map((m) => m[1] ?? ''),
@@ -370,7 +371,7 @@ describe('Methodology copy', () => {
     for (const name of Object.values(rules.measures)) {
       expect(copy, name).toContain(name);
     }
-    expect(rules.measures.long_wait).toContain('longer than 365 days');
+    expect(rules.measures.long_wait).toContain(`longer than ${String(rules.long_wait_days)} days`);
   });
 
   it('describes the rank order the pipeline pins', () => {

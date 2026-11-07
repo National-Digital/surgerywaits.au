@@ -25,6 +25,14 @@ describe('the redirects file', () => {
     expect(validate({ redirects: [{ from: 'no-slash', to: '/a/' }] })).toBe(false);
     expect(validate({ redirects: [{ from: '/a/', to: '/b/', status: 302 }] })).toBe(false);
     expect(validate({ redirects: [{ from: '/a/' }] })).toBe(false);
+    expect(validate({ redirects: [{ from: '/a/#x', to: '/b/' }] })).toBe(false);
+    for (const to of ['https://x.test/b/', '//x.test/b/', '/b/#', '/b/#x#y', '/b#x', 'b/#x']) {
+      expect(validate({ redirects: [{ from: '/a/', to }] }), to).toBe(false);
+    }
+  });
+
+  it('accepts a fragment on a target only', () => {
+    expect(validate({ redirects: [{ from: '/a/', to: '/b/#part-one' }] })).toBe(true);
   });
 
   it('lists each source once', () => {
@@ -35,7 +43,7 @@ describe('the redirects file', () => {
   it('has no loop and no chain', () => {
     const sources = new Set(list.map((r) => r.from));
     expect(list.filter((r) => r.from === r.to)).toEqual([]);
-    expect(list.filter((r) => sources.has(r.to))).toEqual([]);
+    expect(list.filter((r) => sources.has(r.to.split('#')[0] ?? ''))).toEqual([]);
   });
 
   it('sends the earlier Tweed hospital page and each of its pairs to the current slug', () => {

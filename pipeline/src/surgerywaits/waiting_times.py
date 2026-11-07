@@ -9,7 +9,7 @@ from importlib import import_module
 from pathlib import Path
 from typing import Any, Literal, cast
 
-from surgerywaits.catalogue import Role
+from surgerywaits.catalogue import LONG_WAIT_DAYS, Role
 from surgerywaits.hospitals import Register
 from surgerywaits.names import name_key
 
@@ -58,6 +58,8 @@ _MEDIAN = Column("median_wait_days", Role.MEDIAN_WAIT, integer=True)
 _PEER_MEDIAN = Column("peer_group_median_days", None, integer=True)
 _PEER_AVERAGE = Column("peer_group_average", None, integer=False)
 
+_LONG_WAIT_COLUMN = f"share_waited_over_{LONG_WAIT_DAYS}_days"
+
 SPECS: dict[Table, Spec] = {
     Table.URGENCY: Spec(
         "urgency_category",
@@ -74,7 +76,7 @@ SPECS: dict[Table, Spec] = {
         (
             _SURGERIES,
             _MEDIAN,
-            Column("share_waited_over_365_days", Role.LONG_WAIT, integer=False),
+            Column(_LONG_WAIT_COLUMN, Role.LONG_WAIT, integer=False),
             _PEER_MEDIAN,
             _PEER_AVERAGE,
         ),
@@ -84,7 +86,7 @@ SPECS: dict[Table, Spec] = {
         (
             _SURGERIES,
             _MEDIAN,
-            Column("share_waited_over_365_days", Role.LONG_WAIT, integer=False),
+            Column(_LONG_WAIT_COLUMN, Role.LONG_WAIT, integer=False),
             _PEER_MEDIAN,
             _PEER_AVERAGE,
         ),

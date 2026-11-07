@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import { LIVE_LIMITS } from '../lib/article-pages';
-import { getGp, getGuides, getGuidesIndex } from '../lib/content';
+import { getGp, getGuides, getGuidesIndex, getStateTemplate, label } from '../lib/content';
 import { readRules } from '../lib/dist';
 import { GP_PATH, GUIDES_PATH, guideFacts, guides } from '../lib/guides';
 import { isBuilt } from '../lib/links';
 import { surgeryStamp } from '../lib/index-pages';
+import { roleLabels } from '../lib/surgery-page';
 import { categories } from '../lib/urgency-page';
 import gpPage from '../pages/gp.astro';
 import guidePage from '../pages/guides/[slug].astro';
@@ -73,8 +74,7 @@ describe('Guides and the page for general practitioners', () => {
     ].flatMap((s) => s.links ?? []);
     expect(links.length).toBeGreaterThan(10);
     for (const { href } of links) {
-      const known =
-        isBuilt(href) || all.some((g) => g.path === href) || href === '/longest-waits/border/';
+      const known = isBuilt(href) || all.some((g) => g.path === href);
       expect(known, href).toBe(true);
     }
   });
@@ -84,6 +84,7 @@ describe('Guides and the page for general practitioners', () => {
     expect(facts['neighbours']).toBe(String(readRules().neighbours));
     expect(facts['border_radius']).toBe(String(LIVE_LIMITS.borderRadiusKm));
     expect(facts['border_count']).toBe(String(LIVE_LIMITS.borderCount));
+    expect(facts['long_wait_days']).toBe(String(readRules().long_wait_days));
     expect(facts['volume_floor']).toBe(String(LIVE_LIMITS.volumeFloor));
     expect(facts['first_within']).toBe(categories()[0]?.within);
     expect(facts['third_within']).toBe(categories()[2]?.within);
@@ -97,6 +98,16 @@ describe('Guides and the page for general practitioners', () => {
     }
   });
 
+  it('take the long-wait threshold from the rules in the labels and templates too', () => {
+    const days = String(readRules().long_wait_days);
+    const raw = [label('role_long_wait'), getStateTemplate().column_state_long_wait];
+    for (const t of raw) {
+      expect(t).toContain('{long_wait_days}');
+      expect(t).not.toMatch(new RegExp(`(?<![\\w.])${days}(?!\\w)`));
+    }
+    expect(roleLabels(label).long_wait).toContain(`${days} days`);
+  });
+
   it('state the figures in the pages that use them', () => {
     const facts = guideFacts();
     const referral = rendered.find(({ guide }) => guide.slug === 'referral-to-another-hospital');
@@ -107,6 +118,7 @@ describe('Guides and the page for general practitioners', () => {
       `within ${facts['border_radius'] ?? ''} km of each other`,
     );
     expect(text(gpHtml)).toContain(`${facts['second_within'] ?? ''} for category 2`);
+    expect(text(gpHtml)).toContain(`waited longer than ${facts['long_wait_days'] ?? ''} days`);
     expect(text(gpHtml)).toContain(`fewer than ${facts['volume_floor'] ?? ''} surgeries`);
   });
 

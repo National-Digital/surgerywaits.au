@@ -10,6 +10,7 @@
     "start_radius_km",
     "max_period_age_years",
     "max_qld_lag_days",
+    "long_wait_days",
     "hand_matched_facilities",
     "measures",
     "withheld_codes",
@@ -20,6 +21,11 @@
     "start_radius_km": { "type": "number", "exclusiveMinimum": 0 },
     "max_period_age_years": { "type": "integer", "minimum": 0 },
     "max_qld_lag_days": { "type": "integer", "minimum": 0 },
+    "long_wait_days": {
+      "description": "The number of days a patient waits before the long-wait share counts them.",
+      "type": "integer",
+      "minimum": 1
+    },
     "hand_matched_facilities": { "type": "integer", "minimum": 0 },
     "measures": {
       "description": "The name of each measure by its role.",

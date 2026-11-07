@@ -8,7 +8,7 @@ rank_national: nationally
 change_caption: Change on the year before
 role_median_wait: Median wait
 role_volume: Patients treated
-role_long_wait: Waiting more than 365 days
+role_long_wait: Waiting more than {long_wait_days} days
 role_on_time: Treated within the recommended time
 qld_treated: Patients treated
 qld_percent_treated_in_time: Treated within the recommended time

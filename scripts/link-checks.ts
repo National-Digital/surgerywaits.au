@@ -239,7 +239,8 @@ export async function checkLinks(
         bad(here, raw, 'has a malformed percent escape');
         continue;
       }
-      const redirect = redirects.get(path);
+      const redirectTo = redirects.get(path);
+      const [redirect, redirectFrag] = redirectTo?.split('#') ?? [];
       let target: string;
       if (redirect === undefined) {
         target = path.endsWith('/') ? `${path}index.html` : path;
@@ -258,7 +259,8 @@ export async function checkLinks(
       // An empty fragment and #top always resolve, as the HTML standard says.
       let frag: string;
       try {
-        frag = decodeURIComponent(url.hash.slice(1));
+        // A fragment on the redirect target replaces the one on the link, as a Location header does.
+        frag = redirectFrag ?? decodeURIComponent(url.hash.slice(1));
       } catch {
         bad(here, raw, 'has a bad fragment encoding');
         continue;
@@ -270,6 +272,17 @@ export async function checkLinks(
       if (targetPage && !targetPage.ids.has(frag)) {
         bad(here, raw, `has no element with id "${frag}" on the target page`);
       }
+    }
+  }
+  // Each redirect that names a fragment must name an element that its target page has.
+  for (const [from, to] of redirects) {
+    const [path, frag] = to.split('#');
+    if (frag === undefined || path === undefined) {
+      continue;
+    }
+    const page = scanned.get(path.endsWith('/') ? `${path}index.html` : path);
+    if (page?.ids.has(frag) !== true) {
+      bad(from, to, `redirects to a fragment with no element with id "${frag}" on the target page`);
     }
   }
   return report;

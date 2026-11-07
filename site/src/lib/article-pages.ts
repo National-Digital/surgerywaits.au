@@ -79,6 +79,7 @@ export function methodologyFacts(
     max_period_age: String(rules.max_period_age_years),
     max_qld_lag: String(rules.max_qld_lag_days),
     hand_matched: String(rules.hand_matched_facilities),
+    long_wait_days: String(rules.long_wait_days),
     measure_count: countWord(Object.keys(rules.measures).length),
     hospital_code_count: countWord(
       Object.values(rules.withheld_codes).filter((reason) => reason !== PEER_GROUP_REASON).length,
