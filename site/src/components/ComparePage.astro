@@ -28,15 +28,7 @@ const fallback = [
   compareBar={false}
   printFooter={false}
 >
-  <section
-    class="c-tool"
-    aria-labelledby="compare-heading"
-    data-tool
-    data-src="/tool/index.json"
-    data-places="/tool/places.json"
-    data-figures="/tool/figures.json"
-    data-failed={t.load_failed}
-  >
+  <section class="c-tool" aria-labelledby="compare-heading" data-tool data-failed={t.load_failed}>
     <div class="o-columns u-no-print">
       <h1 id="compare-heading">{t.heading}</h1>
       <p>{fill(t.lede, { period })}</p>

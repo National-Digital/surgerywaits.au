@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Cache API</title>
+  </head>
+  <body>
+    <main>
+      <h1>Cache API</h1>
+      <script>
+        caches.open('a').then((cache) => cache.put('/x', new Response('x')));
+      </script>
+    </main>
+  </body>
+</html>

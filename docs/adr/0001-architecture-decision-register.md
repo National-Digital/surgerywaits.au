@@ -119,14 +119,16 @@ previews, no Cloudflare credential sits in the repository until the site is read
 
 ### D8: Analytics count page views and nothing else
 
-The site counts page views with Cloudflare Web Analytics. The count sets no cookie. Nothing a person
-types is sent anywhere. The beacon and report hosts are the only other hosts in the
-Content-Security-Policy, and the privacy check in CI allows exactly those. The
-Content-Security-Policy and the privacy check are planned.
+The site counts page views with Cloudflare Web Analytics. The repository sets no cookie and the
+Worker drops any `Set-Cookie`. The count relies on Cloudflare Web Analytics, which Cloudflare
+[describes as using no cookies or other client-side state for analytics](https://blog.cloudflare.com/privacy-first-web-analytics/); the tests cannot observe the beacon, which Cloudflare adds at the edge.
+Nothing a person types is sent anywhere, and the compare tool fetches only its own `/tool/` files.
+The beacon and report hosts are the only other hosts in the Content-Security-Policy, and the
+privacy check in CI allows exactly those.
 
-Why: the site needs to know which pages are read so it can improve them. A page-view count with no
-cookie answers that without identifying anyone. The compare tool stays stateless, as
-`docs/ARCHITECTURE.md` rule 8 sets out.
+Why: the site needs to know which pages are read so it can improve them. A page-view count that sets
+no cookie answers that without identifying anyone. The compare tool stays stateless, as
+the Privacy rule in `docs/ARCHITECTURE.md` sets out.
 
 ### D9: MCP is a route in the same Worker
 
@@ -252,7 +254,7 @@ built yet.
 
 Why: the checker tests pages against the HTML standard itself. Running it over the whole output
 catches an invalid page that a sample would miss, and this supports the accessibility floor in
-`docs/ARCHITECTURE.md` rule 9.
+the Accessibility rule in `docs/ARCHITECTURE.md`.
 
 ### D18: CSS follows ITCSS layers and BEM names
 

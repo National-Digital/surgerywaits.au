@@ -12,7 +12,7 @@ if (process.env['A11Y_TEST'] !== '1') {
   exclude.push('scripts/a11y.test.ts', 'scripts/layout.test.ts');
 }
 if (process.env['TOOL_TEST'] !== '1') {
-  exclude.push('scripts/tool.test.ts');
+  exclude.push('scripts/tool.test.ts', 'scripts/privacy.test.ts');
 }
 if (process.env['BUILT_CSS'] !== '1') {
   exclude.push('site/src/styles/built-css.test.ts');

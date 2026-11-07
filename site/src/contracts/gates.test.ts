@@ -68,7 +68,17 @@ import { formatDate, formatFigure, formatStamp } from '../lib/format';
 import type { NotPublishedReason, Role } from '../lib/format';
 import { nearRoutes, stateRoutes, surgeryRefs } from '../lib/surgery-page';
 import { cleanUpCopies, withNearbyPair } from '../lib/test-dist';
+import {
+  fetchProblems,
+  historyUses,
+  pageProblems,
+  policySources,
+  policyProblems,
+  sendingUses,
+  storageUses,
+} from '../lib/privacy';
 import { render, text, textsOf } from '../lib/test-render';
+import { SECURITY_HEADERS } from '../../../worker/headers';
 
 const contractDir = new URL('../../../contract/', import.meta.url);
 const siteSrc = new URL('../', import.meta.url).pathname;
@@ -427,11 +437,194 @@ describe('Static pages', () => {
   }, 120_000);
 });
 
+// The code a reader's browser or the Worker runs: every non-test source under these folders.
+function shippedSources(folders: string[]): { file: string; text: string }[] {
+  return folders.flatMap((folder) =>
+    readdirSync(folder, { recursive: true, encoding: 'utf8' })
+      .filter(
+        (f) => /\.(?:ts|astro|js)$/.test(f) && !f.endsWith('.test.ts') && !f.startsWith('dev/'),
+      )
+      .map((f) => ({ file: f, text: readFileSync(join(folder, f), 'utf8') })),
+  );
+}
+const toolSources = (): { file: string; text: string }[] => shippedSources([`${siteSrc}tool`]);
+const siteSources = (): { file: string; text: string }[] =>
+  shippedSources([siteSrc]).filter(
+    ({ file }) => !file.startsWith('contracts/') && file !== 'lib/privacy.ts',
+  );
+const workerSources = (): { file: string; text: string }[] =>
+  shippedSources([join(repoRoot, 'worker')]).filter(({ file }) => !file.endsWith('.d.ts'));
+const policy = SECURITY_HEADERS['Content-Security-Policy'] ?? '';
+
 describe('Privacy', () => {
-  it.todo('the site sets no cookies and uses no localStorage or sessionStorage');
-  it.todo('the compare tool puts no search state in the URL or history');
-  it.todo('the page-view count sets no cookie and sends nothing a person enters');
-  it.todo('the privacy check allows exactly the Web Analytics beacon and report hosts');
+  it('the site sets no cookies and uses no localStorage or sessionStorage', () => {
+    const sources = [...siteSources(), ...workerSources()];
+    expect(sources.length, 'the scan reads files').toBeGreaterThan(20);
+    expect(
+      sources.flatMap(({ file, text }) => storageUses(text).map((u) => `${file}: ${u}`)),
+    ).toEqual([]);
+    for (const fixture of [
+      'document.cookie = "a=1";',
+      "localStorage.setItem('a', '1');",
+      "window['sessionStorage'].clear(); sessionStorage.length;",
+      "indexedDB.open('a');",
+      "headers.set('Set-Cookie', 'a=1');",
+      "document['cookie'] = 'a=1';",
+      "await caches.open('a');",
+      "caches['default'].put(r, s);",
+      "navigator.serviceWorker.register('/sw.js');",
+      'cookieStore.set("a", "1");',
+    ]) {
+      expect(storageUses(fixture), fixture).not.toEqual([]);
+    }
+    expect(storageUses("headers.delete('Set-Cookie');")).toEqual([]);
+  });
+
+  it('the compare tool puts no search state in the URL or history', () => {
+    const sources = toolSources();
+    expect(sources.length, 'the scan reads the tool').toBeGreaterThan(4);
+    expect(
+      sources.flatMap(({ file, text }) => historyUses(text).map((u) => `${file}: ${u}`)),
+    ).toEqual([]);
+    for (const fixture of [
+      "history.pushState({}, '', '?q=1');",
+      "history.replaceState(null, '', '#a');",
+      "location.hash = 'a';",
+      "location.href = '/compare/?q=1';",
+      "location.assign('/x');",
+      "addEventListener('hashchange', f);",
+      "const h = history; h.pushState({}, '', '?q=1');",
+      "const r = window.history; r.replaceState(null, '', '#a');",
+      "window['history'].go(1);",
+      'x.pushState(1);',
+    ]) {
+      expect(historyUses(fixture), fixture).not.toEqual([]);
+    }
+    expect(historyUses('const history = chart(row); const x = location.origin;')).toEqual([]);
+  });
+
+  it('the compare tool fetches only its own /tool/ files', () => {
+    const sources = toolSources();
+    expect(
+      sources.some(({ text }) => text.includes('fetch(')),
+      'the scan finds the tool fetch',
+    ).toBe(true);
+    expect(
+      sources.flatMap(({ file, text }) => fetchProblems(text).map((u) => `${file}: ${u}`)),
+    ).toEqual([]);
+    expect(fetchProblems("fetch('/tool/index.json'); fetch(`/tool/a-b.json`, { x: 1 });")).toEqual(
+      [],
+    );
+    for (const fixture of [
+      'fetch(address);',
+      "fetch('https://stats.example/a.json');",
+      "fetch('//stats.example/tool/a.json');",
+      "fetch('/tool/a.json?q=' + name);",
+      "fetch('/other/a.json');",
+      "const f = fetch; f('/tool/a.json');",
+      "window.fetch('/x');",
+    ]) {
+      expect(fetchProblems(fixture), fixture).not.toEqual([]);
+    }
+  });
+
+  it('the page-view count sets no cookie and sends nothing a person enters', () => {
+    expect(policyProblems(policy)).toEqual([]);
+    expect(policySources(policy)).toEqual([
+      'connect-src https://cloudflareinsights.com',
+      'img-src data:',
+      'script-src https://static.cloudflareinsights.com',
+    ]);
+    expect(policy).toContain("form-action 'none'");
+    expect(
+      toolSources().flatMap(({ file, text }) => sendingUses(text).map((u) => `${file}: ${u}`)),
+    ).toEqual([]);
+    expect(
+      workerSources().flatMap(({ file, text }) => storageUses(text).map((u) => `${file}: ${u}`)),
+    ).toEqual([]);
+    expect(sendingUses('navigator.sendBeacon("/x", name)')).not.toEqual([]);
+    expect(pageProblems('<script>track()</script>')).toEqual(['script: inline']);
+    expect(
+      pageProblems(
+        '<script src="https://static.cloudflareinsights.com/beacon.min.js" defer></script>',
+      ),
+    ).toEqual(['script: https://static.cloudflareinsights.com/beacon.min.js', 'beacon']);
+    expect(pageProblems('<script type="module" src="/_astro/a.js"></script><p>hi</p>')).toEqual([]);
+    expect(pageProblems('<script src="//x.example/a.js"></script>')).toEqual([
+      'script: //x.example/a.js',
+    ]);
+    expect(pageProblems('<SCRIPT>track()</script >')).toEqual(['script: inline']);
+    expect(
+      pageProblems('<template><script src="https://x.example/a.js"></script></template>'),
+    ).toEqual(['script: https://x.example/a.js']);
+    expect(pageProblems('<head><noscript><script>x()</script></noscript></head>')).toEqual([
+      'script: inline',
+    ]);
+    expect(pageProblems('<p>hi</p><script\nsrc=https://x.example/a.js></script\t>')).toEqual([
+      'script: https://x.example/a.js',
+    ]);
+  });
+
+  it('the privacy check allows exactly the Web Analytics beacon and report hosts', () => {
+    expect(policyProblems(policy)).toEqual([]);
+    const third = policy.replace(
+      "img-src 'self' data:",
+      "img-src 'self' data: https://pixel.example",
+    );
+    const script = policy.replace(
+      'https://static.cloudflareinsights.com',
+      'https://static.cloudflareinsights.com https://cdn.example',
+    );
+    const report = policy.replace(
+      'https://cloudflareinsights.com',
+      'https://cloudflareinsights.com https://stats.example',
+    );
+    const swapped = policy.replace(
+      'connect-src',
+      'connect-src https://static.cloudflareinsights.com',
+    );
+    const wild = policy.replace("font-src 'self'", "font-src 'self' *");
+    const missing = policy.replace(' https://cloudflareinsights.com', '');
+    const loosened = policy.replace("default-src 'none'", "default-src 'self'");
+    const repeated = `${policy}; script-src 'self'`;
+    const scheme = (directive: string, source: string): string =>
+      policy.replace(`${directive} 'self'`, `${directive} 'self' ${source}`);
+    for (const [name, fixture, expected] of [
+      ['default-src loosened', loosened, "default-src: 'self'"],
+      ['a repeated directive', repeated, 'duplicate: script-src'],
+      ['https: alone', scheme('style-src', 'https:'), 'extra: style-src https:'],
+      ['http: alone', scheme('style-src', 'http:'), 'extra: style-src http:'],
+      ['ws: alone', scheme('connect-src', 'ws:'), 'extra: connect-src ws:'],
+      ['wss: alone', scheme('connect-src', 'wss:'), 'extra: connect-src wss:'],
+      ['blob:', scheme('img-src', 'blob:'), 'extra: img-src blob:'],
+      ['data: in a script', scheme('script-src', 'data:'), 'extra: script-src data:'],
+      ['a bare host', scheme('font-src', 'cdn.example'), 'extra: font-src cdn.example'],
+      [
+        'a bare host with a port',
+        scheme('font-src', 'cdn.example:443'),
+        'extra: font-src cdn.example:443',
+      ],
+      ['a host wildcard', scheme('font-src', '*.example.com'), 'extra: font-src *.example.com'],
+      ['a lone wildcard', scheme('font-src', '*'), 'extra: font-src *'],
+      [
+        'an inline allowance',
+        scheme('style-src', "'unsafe-inline'"),
+        "keyword: style-src 'unsafe-inline'",
+      ],
+      ['an image host', third, 'extra: img-src https://pixel.example'],
+      ['a script host', script, 'extra: script-src https://cdn.example'],
+      ['a report host', report, 'extra: connect-src https://stats.example'],
+      [
+        'the beacon host in the wrong directive',
+        swapped,
+        'extra: connect-src https://static.cloudflareinsights.com',
+      ],
+      ['a wildcard', wild, 'wildcard or unsafe'],
+      ['a missing report host', missing, 'missing: connect-src https://cloudflareinsights.com'],
+    ] as const) {
+      expect(policyProblems(fixture), name).toContain(expected);
+    }
+  });
 });
 
 describe('Accessibility', () => {
