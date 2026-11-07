@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://surgerywaits.au/contract/health-service.schema.json",
+  "title": "Health service",
+  "description": "health-services/<slug>.json: one local hospital network and its public hospitals that have a page.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["code", "slug", "name", "display_name", "states", "scope", "hospitals", "sources"],
+  "properties": {
+    "code": {
+      "$ref": "common.schema.json#/$defs/text"
+    },
+    "slug": {
+      "$ref": "common.schema.json#/$defs/slug"
+    },
+    "name": {
+      "$ref": "common.schema.json#/$defs/text"
+    },
+    "display_name": {
+      "$ref": "common.schema.json#/$defs/text"
+    },
+    "states": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/state"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "scope": {
+      "$ref": "common.schema.json#/$defs/scope"
+    },
+    "hospitals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "slug", "name", "state", "closed", "surgeries", "urgent_on_time"],
+        "properties": {
+          "code": {
+            "$ref": "common.schema.json#/$defs/code"
+          },
+          "slug": {
+            "$ref": "common.schema.json#/$defs/slug"
+          },
+          "name": {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          "state": {
+            "$ref": "common.schema.json#/$defs/state"
+          },
+          "closed": {
+            "type": "boolean"
+          },
+          "surgeries": {
+            "description": "How many categories the hospital has a published figure for in the newest period of their table, and the period and release of each table in which it has at least one, in the order urgency, procedure, specialty.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["count", "current"],
+            "properties": {
+              "count": {
+                "$ref": "common.schema.json#/$defs/count"
+              },
+              "current": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["kind", "period", "release"],
+                  "properties": {
+                    "kind": {
+                      "$ref": "common.schema.json#/$defs/kind"
+                    },
+                    "period": {
+                      "$ref": "common.schema.json#/$defs/period"
+                    },
+                    "release": {
+                      "$ref": "common.schema.json#/$defs/date"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "urgent_on_time": {
+            "description": "The share of urgent patients treated on time, with the period and release of the figure. The status is the figure's own state. It is stale, with the period and release of the hospital's own latest urgent figures, when those are older than the newest period, and missing, with a null period and release, when the hospital has no on-time figure.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["status", "figure", "period", "release"],
+            "oneOf": [
+              {
+                "properties": {
+                  "status": {
+                    "const": "missing"
+                  },
+                  "figure": {
+                    "type": "null"
+                  },
+                  "period": {
+                    "type": "null"
+                  },
+                  "release": {
+                    "type": "null"
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "status": {
+                    "enum": ["published", "not_published", "not_reported", "stale"]
+                  },
+                  "period": {
+                    "$ref": "common.schema.json#/$defs/period"
+                  },
+                  "release": {
+                    "$ref": "common.schema.json#/$defs/date"
+                  }
+                }
+              }
+            ],
+            "properties": {
+              "status": {
+                "enum": ["published", "not_published", "not_reported", "stale", "missing"]
+              },
+              "figure": {
+                "oneOf": [
+                  {
+                    "$ref": "common.schema.json#/$defs/figure"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "period": {
+                "type": ["string", "null"]
+              },
+              "release": {
+                "type": ["string", "null"]
+              }
+            }
+          }
+        }
+      },
+      "minItems": 1
+    },
+    "sources": {
+      "$ref": "common.schema.json#/$defs/sources"
+    }
+  }
+}

@@ -10,6 +10,7 @@ import sys
 import tempfile
 import time
 from collections.abc import Callable
+from dataclasses import replace
 from functools import cache
 from pathlib import Path
 from typing import Any
@@ -19,8 +20,21 @@ import pytest
 import realdata
 from fixture_dist import fixture_docs, fixture_inputs
 from surgerywaits.contract import CONTRACT_DIR, ContractError, schema_names, validate
-from surgerywaits.dist import SUMS, DistError, Inputs, assemble, build_dist, render, write
+from surgerywaits.dist import (
+    SUMS,
+    DistError,
+    Inputs,
+    assemble,
+    build_context,
+    build_dist,
+    network_docs,
+    render,
+    urgent_on_time,
+    write,
+)
+from surgerywaits.gates import URGENT_SLUG
 from surgerywaits.manifest import load
+from surgerywaits.waiting_times import Table
 
 Doc = dict[str, Any]
 PERIOD = f"2024{chr(0x2013)}25"
@@ -583,4 +597,40 @@ def test_the_hospital_index_carries_each_network_code_and_name() -> None:
     rows = real_docs()["hospitals.json"]["hospitals"]
     mapped = [r["network"] for r in rows if r["network"] is not None]
     assert mapped
-    assert all(set(n) == {"code", "name"} for n in mapped)
+    assert all(set(n) == {"code", "name", "slug"} for n in mapped)
+
+
+def test_a_renamed_urgent_category_stops_the_build() -> None:
+    ctx = build_context(fixture_inputs())
+    renamed = {
+        k: ("urgent-surgery", v[1]) if v[0] == URGENT_SLUG else v for k, v in ctx.categories.items()
+    }
+    with pytest.raises(DistError, match="urgent-elective-surgery"):
+        network_docs(replace(ctx, categories=renamed))
+
+
+def test_the_urgent_figure_says_why_it_is_absent() -> None:
+    ctx = build_context(fixture_inputs())
+    assert urgent_on_time(ctx, None) == {
+        "status": "missing",
+        "figure": None,
+        "period": None,
+        "release": None,
+    }
+    old = next(o for o in ctx.latest.values() if o.table is Table.URGENCY)
+    stale = urgent_on_time(ctx, replace(old, period="1999\u201300"))
+    assert stale == {
+        "status": "stale",
+        "figure": None,
+        "period": "1999\u201300",
+        "release": ctx.release_of[Table.URGENCY],
+    }
+    page = copy.deepcopy(
+        next(d for _, (k, d) in sorted(fixture_docs().items()) if k == "health-service")
+    )
+    for urgent in (stale, urgent_on_time(ctx, None)):
+        page["hospitals"][0]["urgent_on_time"] = urgent
+        validate("health-service", page)
+    page["hospitals"][0]["urgent_on_time"]["status"] = "published"
+    with pytest.raises(ContractError):
+        validate("health-service", page)

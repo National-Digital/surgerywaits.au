@@ -18,6 +18,8 @@ for (const schema of Object.values(schemaFiles)) {
 
 export type SchemaName =
   | 'credits'
+  | 'health-service'
+  | 'health-service-index'
   | 'hospital'
   | 'hospital-index'
   | 'index'
@@ -31,6 +33,7 @@ export type SchemaName =
 
 const ROOT_FILES: Record<string, SchemaName> = {
   'credits.json': 'credits',
+  'health-services.json': 'health-service-index',
   'hospitals.json': 'hospital-index',
   'index.json': 'index',
   'queensland.json': 'queensland-index',
@@ -39,6 +42,7 @@ const ROOT_FILES: Record<string, SchemaName> = {
 };
 
 const FOLDERS: Record<string, SchemaName> = {
+  'health-services': 'health-service',
   hospitals: 'hospital',
   queensland: 'queensland',
   states: 'state',
@@ -124,7 +128,7 @@ export interface Hospital {
   state: State;
   closed: boolean;
   scope: { sector: 'public'; private_excluded: string[] };
-  network: { code: string; name: string } | null;
+  network: { code: string; name: string; slug: string } | null;
   // Null where the source gave no coordinates, so there is no nearby list either.
   nearby: { radius_km: number; hospitals: NearbyHospital[] } | null;
   surgeries: HospitalSurgery[];
@@ -137,10 +141,49 @@ export interface HospitalIndexRow {
   name: string;
   state: State;
   closed: boolean;
-  network: { code: string; name: string } | null;
+  network: { code: string; name: string; slug: string } | null;
   latitude: number | null;
   longitude: number | null;
   latest_period: string;
+}
+
+interface HealthServiceMember {
+  code: string;
+  slug: string;
+  name: string;
+  state: State;
+  closed: boolean;
+  // Categories with a published figure in the newest period, and the period and release of each table that has one.
+  surgeries: {
+    count: number;
+    current: { kind: HospitalSurgery['kind']; period: string; release: string }[];
+  };
+  urgent_on_time: {
+    status: 'published' | 'not_published' | 'not_reported' | 'stale' | 'missing';
+    figure: Figure | null;
+    // Null only when the status is missing.
+    period: string | null;
+    release: string | null;
+  };
+}
+
+export interface HealthService {
+  code: string;
+  slug: string;
+  name: string;
+  display_name: string;
+  states: State[];
+  hospitals: HealthServiceMember[];
+  sources: string[];
+}
+
+export interface HealthServiceIndexRow {
+  code: string;
+  slug: string;
+  name: string;
+  display_name: string;
+  states: State[];
+  hospitals: number;
 }
 
 export type Kind = HospitalSurgery['kind'];
@@ -260,6 +303,14 @@ export function readHospitalSources(): string[] {
   return (readDist('hospitals.json') as { sources: string[] }).sources;
 }
 
+export function readHealthService(slug: string): HealthService {
+  return readDist(`health-services/${slug}.json`) as HealthService;
+}
+
+export function readHealthServiceIndex(): HealthServiceIndexRow[] {
+  return (readDist('health-services.json') as { networks: HealthServiceIndexRow[] }).networks;
+}
+
 export function readTrend(slug: string): Trend {
   return readDist(`trends/${slug}.json`) as Trend;
 }
@@ -301,7 +352,9 @@ export function listSurgeries(kind: Kind): string[] {
     .sort();
 }
 
-export function listDist(folder: 'hospitals' | 'queensland' | 'states' | 'trends'): string[] {
+export function listDist(
+  folder: 'health-services' | 'hospitals' | 'queensland' | 'states' | 'trends',
+): string[] {
   return readdirSync(join(distDirectory(), folder))
     .filter((file) => file.endsWith('.json'))
     .map((file) => file.slice(0, -'.json'.length))

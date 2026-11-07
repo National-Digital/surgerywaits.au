@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://surgerywaits.au/contract/health-service-index.schema.json",
+  "title": "Health service index",
+  "description": "health-services.json: one row for each local hospital network that has a page.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["networks", "sources"],
+  "properties": {
+    "networks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "slug", "name", "display_name", "states", "hospitals"],
+        "properties": {
+          "code": {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          "slug": {
+            "$ref": "common.schema.json#/$defs/slug"
+          },
+          "name": {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          "display_name": {
+            "$ref": "common.schema.json#/$defs/text"
+          },
+          "states": {
+            "type": "array",
+            "items": {
+              "$ref": "common.schema.json#/$defs/state"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "hospitals": {
+            "$ref": "common.schema.json#/$defs/count"
+          }
+        }
+      }
+    },
+    "sources": {
+      "$ref": "common.schema.json#/$defs/sources"
+    }
+  }
+}

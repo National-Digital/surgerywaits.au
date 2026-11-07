@@ -8,6 +8,8 @@ import {
   distDirectory,
   listDist,
   readDist,
+  readHealthService,
+  readHealthServiceIndex,
   readHospital,
   schemaFor,
   validateDist,
@@ -57,6 +59,8 @@ describe('schemaFor', () => {
     ['trends/armidale-hospital.json', 'trend'],
     ['surgeries/procedure/adenoidectomy.json', 'surgery'],
     ['states/nsw.json', 'state'],
+    ['health-services.json', 'health-service-index'],
+    ['health-services/hunter-new-england.json', 'health-service'],
     ['queensland/h0385.json', 'queensland'],
   ])('maps %s to the %s schema', (path, schema) => {
     expect(schemaFor(path)).toBe(schema);
@@ -86,6 +90,28 @@ describe('readDist', () => {
     const slugs = listDist('hospitals');
     expect(slugs).toEqual([...slugs].sort());
     expect(slugs).toContain('armidale-hospital');
+  });
+
+  it('reads each network with member hospitals that exist as hospital files', () => {
+    const rows = readHealthServiceIndex();
+    expect(rows.length).toBeGreaterThan(0);
+    const slugs = new Set(listDist('hospitals'));
+    for (const row of rows) {
+      const network = readHealthService(row.slug);
+      expect(network.hospitals).toHaveLength(row.hospitals);
+      for (const member of network.hospitals) {
+        expect(slugs.has(member.slug)).toBe(true);
+        expect(readHospital(member.slug).network?.slug).toBe(row.slug);
+      }
+    }
+    expect(listDist('health-services')).toEqual(rows.map((r) => r.slug).sort());
+  });
+
+  it('rejects a network file that lost its slug', () => {
+    const path = broken('health-services/hunter-new-england.json', (doc) => {
+      Reflect.deleteProperty(doc, 'slug');
+    });
+    expect(() => readDist(path)).toThrow(/health-service schema/);
   });
 
   it('rejects a published figure that lost its release date', () => {

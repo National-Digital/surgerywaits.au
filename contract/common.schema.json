@@ -248,16 +248,19 @@
       }
     },
     "network": {
-      "description": "The publisher's own network mapping.",
+      "description": "The publisher's own network mapping, with the slug of the network's page.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["code", "name"],
+      "required": ["code", "name", "slug"],
       "properties": {
         "code": {
           "$ref": "#/$defs/text"
         },
         "name": {
           "$ref": "#/$defs/text"
+        },
+        "slug": {
+          "$ref": "#/$defs/slug"
         }
       }
     },
