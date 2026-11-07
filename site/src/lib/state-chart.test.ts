@@ -128,11 +128,11 @@ describe('the state chart', () => {
 
   it('keeps every text inside the canvas for every reason code', () => {
     const reasons = Object.keys(REASONS) as NotPublishedFigure['reason'][];
-    const bars = [
+    const bars: { name: string; figure: Figure }[] = [
       ...reasons.map((reason) => ({
         name: 'Australian Capital Territory',
         figure: {
-          state: 'not_published',
+          state: 'not_published' as const,
           reason,
           period: '2024–25',
           release: '2026-08-19',
@@ -141,11 +141,11 @@ describe('the state chart', () => {
       {
         name: 'Northern Territory',
         figure: {
-          state: 'not_reported',
-          reason: 'not_reported_by_source',
+          state: 'not_reported' as const,
+          reason: 'not_reported_by_source' as const,
           period: '2024–25',
           release: '2026-08-19',
-        } as Figure,
+        },
       },
       { name: 'Victoria', figure: published(68) },
     ];

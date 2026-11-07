@@ -52,9 +52,23 @@ describe('the data files', () => {
     }
   }, 120_000);
 
-  it('writes the same bytes each time', () => {
+  it('writes the same bytes whatever order the keys arrive in', () => {
+    const reversed = (value: unknown): unknown => {
+      if (Array.isArray(value)) {
+        return value.map(reversed);
+      }
+      if (typeof value === 'object' && value !== null) {
+        return Object.fromEntries(
+          Object.entries(value)
+            .reverse()
+            .map(([key, item]) => [key, reversed(item)]),
+        );
+      }
+      return value;
+    };
     for (const path of paths.slice(0, 20)) {
-      expect(dataApiBody(path)).toBe(dataApiBody(path));
+      const raw: unknown = JSON.parse(readFileSync(join(distDirectory(), path), 'utf8'));
+      expect(canonicalJson(reversed(raw)), path).toBe(dataApiBody(path));
     }
   });
 
