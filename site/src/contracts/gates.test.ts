@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ESLint } from 'eslint';
@@ -97,27 +97,57 @@ const reasons = (
 
 const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
 
-// The CSS a reader's browser receives: each stylesheet and the style block of each component.
+// SVG output sizes its text by the viewBox, so its unitless font-size attributes scale with the picture.
+const SVG_ONLY = ['lib/state-chart.ts'];
+const STYLE_ATTRIBUTE = /\sstyle=(?:\x22([^\x22]*)\x22|\x27([^\x27]*)\x27)/g;
+const stripComments = (css: string): string =>
+  css.replace(new RegExp('/\\*[\\s\\S]*?\\*/', 'g'), '');
+// The CSS a reader's browser receives: stylesheets, component style blocks and style attributes,
+// and the style strings that .ts files build.
 function styleSources(): string[] {
   const src = fileURLToPath(new URL('../', import.meta.url));
   return readdirSync(src, { recursive: true, encoding: 'utf8' })
-    .filter((f) => /\.(?:css|astro)$/.test(f))
-    .map((f) => {
+    .filter(
+      (f) => /\.(?:css|astro|ts)$/.test(f) && !f.endsWith('.test.ts') && !SVG_ONLY.includes(f),
+    )
+    .flatMap((f) => {
       const text = readFileSync(join(src, f), 'utf8');
-      return f.endsWith('.css')
-        ? text
-        : [...text.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join('\n');
+      if (f.endsWith('.css')) {
+        return [stripComments(text)];
+      }
+      const blocks = f.endsWith('.astro')
+        ? [...text.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) =>
+            stripComments(m[1] ?? ''),
+          )
+        : [];
+      const attributes = [...text.matchAll(STYLE_ATTRIBUTE)].map((m) => m[1] ?? m[2] ?? '');
+      return f.endsWith('.ts') ? [stripComments(text)] : [...blocks, ...attributes];
     });
 }
 
 const TYPE_PROPERTY =
   /^(?:font|font-size|line-height|letter-spacing|word-spacing|--(?:fs|lh|tracking)-.+)$/;
 const ABSOLUTE_UNIT = /\d(?:px|pt|pc|cm|mm|in|q)\b/i;
+const RELATIVE_UNIT = /\d(?:rem|em|ex|ch|lh|rlh|vw|vh|vi|vb|vmin|vmax|%)/i;
+// A px term inside a calc() that also holds a relative unit still follows the reader's size.
+function withoutRelativeCalc(value: string): string {
+  let next = value;
+  for (let prev = ''; prev !== next;) {
+    prev = next;
+    next = next.replace(/calc\(([^()]*)\)/g, (m, inner: string) =>
+      RELATIVE_UNIT.test(inner) ? '0' : m,
+    );
+  }
+  return next;
+}
 // A type size in an absolute unit would ignore the size a reader sets in the browser.
 function absoluteTypeSizes(sources: string[]): string[] {
   return sources.flatMap((css) =>
-    [...css.matchAll(/([\w-]+)\s*:\s*([^;{}]+)/g)]
-      .filter(([, name = '', value = '']) => TYPE_PROPERTY.test(name) && ABSOLUTE_UNIT.test(value))
+    [...stripComments(css).matchAll(/([\w-]+)\s*:\s*([^;{}]+)/g)]
+      .filter(
+        ([, name = '', value = '']) =>
+          TYPE_PROPERTY.test(name) && ABSOLUTE_UNIT.test(withoutRelativeCalc(value)),
+      )
       .map(([, name = '', value = '']) => `${name}:${value.trim()}`),
   );
 }
@@ -129,7 +159,18 @@ const DATA_FILES = new Set([
   'data/redirects.schema.json',
 ]);
 const DATA_EXTENSION =
-  /\.(?:parquet|csv|tsv|ndjson|jsonl|feather|arrow|sqlite3?|db|xlsx?|zip|gz)$/i;
+  /\.(?:parquet|csv|tsv|ndjson|jsonl|feather|arrow|sqlite3?|db|xlsx?|xlsb|zip|gz|zst|tar|7z)$/i;
+const SIZE_CAP = 1_000_000;
+const FIXTURE_SIZE_CAP = 400_000; // the largest fixture is 162 KB
+// A snapshot can hide under any name, so a big file fails wherever it sits.
+function oversized(sizes: Record<string, number>): string[] {
+  return Object.entries(sizes)
+    .filter(
+      ([f, bytes]) =>
+        bytes > (f.startsWith('pipeline/tests/fixtures/') ? FIXTURE_SIZE_CAP : SIZE_CAP),
+    )
+    .map(([f]) => f);
+}
 function dataSnapshots(tracked: string[]): string[] {
   return tracked.filter((f) => {
     if (f.startsWith('pipeline/tests/fixtures/') || DATA_FILES.has(f)) {
@@ -402,6 +443,9 @@ describe('Accessibility', () => {
         'c{font:italic 13px/1.5 serif}',
         'd{font-size:clamp(1rem,2vw,16px)}',
         'e{font-size:1rem;line-height:1.5;border-width:1px}',
+        '/* font-size:9px */f{font-size:1rem}',
+        'g{font-size:calc(1rem + 2px);line-height:calc(1.5 * 12px)}',
+        'h{font-size:clamp(1rem,calc(0.5rem + 1vw),calc(2rem + 1px))}',
       ]),
     ).toEqual([
       'font-size:14px',
@@ -410,7 +454,31 @@ describe('Accessibility', () => {
       '--fs-x:12px',
       'font:italic 13px/1.5 serif',
       'font-size:clamp(1rem,2vw,16px)',
+      'line-height:calc(1.5 * 12px)',
     ]);
+    expect(
+      absoluteTypeSizes(
+        ['<p style="font-size:14px">'].flatMap((h) =>
+          [...h.matchAll(STYLE_ATTRIBUTE)].map((m) => m[1] ?? ''),
+        ),
+      ),
+    ).toEqual(['font-size:14px']);
+  });
+  it('exempts only SVG output from the relative-size check, where text is sized by the viewBox', () => {
+    const src = fileURLToPath(new URL('../', import.meta.url));
+    expect(SVG_ONLY.length).toBeGreaterThan(0);
+    for (const f of SVG_ONLY) {
+      const text = readFileSync(join(src, f), 'utf8');
+      expect(text, f).toContain('<svg');
+      expect(text, f).not.toMatch(STYLE_ATTRIBUTE);
+      expect(text, f).not.toContain('<style');
+      const sizes = text.match(/font-size[^,;]{0,12}/g) ?? [];
+      expect(sizes.length, f).toBeGreaterThan(0);
+      expect(
+        sizes.every((v) => /^font-size=\x22\d+(?:\.\d+)?\x22/.test(v)),
+        f,
+      ).toBe(true);
+    }
   });
   // The charts and bars are the only marks that carry data in colour, so the gate covers them.
   it('colour is never the only carrier of meaning', async () => {
@@ -606,6 +674,27 @@ describe('Repository', () => {
       .filter((f) => f !== '');
     expect(tracked.length).toBeGreaterThan(0);
     expect(dataSnapshots(tracked)).toEqual([]);
+    expect(
+      oversized(
+        Object.fromEntries(
+          tracked
+            .filter((f) => existsSync(join(repoRoot, f)))
+            .map((f) => [f, statSync(join(repoRoot, f)).size]),
+        ),
+      ),
+    ).toEqual([]);
+    expect(
+      oversized({
+        'docs/big.bin': 1_000_001,
+        'docs/ok.bin': 1_000_000,
+        'pipeline/tests/fixtures/a/data.parquet': 399_999,
+        'pipeline/tests/fixtures/b/data.parquet': 400_001,
+        'site/public/one.json': 2_000_000,
+      }),
+    ).toEqual(['docs/big.bin', 'pipeline/tests/fixtures/b/data.parquet', 'site/public/one.json']);
+    expect(
+      dataSnapshots(['a/x.zst', 'a/x.tar', 'a/x.7z', 'a/x.xlsb', 'a/x.xlsx', 'a/x.txt']),
+    ).toEqual(['a/x.zst', 'a/x.tar', 'a/x.7z', 'a/x.xlsb', 'a/x.xlsx']);
     expect(
       dataSnapshots([
         'data/manifest.json',

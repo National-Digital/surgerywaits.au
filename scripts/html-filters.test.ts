@@ -25,15 +25,22 @@ describe('the HTML gate filters', () => {
 
   it('finds a pattern with no comment directly above it, and an empty comment', () => {
     expect(unreasonedFilters(read(fixture('filters/no-reason.txt')))).toEqual([
-      'line 4: ^A pattern with no comment above it$',
+      'line 6: ^A pattern with no comment above it$',
     ]);
     expect(unreasonedFilters('#\n^empty comment$\n')).toEqual(['line 2: ^empty comment$']);
+  });
+
+  it('does not count the file header as the reason for the first pattern', () => {
+    expect(unreasonedFilters(read(fixture('filters/header-only.txt')))).toEqual([
+      'line 2: ^A pattern with only the header above it$',
+    ]);
+    expect(html(fixture('filters/header-only.txt')).status).toBe(1);
   });
 
   it('stops the command before the checker runs when a filter has no reason', () => {
     const r = html(fixture('filters/no-reason.txt'));
     expect(r.status).toBe(1);
-    expect(r.stderr).toContain('line 4: ^A pattern with no comment above it$');
+    expect(r.stderr).toContain('line 6: ^A pattern with no comment above it$');
   });
 
   it('keeps the checker version exact in package.json, in the lockfile and as installed', () => {

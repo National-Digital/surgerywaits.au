@@ -229,6 +229,9 @@ jobs:
         working-directory: .
       - run: npm run links -- site/dist
         working-directory: .
+      # The budget in scripts/page-weight-budget.json is set from this real build.
+      - run: npm run weight -- site/dist
+        working-directory: .
       - run: npx vitest run site/src/contracts/determinism.test.ts
         working-directory: .
         env:

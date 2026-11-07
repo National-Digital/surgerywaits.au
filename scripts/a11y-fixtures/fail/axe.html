@@ -10,12 +10,14 @@
         --fg: #111;
         --bg: #fff;
         --link: #0000b3;
+        --soft: #6b6b6b;
       }
       @media (prefers-color-scheme: dark) {
         :root {
           --fg: #f2f2f2;
           --bg: #101010;
           --link: #9ecbff;
+          --soft: #8a8a8a;
         }
       }
       html {
@@ -57,8 +59,8 @@
         background: var(--bg);
         border: 1px solid var(--fg);
       }
-      body {
-        background: #fff;
+      .soft {
+        color: var(--soft);
       }
     </style>
   </head>
@@ -66,7 +68,7 @@
     <div class="site">
       <main>
         <h1>Axe contrast</h1>
-        <p style="color: #6b6b6b; background: #fff">
+        <p class="soft">
           Waiting times are measured in days. Waiting times are measured in days. Waiting times are
           measured in days. Waiting times are measured in days. Waiting times are measured in days.
           Waiting times are measured in days. Waiting times are measured in days. Waiting times are

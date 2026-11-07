@@ -14,7 +14,7 @@ import {
   launch,
   serve,
 } from './a11y-audit.ts';
-import type { Served } from './a11y-audit.ts';
+import type { Scheme, Served } from './a11y-audit.ts';
 import {
   HOUSE,
   TEXT_SPACING,
@@ -84,6 +84,39 @@ browsers('each check fires on the fixture built to fail it', () => {
       expect(silent).toEqual([]);
     },
     T * PROOF.length,
+  );
+
+  const axeAaaRules = async (scheme: Scheme): Promise<string[]> =>
+    (
+      await auditPage({
+        browser: up(browser),
+        base: up(server).base,
+        path: '/fail/axe.html',
+        scheme,
+        viewport: { name: 'desktop', width: 1280, height: 900 },
+        exceptions: [],
+        used: new Set(),
+      })
+    ).map((f) => f.rule);
+
+  it(
+    'axe fails text that passes AA but misses AAA contrast in light',
+    async () => {
+      const rules = await axeAaaRules('light');
+      expect(rules).toContain('axe:color-contrast-enhanced');
+      expect(rules).not.toContain('axe:color-contrast');
+    },
+    T,
+  );
+
+  it(
+    'axe fails text that passes AA but misses AAA contrast in dark',
+    async () => {
+      const rules = await axeAaaRules('dark');
+      expect(rules).toContain('axe:color-contrast-enhanced');
+      expect(rules).not.toContain('axe:color-contrast');
+    },
+    T,
   );
 
   it(

@@ -1,3 +1,5 @@
+# Header for the file.
+
 # A reason for the first pattern.
 ^The first pattern$
 
