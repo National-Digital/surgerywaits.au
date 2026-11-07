@@ -210,6 +210,33 @@ describe('A member with no urgent figure', () => {
 });
 
 describe('The surgery type count', () => {
+  it('says in the caption that the count includes types with no published figure', () => {
+    for (const { slug, html } of pages) {
+      const caption = html.split('<caption')[1]?.split('</caption>')[0] ?? '';
+      expect(text(caption), slug).toContain(t.types_note);
+      expect(t.types_note).toMatch(/published no figures/);
+      expect(t.types_note).toMatch(/not a count of published figures/);
+    }
+  });
+
+  it('says the order is by state first only for a network that spans states', async () => {
+    for (const { slug, html } of pages) {
+      const intro =
+        readHealthService(slug).states.length > 1 ? t.hospitals_intro_states : t.hospitals_intro;
+      expect(main(html), slug).toContain(intro);
+    }
+    const slug = editedService((service) => {
+      service.states = ['NSW', 'Qld'];
+      const member = service.hospitals[0];
+      if (member !== undefined) {
+        member.state = 'Qld';
+      }
+    });
+    const html = await render(HealthServicePage, { slug });
+    expect(main(html)).toContain(t.hospitals_intro_states);
+    expect(main(html)).not.toContain(t.hospitals_intro);
+  });
+
   it('lists members by name, with state first only for a network that spans states', () => {
     const collator = new Intl.Collator('en-AU');
     for (const slug of slugs) {

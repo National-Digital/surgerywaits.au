@@ -360,6 +360,7 @@ export const healthServiceTemplateSchema = z.strictObject({
   source_name: slotted('name'),
   hospitals_heading: slotted('network'),
   hospitals_intro: slotted(),
+  hospitals_intro_states: slotted(),
   hospitals_caption: slotted('network'),
   row_heading: slotted(),
   col_state: slotted(),

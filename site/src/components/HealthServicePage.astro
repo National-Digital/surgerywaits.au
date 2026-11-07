@@ -65,18 +65,18 @@ const stateLinks = service.states
   <section aria-labelledby="hospitals-heading">
     <div class="o-columns">
       <h2 id="hospitals-heading">{fill(t.hospitals_heading, { network })}</h2>
-      <p>{t.hospitals_intro}</p>
+      <p>{service.states.length > 1 ? t.hospitals_intro_states : t.hospitals_intro}</p>
     </div>
     <PlainTable
       id="hospitals"
       caption={fill(t.hospitals_caption, { network })}
       stamp={table.stamp}
+      notes={[t.types_note]}
       rowHeading={t.row_heading}
       headings={[t.col_state, t.col_types, t.col_urgent]}
       rows={table.rows}
     />
     <div class="o-columns">
-      <p>{t.types_note}</p>
       <p>{fill(t.urgent_note, { within: urgent.within })}</p>
     </div>
   </section>

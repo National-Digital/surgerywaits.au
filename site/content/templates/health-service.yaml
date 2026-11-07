@@ -13,18 +13,19 @@ grouping:
 source_name: 'The source publishes this network as {name}.'
 hospitals_heading: 'Hospitals of {network}'
 hospitals_intro: The hospitals are in name order. Each name links to that hospital's page.
+hospitals_intro_states: The hospitals are in order of state or territory, then name. Each name links to that hospital's page.
 hospitals_caption: 'Public hospitals of {network}'
 row_heading: Hospital
 col_state: State or territory
 col_types: Surgery types reported
 col_urgent: Urgent patients treated on time
 closed_name: '{name} (closed)'
-types_note: A surgery type counts when the hospital reported it for the newest period, including a surgery type for which the source did not publish every figure. The count covers procedures only. It leaves out specialties and urgency categories.
-no_types_cell: No surgery type reported for the newest period.
+types_note: The count includes surgery types for which the source published no figures. It is not a count of published figures. A surgery type counts when the hospital has any row for it in the newest period. The count covers procedures only and leaves out specialties and urgency categories.
+no_types_cell: The hospital reported no surgery type for the newest period.
 urgent_note: 'The urgent share is the share of category 1 patients treated within {within}. It covers all planned surgery at the hospital and is never combined with a procedure figure.'
 table_stamp: 'Figures are for {period}, released {release}, unless a cell gives its own period.'
 cell_stamp: '{text} ({stamp})'
-stale_cell: 'No figure for the newest period. The latest urgent figures are for {stamp}.'
+stale_cell: 'The source has no urgent figure for this hospital for the newest period. Its latest urgent figures are for {stamp}.'
 missing_cell: The source has no urgent figure for this hospital.
 urgency_link: '{category}: hospitals by share treated on time'
 links_heading: Related pages

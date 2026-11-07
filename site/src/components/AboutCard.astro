@@ -17,7 +17,15 @@ const { id, heading, rows } = Astro.props;
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
       <>
         <dt>{row.term}</dt>
-        <dd>{row.href === undefined ? row.value : <a href={row.href}>{row.value}</a>}</dd>
+        <dd>
+          {row.href === undefined ? (
+            row.value
+          ) : (
+            <a class="c-about__link" href={row.href}>
+              {row.value}
+            </a>
+          )}
+        </dd>
       </>
     ))}
   </dl>
@@ -52,6 +60,12 @@ const { id, heading, rows } = Astro.props;
     .c-about__facts dd {
       margin: 0;
       overflow-wrap: anywhere;
+    }
+
+    .c-about__link {
+      display: inline-flex;
+      align-items: center;
+      min-height: var(--target);
     }
   }
 </style>
