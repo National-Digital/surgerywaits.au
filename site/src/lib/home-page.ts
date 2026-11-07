@@ -10,12 +10,12 @@ import { categories } from './urgency-page';
 
 export const COMMON_COUNT = 20;
 
-export interface PlainCell {
+interface PlainCell {
   text: string;
   withheld: boolean;
 }
 
-export interface PlainRow {
+interface PlainRow {
   name: string;
   href: string;
   cells: PlainCell[];
