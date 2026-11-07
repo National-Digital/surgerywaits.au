@@ -89,7 +89,7 @@ schemas.
 
 Why: a schema file, a type definition and an API description written by hand drift apart. One source
 for all three means a change to an output file is a change to one schema, and a check fails when
-either half disagrees with it. The schemas and the OpenAPI description are planned.
+either half disagrees with it.
 
 ### D6: The site is Astro with strict TypeScript
 

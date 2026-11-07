@@ -20,7 +20,7 @@ describe('the built data files', () => {
   const paths = dataApiPaths();
 
   it('holds exactly the files of the dist, none else', () => {
-    expect(built('data-api/', '.json')).toEqual(paths);
+    expect(built('data-api/', '.json').filter((file) => file !== 'openapi.json')).toEqual(paths);
   });
 
   it('publishes each file with the same content as the dist file, keys sorted', () => {

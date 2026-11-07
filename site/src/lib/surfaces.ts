@@ -2,6 +2,7 @@ import { readdirSync } from 'node:fs';
 
 import { dataApiPaths } from './data-api';
 import { contractSchemas } from './dist';
+import { OPENAPI_PATH } from './openapi';
 import { SECURITY_TXT_PATH } from './security-txt';
 import { stateChartFiles } from './state-chart';
 
@@ -39,15 +40,30 @@ const securityProblem = (body: string): string | undefined => {
     : undefined;
 };
 
+const openApiProblem = (body: string): string | undefined => {
+  const document = JSON.parse(body) as { openapi?: unknown };
+  return typeof document.openapi === 'string' && document.openapi.startsWith('3.1.')
+    ? undefined
+    : 'not an OpenAPI 3.1 document';
+};
+
 // Every machine-readable file the site serves.
 // A new surface is added here with its own entry.
 export const SURFACES: readonly Surface[] = [
   {
     id: 'data-files',
-    pattern: /^\/data-api\/.+\.json$/u,
+    pattern: /^\/data-api\/(?!openapi\.json$).+\.json$/u,
     mediaType: 'application/json',
     purpose: 'The dist files the pages are built from, each valid against its published schema.',
     expected: () => dataApiPaths().map((path) => `/data-api/${path}`),
+  },
+  {
+    id: 'openapi',
+    pattern: /^\/data-api\/openapi\.json$/u,
+    mediaType: 'application/json',
+    purpose: 'The OpenAPI 3.1 description of the data files, generated from the schemas.',
+    expected: () => [OPENAPI_PATH],
+    check: openApiProblem,
   },
   {
     id: 'schemas',

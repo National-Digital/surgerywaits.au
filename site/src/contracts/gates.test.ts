@@ -2,6 +2,8 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { Validator } from '@seriousme/openapi-schema-validator';
+import { Ajv2020 } from 'ajv/dist/2020.js';
 import { ESLint } from 'eslint';
 import { describe, expect, it } from 'vitest';
 import type { z } from 'astro/zod';
@@ -55,6 +57,7 @@ import { sampleCharts, surgeryTables } from '../dev/preview';
 import { planChart } from '../lib/chart';
 import {
   DistError,
+  contractSchemas,
   distDirectory,
   listDist,
   readHospital,
@@ -63,6 +66,7 @@ import {
   validateDist,
   validateDocument,
 } from '../lib/dist';
+import { openApiDisagreements, openApiDocument } from '../lib/openapi';
 import { getHospitalTemplate, getSurgeryTemplate } from '../lib/content';
 import { formatDate, formatFigure, formatStamp } from '../lib/format';
 import type { NotPublishedReason, Role } from '../lib/format';
@@ -944,5 +948,71 @@ describe('Repository', () => {
 });
 
 describe('OpenAPI', () => {
-  it.todo('a schema and the generated OpenAPI description never disagree');
+  // Read at collection, before another test stubs the variable to a copy it later deletes.
+  const dist = distDirectory();
+  const schemaCatalogue = (): Ajv2020 => {
+    const ajv = new Ajv2020({ strict: true, allErrors: true });
+    for (const [, schema] of contractSchemas()) {
+      ajv.addSchema(schema as object);
+    }
+    return ajv;
+  };
+  const distFiles = (): { path: string; body: unknown }[] =>
+    readdirSync(dist, { recursive: true, encoding: 'utf8' })
+      .filter((file) => file.endsWith('.json'))
+      .sort()
+      .map((path) => ({
+        path: `/data-api/${path}`,
+        body: JSON.parse(readFileSync(join(dist, path), 'utf8')) as unknown,
+      }));
+
+  it('a schema and the generated OpenAPI description never disagree', () => {
+    const files = distFiles();
+    expect(files.length).toBeGreaterThan(0);
+    expect(openApiDisagreements(openApiDocument(), files, schemaCatalogue())).toEqual([]);
+  });
+
+  it('reports a path that names the wrong schema, a path with no file and a file with no path', () => {
+    const document = structuredClone(openApiDocument()) as {
+      paths: Record<string, unknown>;
+    };
+    const hospital = document.paths['/data-api/hospitals/{slug}.json'] as {
+      get: {
+        responses: { '200': { content: { 'application/json': { schema: { $ref: string } } } } };
+      };
+    };
+    hospital.get.responses['200'].content['application/json'].schema.$ref =
+      'https://surgerywaits.au/contract/trend.schema.json';
+    document.paths['/data-api/ghosts.json'] = document.paths['/data-api/rules.json'];
+    delete document.paths['/data-api/credits.json'];
+    const problems = openApiDisagreements(document, distFiles(), schemaCatalogue());
+    expect(problems.some((p) => /^\/data-api\/hospitals\/.+ breaks .*trend/u.test(p))).toBe(true);
+    expect(problems).toContain('/data-api/ghosts.json matches no file');
+    expect(problems).toContain('/data-api/credits.json has no path in the description');
+  });
+
+  it('is a valid OpenAPI 3.1 document', async () => {
+    const validator = new Validator();
+    // The validator resolves internal references only; the disagreement test proves the external ones.
+    const document = JSON.parse(
+      JSON.stringify(openApiDocument()).replaceAll(/\{"\$ref":"https:[^"]*"\}/gu, '{}'),
+    ) as Record<string, unknown>;
+    const result = await validator.validate(document);
+    expect(result.errors).toBeUndefined();
+    expect(result.valid).toBe(true);
+    expect(validator.version).toBe('3.1');
+  });
+
+  it('gives each path a GET and a HEAD with a 200 and a 404', () => {
+    const { paths } = openApiDocument() as {
+      paths: Record<string, Record<string, { responses: Record<string, unknown> }>>;
+    };
+    expect(Object.keys(paths).length).toBe(14);
+    for (const [path, item] of Object.entries(paths)) {
+      expect(Object.keys(item).sort(), path).toEqual(['get', 'head']);
+      for (const operation of Object.values(item)) {
+        expect(Object.keys(operation.responses).sort(), path).toEqual(['200', '404']);
+      }
+    }
+  });
 });

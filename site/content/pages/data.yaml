@@ -34,6 +34,7 @@ after:
       - Each hospital's yearly trend has its own file in /data-api/trends/.
       - The Queensland quarterly figures are in /data-api/queensland.json and in /data-api/queensland/, with one file for each hospital that has quarterly figures.
       - The file /data-api/suburbs.json holds the centre point of each suburb.
+      - An OpenAPI 3.1 description of the files is published at /data-api/openapi.json. It lists each kind of file with the schema that the kind follows and the headers that the site sends.
       - A JSON Schema for each kind of file is published at /contract/, named for the kind, as in /contract/hospital.schema.json. The build checks every published file against its schema.
       - A chart of the median wait in each state for one procedure is published as an SVG file at /charts/, with the name of the procedure's page address and the ending .svg. Every state listed under benchmarks in the procedure's file in /data-api/surgeries/procedure/ appears in the chart. A state with a withheld figure, or with no figure, has a row that says why and has no bar.
   - id: reuse

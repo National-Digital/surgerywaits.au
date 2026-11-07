@@ -45,7 +45,7 @@ export type SchemaName =
   | 'tool-figures'
   | 'trend';
 
-const ROOT_FILES: Record<string, SchemaName> = {
+export const ROOT_FILES: Record<string, SchemaName> = {
   'credits.json': 'credits',
   'health-services.json': 'health-service-index',
   'hospitals.json': 'hospital-index',
@@ -56,7 +56,7 @@ const ROOT_FILES: Record<string, SchemaName> = {
   'surgeries.json': 'surgery-index',
 };
 
-const FOLDERS: Record<string, SchemaName> = {
+export const FOLDERS: Record<string, SchemaName> = {
   'health-services': 'health-service',
   hospitals: 'hospital',
   queensland: 'queensland',
