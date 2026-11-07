@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://surgerywaits.au/contract/tool-index.schema.json",
   "title": "Compare tool index",
-  "description": "/tool/index.json: what the compare tool loads when its page opens. The site build writes it from the dist. Each procedure lists the address of its figure file, /tool/procedures/<slug>.json. A hospital row is [slug, name, state, latitude, longitude], and a figure row in a procedure file points at a hospital by its place in this list. A reason code is -1 minus its place in reasons.",
+  "description": "/tool/index.json: what the compare tool loads when its page opens. The site build writes it from the dist. The figure rows of every procedure are in /tool/figures.json, keyed by procedure slug. A hospital row is [slug, name, state, latitude, longitude], and a figure row in /tool/figures.json points at a hospital by its place in this list. A reason code is -1 minus its place in reasons.",
   "type": "object",
   "additionalProperties": false,
   "required": ["hospitals", "neighbours", "procedures", "reasons", "strings"],

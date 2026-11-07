@@ -1,4 +1,4 @@
-import { getSite } from './content';
+import { getSite, label } from './content';
 import type { ArticleSection } from './content-schema';
 import { readRules } from './dist';
 import type { Rules } from './dist';
@@ -112,7 +112,9 @@ export function methodologyFacts(
 
 export const aboutFacts = (): Record<string, string> => ({ operator: getSite().operator.name });
 
-export const dataFacts = (): Record<string, string> => ({});
+export const dataFacts = (): Record<string, string> => ({
+  passport_heading: label('passport_heading'),
+});
 
 export const fillText = (text: string, facts: Record<string, string>): string =>
   fillKnown(text, facts);

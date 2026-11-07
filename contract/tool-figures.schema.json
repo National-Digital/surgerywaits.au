@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://surgerywaits.au/contract/tool-figures.schema.json",
   "title": "Compare tool figures",
-  "description": "/tool/figures.json: every procedure's figure rows, which the compare tool loads when its surgery box is first used. The request names no surgery. A value is its number when published, and -1 minus the place of its reason in the index's reasons when it is not. A figure row is [hospital index, stamp index, median wait, volume, rank or null, median history or null], and the history is the first year followed by one value for each later year, with null for a year the hospital did not report. pairs lists the hospital indexes that have a page for the procedure.",
+  "description": "/tool/figures.json: every procedure's figure rows, keyed by procedure slug, which the compare tool loads when its surgery box is first used. A value is its number when published, and -1 minus the place of its reason in the index's reasons when it is not. A figure row is [hospital's place in the index's hospitals, stamp index, median wait, volume, rank or null, median history or null], and the history is the first year followed by one value for each later year, with null for a year the hospital did not report. pairs lists the places in the index's hospitals of the hospitals that have a page for the procedure.",
   "type": "object",
   "additionalProperties": false,
   "required": ["procedures"],

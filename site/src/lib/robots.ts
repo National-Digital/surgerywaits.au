@@ -23,5 +23,5 @@ const group = (agent: string): string => `User-agent: ${agent}\n${CONTENT_SIGNAL
 
 export function robotsTxt(): string {
   const groups = ['*', ...NAMED_CRAWLERS].map(group).join('\n');
-  return `# ${SITE}: public hospital waiting times for planned surgery in Australia.\n\n${groups}\nSitemap: ${SITEMAP_URL}\n`;
+  return `# ${SITE}: public hospital waiting times for planned surgery in Australia.\n# For AI agents: ${SITE}/agents/ and ${SITE}/llms.txt\n\n${groups}\nSitemap: ${SITEMAP_URL}\n`;
 }
