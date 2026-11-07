@@ -1,0 +1,28 @@
+title: 'Data and attribution: where {site} gets its data'
+description: Every dataset behind Surgery Waits, with its publisher, version, release date, licence and citation, and how to reuse the data.
+crumb_home: Home
+crumb: Data and attribution
+heading: Data and attribution
+lede: Every figure on this site comes from one of the datasets listed below. The site takes each dataset from publicdata.au.
+stamp: 'The national waiting times on this site cover {period} and were released on {release}.'
+counts: 'The register lists {hospitals} public hospitals, and the site covers {surgeries} surgeries and specialties.'
+sections:
+  - id: how
+    heading: How the build reads the data
+    paragraphs:
+      - 'publicdata.au serves each dataset as a dated version that does not change. The build pins one version of each dataset and records its SHA-256 digest. The build stops when a downloaded file has a different digest.'
+      - The build has no other source and no fallback. It does not fetch from the publishers directly.
+    links:
+      - label: Methodology
+        href: /methodology/
+  - id: use
+    heading: What each dataset supplies
+    paragraphs:
+      - The Australian Institute of Health and Welfare (AIHW) supplies the waiting times by urgency category, by procedure and by specialty. It also supplies the register of hospitals with their names, states, health networks and locations, and the lists of measures and reporting units that describe them.
+      - Queensland Health supplies quarterly figures by urgency category and by specialty. The Australian Bureau of Statistics supplies the suburb and locality boundaries that give each suburb a centre.
+after:
+  - id: reuse
+    heading: Reusing the data
+    paragraphs:
+      - Each dataset keeps its publisher's licence, which its entry above names. These licences require a person who reuses the data to credit the publisher. The entry gives a citation to use.
+      - The publishers do not endorse this site and have no involvement in it. The site excludes private hospitals.

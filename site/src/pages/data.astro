@@ -1,0 +1,35 @@
+---
+import ArticlePage from '../components/ArticlePage.astro';
+import DataPassport from '../components/DataPassport.astro';
+import { getDataPage, getSite } from '../lib/content';
+import { readCredits } from '../lib/credits';
+import { formatCount } from '../lib/format';
+import { homeCounts } from '../lib/home-page';
+import { surgeryStamp } from '../lib/index-pages';
+import { DATA_PATH } from '../lib/article-pages';
+import { fill } from '../lib/slots';
+
+const t = getDataPage();
+const counts = homeCounts();
+---
+
+<ArticlePage
+  title={fill(t.title, { site: getSite().name })}
+  description={t.description}
+  path={DATA_PATH}
+  crumbHome={t.crumb_home}
+  crumb={t.crumb}
+  heading={t.heading}
+  intro={[
+    t.lede,
+    fill(t.stamp, surgeryStamp()),
+    fill(t.counts, {
+      hospitals: formatCount(counts.hospitals),
+      surgeries: formatCount(counts.surgeries),
+    }),
+  ]}
+  sections={t.sections}
+  after={t.after}
+>
+  <DataPassport sources={readCredits().map((credit) => credit.slug)} />
+</ArticlePage>

@@ -8,6 +8,9 @@ import type { z } from 'astro/zod';
 import {
   areasSchema,
   homeTemplateSchema,
+  aboutSchema,
+  dataPageSchema,
+  methodologySchema,
   hospitalTemplateSchema,
   hospitalsIndexSchema,
   labelsSchema,
@@ -469,11 +472,15 @@ describe('Copy', () => {
       'templates/health-service.yaml': healthServiceTemplateSchema,
       'templates/longest.yaml': longestTemplateSchema,
       'terms.yaml': termsSchema,
+      'pages/not-found.yaml': pageSchema,
+      'pages/methodology.yaml': methodologySchema,
+      'pages/data.yaml': dataPageSchema,
+      'pages/about.yaml': aboutSchema,
     };
     const files = readContent();
     expect(files.length).toBeGreaterThan(0);
     for (const { path, data } of files) {
-      const schema = path.startsWith('pages/') ? pageSchema : schemas[path];
+      const schema = schemas[path];
       expect(schema, path + ' has no schema').toBeDefined();
       expect(schema?.safeParse(data).success, path).toBe(true);
     }

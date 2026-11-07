@@ -1,0 +1,125 @@
+title: 'Methodology: how {site} produces its figures'
+description: How Surgery Waits gets its planned surgery waiting times, handles figures the publisher withholds, ranks hospitals, finds nearby hospitals and decides which pages search engines may list.
+crumb_home: Home
+crumb: Methodology
+heading: Methodology
+lede: This page describes what the build does with the published data, in the order the data moves through it. Each rule here is one the code applies.
+stamp: 'The national figures on this site cover {period} and were released on {release}.'
+jump_heading: On this page
+jump_label: Methodology sections
+sections:
+  - id: sources
+    heading: Where the figures come from
+    paragraphs:
+      - 'The site takes all of its data from publicdata.au. The build reads one dated version of each dataset and checks the file against a SHA-256 digest recorded in advance. A file with a different digest stops the build. The build has no second source and no fallback.'
+      - The waiting times come from the Australian Institute of Health and Welfare (AIHW) through its MyHospitals data. Queensland Health publishes its own quarterly figures. The Australian Bureau of Statistics publishes the suburb and locality boundaries.
+      - The site shows each figure as the publisher gives it. It does not calculate a median, an average or a total from other figures. The data page lists every dataset with its version, release date, licence and citation.
+    links:
+      - label: Data and attribution
+        href: /data/
+  - id: measures
+    heading: What each measure means
+    paragraphs:
+      - 'AIHW publishes four measures. The pipeline accepts a measure only when its name and unit match this list, and the build stops when a name or unit changes.'
+    items:
+      - 'Median waiting time for elective surgery, in days. Half of the patients waited this many days or fewer.'
+      - 'Number of elective surgeries. This is the count of surgeries in the period.'
+      - 'Percentage of patients who waited longer than 365 days for elective surgery. The procedure and specialty tables publish this share.'
+      - 'Percentage of patients who received their surgery within clinically recommended times. The urgency table publishes this share.'
+  - id: counted-time
+    heading: What the waiting time counts
+    paragraphs:
+      - AIHW counts the time a patient spends on the waiting list for surgery. The time before a patient joins the list is outside the figure, so the wait to see a specialist is outside it too.
+      - A median that rests on few surgeries can change a great deal from year to year. The number of surgeries appears beside each median for this reason.
+    links:
+      - label: Urgency categories
+        href: /urgency/
+  - id: terms
+    heading: The word elective
+    paragraphs:
+      - 'AIHW names its collection "elective surgery". In the source the term describes surgery that can be booked in advance. This site uses the term planned surgery for the same category.'
+      - This page is the only page that uses the word elective, and it uses the word to quote the source.
+  - id: not-published
+    heading: Figures that are not published
+    paragraphs:
+      - A publisher withholds a figure when the data cannot support it. The site shows such a figure as not published and gives the publisher's reason. A figure that is not published is never shown as 0, never left blank and never given a rank.
+      - 'AIHW marks a withheld hospital figure with one of three codes. The site gives each code its own wording.'
+    items:
+      - '"<5" means too few patients. The site says "not published: too few patients".'
+      - '"-" means no patients were reported. The site says "not published: no patients reported".'
+      - '"NP" means AIHW did not publish the figure. The site says "not published: AIHW did not publish a figure". AIHW gives more than one reason for this code, and the site does not say which reason applies.'
+      - 'The peer group columns can carry the code "Not peered". AIHW does not define this code. The site shows it only in place of the peer group figures, as "not published: no peer group comparison".'
+  - id: not-reported
+    heading: Figures that are not reported
+    paragraphs:
+      - 'A figure is not reported when the source leaves it empty and gives neither a publisher code nor a withheld mark. The Queensland release can leave the change on the prior year empty in this way, and the site shows it as not reported.'
+      - The build stops on any other empty cell that has no code or mark. A code that the pipeline does not know also stops the build.
+  - id: earlier
+    heading: Earlier figures
+    paragraphs:
+      - A hospital does not report every surgery every year. A figure is from an earlier period when the hospital's latest period for that surgery is older than the newest period in the table.
+      - The site shows an earlier figure with its own period and a note that it is not the latest figure. The site does not carry the figure forward as a current one, and it never ranks it.
+  - id: ranks
+    heading: How ranks work
+    paragraphs:
+      - 'The site ranks hospitals on one measure at a time. A rank compares public hospitals within one surgery or one urgency category, in the newest period of its table.'
+      - 'A lower median wait ranks first. A lower share of patients who waited longer than 365 days ranks first. A higher share of patients treated within the recommended time ranks first. The number of surgeries is a count and is never ranked.'
+      - 'Ties share a rank. If two hospitals tie for 2nd place, both rank 2nd and the next hospital ranks 4th.'
+      - 'A figure is ranked only when it is current and published. The site does not rank a figure that is not published, not reported, from an earlier period or from a closed hospital. It does not rank a state or national figure.'
+      - The site orders hospitals by the measured number and uses no other criterion. It does not describe any hospital as the best.
+  - id: benchmarks
+    heading: State and national figures
+    paragraphs:
+      - AIHW publishes a figure for each state and territory and one for Australia. The site shows these beside a hospital's figure for the same measure and period.
+      - The urgency table publishes no state or national figure, so urgency pages carry none.
+  - id: trends
+    heading: Changes over time
+    paragraphs:
+      - A chart shows a figure for each year the source published it. A year with no published figure is a gap in the line, and the table under the chart gives the reason.
+      - 'The change from one year to the next is the later value minus the earlier value. The site shows a change only when both years are consecutive and both figures are published.'
+  - id: queensland
+    heading: Queensland quarterly figures
+    paragraphs:
+      - Queensland Health publishes quarterly figures that count patients by urgency category and by specialty. The site shows them in a separate section on the hospital page and on the Queensland page.
+      - The quarterly figures cover three months. They count different things from the national tables, so the site never ranks them, never compares them with a national figure and never adds them to a national figure.
+      - 'The site matches each Queensland facility to one hospital in the national register by name. A short list of four named facilities is matched by hand, and the build stops if either name in that list changes. A facility that matches no hospital, or more than one, is left out. A facility whose hospital has closed is also left out. The state-wide total in the release is not a hospital and is left out.'
+      - 'A Queensland column that the release lists as withheld is shown as "not published: Queensland Health gave no figure". An empty change on the prior year, with no withheld mark, is shown as not reported.'
+  - id: joins
+    heading: Matching hospitals
+    paragraphs:
+      - 'The waiting time tables name each hospital and give no hospital code. The pipeline joins each row to one hospital in the AIHW register by name, state and other recorded names. A row that matches no hospital, or more than one, stops the build.'
+      - AIHW also publishes one catch-all category for every surgery it does not name. The pipeline leaves it out, because no one waits for it as a single procedure.
+  - id: nearby
+    heading: Nearby hospitals
+    paragraphs:
+      - 'Each hospital with a recorded location has a list of its 8 nearest open public hospitals. The distance is the great-circle distance between the two recorded locations, rounded to the nearest whole kilometre. Road distance and travel time are not measured.'
+      - 'The search starts at 250 km and doubles the radius until 8 open hospitals fall inside it. The search ignores state borders, so a hospital near a border can list hospitals in the next state.'
+      - A closed hospital also has a list, and the list holds open hospitals only. A hospital with no recorded location has no list. The build stops when a location falls outside Australia.
+      - The hospital and surgery page lists the hospitals from this list that published a shorter median wait for the surgery.
+  - id: places
+    heading: Nearby places
+    paragraphs:
+      - "A nearby places page groups the hospitals of one health network around the network's main hospital. It lists the network's open hospitals within 25 km of the main hospital. It adds up to 2 hospitals from other networks that are within 25 km of a listed hospital. No two listed hospitals are more than 120 km apart."
+      - 'A place needs at least 2 hospitals with a current published median for a surgery. A place keeps its pages only when at least 3 surgeries give it one.'
+      - 'Some pages name the nearest suburb or locality to a hospital. The site uses the centre of each suburb, which is the centre of its area from the ABS boundary. When that point falls outside the suburb, the site uses the point farthest from the edge of its largest part.'
+  - id: thin
+    heading: Pages that search engines skip
+    paragraphs:
+      - A hospital and surgery page is marked so that search engines do not list it when it carries little beyond one figure. The page is still built and linked.
+      - 'A page is marked when its median is not published. A page is also marked when it has none of these four things: an earlier published year of the same median, an open hospital on its nearby list with a published median, a share of patients who waited longer than 365 days beside a national share, or a nearest suburb in its state.'
+  - id: freshness
+    heading: How current the data is
+    paragraphs:
+      - "The data describes periods that ended before the release. AIHW figures cover a financial year, and the release follows later. A hospital's waiting list today can differ from the published figure. Each figure shows its reference period and its release date."
+      - 'The build checks that each release agrees with its own dates. It stops when the newest period of a national table starts more than 2 years before the release year. It stops when a Queensland quarter was released more than 200 days after it ended.'
+      - The site shows the dataset versions listed on the data page. A new release appears after the pinned versions are updated and the site is rebuilt.
+  - id: exclusions
+    heading: What the site leaves out
+    paragraphs:
+      - Private hospitals are excluded. The pipeline removes every private hospital from the register, so the site has no figure for one.
+      - The site gives no medical advice and does not recommend a hospital, a doctor or a treatment.
+    links:
+      - label: Public hospitals
+        href: /hospitals/
+      - label: States and territories
+        href: /state/

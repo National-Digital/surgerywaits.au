@@ -2,14 +2,17 @@ import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 import {
+  aboutSchema,
   areasSchema,
   healthServiceTemplateSchema,
+  dataPageSchema,
   homeTemplateSchema,
   hospitalsIndexSchema,
   hospitalTemplateSchema,
   pairTemplateSchema,
   labelsSchema,
   longestTemplateSchema,
+  methodologySchema,
   navigationSchema,
   pageSchema,
   siteSchema,
@@ -65,7 +68,14 @@ export const collections = {
     schema: longestTemplateSchema,
   }),
   pages: defineCollection({
-    loader: glob({ pattern: '*.yaml', base: './content/pages' }),
+    loader: glob({ pattern: 'not-found.yaml', base: './content/pages' }),
     schema: pageSchema,
+  }),
+  articles: defineCollection({
+    loader: glob({
+      pattern: ['methodology.yaml', 'data.yaml', 'about.yaml'],
+      base: './content/pages',
+    }),
+    schema: z.union([methodologySchema, dataPageSchema, aboutSchema]),
   }),
 };

@@ -1,0 +1,40 @@
+title: 'About {site}'
+description: Who builds and runs Surgery Waits, why it exists, how its data reaches the page and how to get in touch.
+crumb_home: Home
+crumb: About
+heading: About Surgery Waits
+lede: Surgery Waits shows how long patients waited for planned surgery at public hospitals in Australia. National Digital builds and runs the site.
+sections:
+  - id: who
+    heading: Who runs the site
+    paragraphs:
+      - National Digital builds and operates Surgery Waits from Burleigh Heads, Queensland. National Digital also publishes publicdata.au, the source of every dataset on this site.
+  - id: why
+    heading: Why the site exists
+    paragraphs:
+      - Public hospitals report how long patients waited for planned surgery. The Australian Institute of Health and Welfare publishes these figures for one hospital and one surgery at a time.
+      - Surgery Waits puts the figures for one surgery side by side. A reader can compare hospitals near them, including hospitals across a state border.
+    links:
+      - label: Methodology
+        href: /methodology/
+  - id: funding
+    heading: Funding and advertising
+    paragraphs:
+      - National Digital pays for the site. The site carries no advertising and no sponsorship, and it sells nothing.
+  - id: independence
+    heading: Independence from the publishers
+    paragraphs:
+      - Surgery Waits has no connection with any government, health department, hospital, health service or data publisher. The publishers of the data have no involvement in the site and do not endorse it.
+      - An error in how the site presents a figure is an error in this site.
+  - id: data
+    heading: How the data reaches the page
+    paragraphs:
+      - 'Each publisher releases its data. publicdata.au stores each release as a dated version with a recorded SHA-256 digest. The site build reads those versions and stops when a file does not match its digest.'
+      - The build produces every page from the pinned versions. It estimates nothing and edits no figure by hand. The same data produces the same pages.
+    links:
+      - label: Data and attribution
+        href: /data/
+  - id: contact
+    heading: Contact
+    paragraphs:
+      - To report a problem with a figure, ask a question or ask about reusing something, use the contact link at the foot of every page.

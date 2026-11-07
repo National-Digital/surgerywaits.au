@@ -1,0 +1,52 @@
+---
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+import JumpList from './JumpList.astro';
+import ArticleSection from './ArticleSection.astro';
+import Prose from './Prose.astro';
+import type { ArticleSection as Section } from '../lib/content-schema';
+
+interface Props {
+  title: string;
+  description: string;
+  path: string;
+  crumbHome: string;
+  crumb: string;
+  heading: string;
+  // Paragraphs shown under the heading, before the first section.
+  intro: string[];
+  sections: Section[];
+  // Sections that follow whatever the page puts in the slot.
+  after?: Section[];
+  jump?: { heading: string; label: string };
+}
+
+const { title, description, path, crumbHome, crumb, heading, intro, sections, after, jump } =
+  Astro.props;
+const crumbs = [{ label: crumbHome, href: '/' }, { label: crumb }];
+const all = [...sections, ...(after ?? [])];
+---
+
+<Base {title} {description} canonicalPath={path}>
+  <div class="o-columns">
+    <Breadcrumbs items={crumbs} />
+    <h1>{heading}</h1>
+    <Prose paragraphs={intro} />
+    {jump !== undefined && (
+      <JumpList
+        heading={jump.heading}
+        label={jump.label}
+        items={all.map((s) => ({ label: s.heading, href: `#${s.id}` }))}
+      />
+    )}
+    {sections.map((s) => (
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+      <ArticleSection section={s} />
+    ))}
+    <slot />
+    {(after ?? []).map((s) => (
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+      <ArticleSection section={s} />
+    ))}
+  </div>
+</Base>

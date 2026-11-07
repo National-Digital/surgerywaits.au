@@ -723,3 +723,39 @@ export const homeTemplateSchema = z.strictObject({
   exclusion_heading: slotted(),
   exclusion: slotted(),
 });
+
+const section = z.strictObject({
+  id: z.string().regex(/^[a-z]+(?:-[a-z]+)*$/, 'lower-case words joined by hyphens'),
+  heading: text,
+  paragraphs: z.array(text).min(1),
+  items: z.array(text).min(1).optional(),
+  links: z.array(link).min(1).optional(),
+});
+
+export type ArticleSection = z.output<typeof section>;
+
+const article = {
+  title: slotted('site'),
+  description: slotted(),
+  crumb_home: text,
+  crumb: text,
+  heading: text,
+  lede: text,
+  sections: z.array(section).min(1),
+};
+
+export const methodologySchema = z.strictObject({
+  ...article,
+  stamp: slotted('period', 'release'),
+  jump_heading: slotted(),
+  jump_label: slotted(),
+});
+
+export const dataPageSchema = z.strictObject({
+  ...article,
+  stamp: slotted('period', 'release'),
+  counts: slotted('hospitals', 'surgeries'),
+  after: z.array(section).min(1),
+});
+
+export const aboutSchema = z.strictObject(article);

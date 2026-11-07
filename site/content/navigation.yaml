@@ -13,6 +13,8 @@ site:
 about:
   - label: About
     href: /about/
+  - label: Data and attribution
+    href: /data/
   - label: Privacy
     href: /privacy/
   - label: Terms of use
