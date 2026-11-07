@@ -32,6 +32,9 @@ CODE_SAFE = re.compile(r"[A-Za-z0-9]+")
 RELEASE_DAY = re.compile(r"(\d{4})(\d{2})(\d{2})\d*")
 
 
+URGENT_SLUG = "urgent-elective-surgery"
+
+
 class GateError(Exception):
     pass
 
@@ -183,6 +186,86 @@ def _check_network_slugs(docs: Mapping[str, tuple[str, dict[str, Any]]]) -> None
     if set(members) != listed:
         msg = "the network files and the hospital files do not name the same member hospitals"
         raise GateError(msg)
+    _check_network_members(docs)
+
+
+def _expected_member(hospital: dict[str, Any]) -> dict[str, Any]:
+    """What a network file must say about a hospital, worked out from its hospital file."""
+    current = [s for s in hospital["surgeries"] if not s["stale"]]
+    published = [
+        s
+        for s in current
+        if any(m["figure"]["state"] == "published" for m in s["measures"].values())
+    ]
+    urgent = next(
+        (s for s in hospital["surgeries"] if s["kind"] == "urgency" and s["slug"] == URGENT_SLUG),
+        None,
+    )
+    status, figure = "missing", None
+    if urgent is not None and urgent["stale"]:
+        status = "stale"
+    elif urgent is not None and "on_time" in urgent["measures"]:
+        figure = urgent["measures"]["on_time"]["figure"]
+        status = figure["state"]
+    return {
+        "code": hospital["code"],
+        "slug": hospital["slug"],
+        "name": hospital["name"],
+        "state": hospital["state"],
+        "closed": hospital["closed"],
+        "count": len(published),
+        "status": status,
+        "figure": figure,
+    }
+
+
+def _current_stamps(hospitals: Mapping[str, dict[str, Any]]) -> dict[str, tuple[str, str]]:
+    """The period and release the hospital files give each kind's current figures."""
+    stamps: dict[str, tuple[str, str]] = {}
+    for d in hospitals.values():
+        for s in d["surgeries"]:
+            if not s["stale"]:
+                for m in s["measures"].values():
+                    stamps[s["kind"]] = (m["figure"]["period"], m["figure"]["release"])
+    return stamps
+
+
+def _check_member_stamps(
+    path: str, m: dict[str, Any], stamps: Mapping[str, tuple[str, str]]
+) -> None:
+    current = {c["kind"]: (c["period"], c["release"]) for c in m["surgeries"]["current"]}
+    urgent = m["urgent_on_time"]
+    if (
+        list(current) != ["urgency", "procedure", "specialty"]
+        or any(current[k] != v for k, v in stamps.items())
+        or (urgent["period"], urgent["release"]) != current["urgency"]
+    ):
+        msg = f"{path} stamps {m['slug']} with a period or release the hospital files do not"
+        raise GateError(msg)
+
+
+def _check_network_members(docs: Mapping[str, tuple[str, dict[str, Any]]]) -> None:
+    """Every member of a network file agrees with its own hospital file."""
+    hospitals = {d["slug"]: d for _, (k, d) in sorted(docs.items()) if k == "hospital"}
+    stamps = _current_stamps(hospitals)
+    for path, (kind, n) in sorted(docs.items()):
+        if kind != "health-service":
+            continue
+        for m in n["hospitals"]:
+            h = hospitals[m["slug"]]
+            if h["network"]["code"] != n["code"] or h["network"]["name"] != n["name"]:
+                msg = f"{path} lists {m['slug']}, which belongs to a different network"
+                raise GateError(msg)
+            found = {
+                **{k: m[k] for k in ("code", "slug", "name", "state", "closed")},
+                "count": m["surgeries"]["count"],
+                "status": m["urgent_on_time"]["status"],
+                "figure": m["urgent_on_time"]["figure"],
+            }
+            if found != _expected_member(h):
+                msg = f"{path} disagrees with the hospital file for {m['slug']}"
+                raise GateError(msg)
+            _check_member_stamps(path, m, stamps)
 
 
 def check_benchmarks(docs: Mapping[str, tuple[str, dict[str, Any]]]) -> None:

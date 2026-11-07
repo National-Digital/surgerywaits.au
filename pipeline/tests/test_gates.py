@@ -327,3 +327,73 @@ def test_a_change_without_a_published_previous_year_fails() -> None:
     series["periods"][1] = f"{second[0] + 1}{DASH}{(second[0] + 2) % 100:02d}"
     with pytest.raises(ContractError, match="year before"):
         validate("trend", doc)
+
+
+def _member(docs: dict[str, tuple[str, Doc]], position: int = 0) -> tuple[Doc, Doc]:
+    network = next(d for _, (k, d) in sorted(docs.items()) if k == "health-service")
+    return network, network["hospitals"][position]
+
+
+def _hospital_of(docs: dict[str, tuple[str, Doc]], slug: str) -> Doc:
+    return next(d for _, (k, d) in sorted(docs.items()) if k == "hospital" and d["slug"] == slug)
+
+
+def test_a_clean_dist_passes_the_network_member_checks() -> None:
+    check_docs(ENTRIES, _docs())
+
+
+def test_a_member_whose_hospital_moved_to_another_network_fails() -> None:
+    docs = _docs()
+    _, member = _member(docs)
+    _hospital_of(docs, member["slug"])["network"]["code"] = "OTHER"
+    with pytest.raises(GateError, match=r"different network|different slugs|two names"):
+        check_docs(ENTRIES, docs)
+
+
+def test_a_network_renamed_in_its_file_alone_fails() -> None:
+    docs = _docs()
+    network, _ = _member(docs)
+    network["name"] = "Renamed network"
+    with pytest.raises(GateError, match="different network"):
+        check_docs(ENTRIES, docs)
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [("state", "Tas"), ("name", "Another hospital"), ("closed", True)],
+)
+def test_a_member_that_differs_from_its_hospital_file_fails(field: str, value: object) -> None:
+    docs = _docs()
+    _, member = _member(docs)
+    member[field] = value
+    with pytest.raises(GateError, match="disagrees with the hospital file"):
+        check_docs(ENTRIES, docs)
+
+
+def test_a_member_with_altered_figures_fails() -> None:
+    docs = _docs()
+    _, member = _member(docs)
+    member["surgeries"]["count"] += 1
+    with pytest.raises(GateError, match="disagrees with the hospital file"):
+        check_docs(ENTRIES, docs)
+    docs = _docs()
+    network, _ = _member(docs)
+    published = next(
+        m for m in network["hospitals"] if m["urgent_on_time"]["status"] == "published"
+    )
+    published["urgent_on_time"]["figure"]["value"] += 1
+    with pytest.raises(GateError, match="disagrees with the hospital file"):
+        check_docs(ENTRIES, docs)
+    docs = _docs()
+    network, _ = _member(docs)
+    network["hospitals"][0]["urgent_on_time"]["status"] = "stale"
+    with pytest.raises(GateError, match="disagrees with the hospital file"):
+        check_docs(ENTRIES, docs)
+
+
+def test_a_member_stamped_with_another_period_fails() -> None:
+    docs = _docs()
+    _, member = _member(docs)
+    member["surgeries"]["current"][1]["period"] = "1999-00"
+    with pytest.raises(GateError, match="stamps"):
+        check_docs(ENTRIES, docs)

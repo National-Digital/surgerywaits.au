@@ -15,7 +15,7 @@ from surgerywaits.benchmarks import SCOPES, Benchmarks, derive_benchmarks
 from surgerywaits.catalogue import Catalogue, Role
 from surgerywaits.contract import validate
 from surgerywaits.derive import Derived, DerivedFigure, DerivedObservation, RankStatus, TrendPoint
-from surgerywaits.gates import check_docs, check_freshness
+from surgerywaits.gates import URGENT_SLUG, check_docs, check_freshness
 from surgerywaits.hospitals import STATES, Hospital, Register
 from surgerywaits.manifest import Entry, as_credit
 from surgerywaits.queensland import FacilityQuarter, Overlay
@@ -56,7 +56,6 @@ ROLE_UNITS = {
 NON_SLUG = re.compile(r"[^a-z0-9]+")
 APOSTROPHES = re.compile("['\\u2019]")
 TRAILING_QUALIFIER = re.compile(r"\s*\([^)]*\)\s*$")
-URGENT_SLUG = "urgent-elective-surgery"
 # A single period is already on the hospital page, so it is not a trend.
 MIN_POINTS = 2
 READ_SOURCES = (
@@ -316,7 +315,7 @@ class _Ctx:
         return self.categories[table, category][0]
 
 
-def _context(inputs: Inputs) -> _Ctx:
+def build_context(inputs: Inputs) -> _Ctx:
     releases = _releases(inputs.entries)
     register = inputs.register
     latest: dict[tuple[str, Table, str], DerivedObservation] = {}
@@ -436,27 +435,54 @@ def _hospital_docs(ctx: _Ctx) -> dict[str, tuple[str, Doc]]:
     return docs
 
 
-def _urgent_on_time(ctx: _Ctx, code: str) -> Doc | None:
-    for (c, table, category), o in ctx.latest.items():
-        if c != code or table is not Table.URGENCY or ctx.slug_of(table, category) != URGENT_SLUG:
-            continue
-        if o.period != ctx.newest[table]:
-            return None
-        found = next((f for f in o.figures if f.role is Role.ON_TIME), None)
-        return _figure(found.figure, o.period, ctx.release_of[table]) if found else None
-    return None
+def _urgent_lookup(ctx: _Ctx) -> dict[str, DerivedObservation]:
+    """The latest urgent-surgery observation of each hospital; fails if the category is gone."""
+    if not any(
+        table is Table.URGENCY and slug == URGENT_SLUG
+        for (table, _), (slug, _) in ctx.categories.items()
+    ):
+        msg = f"no urgency category has the slug {URGENT_SLUG!r}"
+        raise DistError(msg)
+    return {
+        code: o
+        for (code, table, category), o in ctx.latest.items()
+        if table is Table.URGENCY and ctx.slug_of(table, category) == URGENT_SLUG
+    }
 
 
-def _network_docs(ctx: _Ctx) -> dict[str, tuple[str, Doc]]:
+def urgent_on_time(ctx: _Ctx, o: DerivedObservation | None) -> Doc:
+    """The on-time figure for urgent surgery, stamped with the newest period and its release."""
+    period, release = ctx.newest[Table.URGENCY], ctx.release_of[Table.URGENCY]
+    stamp: Doc = {"period": period, "release": release}
+    if o is None:
+        return {"status": "missing", "figure": None, **stamp}
+    if o.period != period:
+        return {"status": "stale", "figure": None, **stamp}
+    found = next((f for f in o.figures if f.role is Role.ON_TIME), None)
+    if found is None:
+        return {"status": "missing", "figure": None, **stamp}
+    figure = _figure(found.figure, period, release)
+    return {"status": figure["state"], "figure": figure, **stamp}
+
+
+def network_docs(ctx: _Ctx) -> dict[str, tuple[str, Doc]]:
     """One file for each network with a hospital that has a page, and an index of them."""
     members: dict[str, list[Hospital]] = defaultdict(list)
     for code in sorted(ctx.slugs):
         h = ctx.hospitals[code]
         if h.network_status == "mapped" and h.network_code is not None:
             members[h.network_code].append(h)
-    figures: dict[str, int] = defaultdict(int)
-    for code, _, _ in ctx.latest:
-        figures[code] += 1
+    current: dict[str, int] = defaultdict(int)
+    for (code, table, _), o in ctx.latest.items():
+        if o.period == ctx.newest[table] and any(
+            f.figure.state is FigureState.PUBLISHED for f in o.figures
+        ):
+            current[code] += 1
+    urgent = _urgent_lookup(ctx)
+    stamps = [
+        {"kind": t.value, "period": ctx.newest[t], "release": ctx.release_of[t]}
+        for t in sorted(ctx.newest, key=lambda t: SCOPE_ORDER[t.value])
+    ]
     docs: dict[str, tuple[str, Doc]] = {}
     rows: list[Doc] = []
     for code, hospitals in sorted(members.items()):
@@ -481,8 +507,8 @@ def _network_docs(ctx: _Ctx) -> dict[str, tuple[str, Doc]]:
                         "name": h.name,
                         "state": h.state,
                         "closed": h.closed,
-                        "surgeries": figures[h.code],
-                        "urgent_on_time": _urgent_on_time(ctx, h.code),
+                        "surgeries": {"count": current[h.code], "current": stamps},
+                        "urgent_on_time": urgent_on_time(ctx, urgent.get(h.code)),
                     }
                     for h in sorted(hospitals, key=lambda h: (h.name, h.code))
                 ],
@@ -707,9 +733,9 @@ def assemble(inputs: Inputs) -> dict[str, tuple[str, Doc]]:
         TABLE_SOURCES.values(),
         inputs.overlay.records,
     )
-    ctx = _context(inputs)
+    ctx = build_context(inputs)
     names = {h.code: h.name for h in inputs.register.hospitals}
-    docs = {**_hospital_docs(ctx), **_trend_docs(ctx), **_surgery_docs(ctx), **_network_docs(ctx)}
+    docs = {**_hospital_docs(ctx), **_trend_docs(ctx), **_surgery_docs(ctx), **network_docs(ctx)}
     docs.update(_state_docs(ctx, docs))
     docs["suburbs.json"] = (
         "suburbs",

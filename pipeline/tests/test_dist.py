@@ -10,6 +10,7 @@ import sys
 import tempfile
 import time
 from collections.abc import Callable
+from dataclasses import replace
 from functools import cache
 from pathlib import Path
 from typing import Any
@@ -19,8 +20,21 @@ import pytest
 import realdata
 from fixture_dist import fixture_docs, fixture_inputs
 from surgerywaits.contract import CONTRACT_DIR, ContractError, schema_names, validate
-from surgerywaits.dist import SUMS, DistError, Inputs, assemble, build_dist, render, write
+from surgerywaits.dist import (
+    SUMS,
+    DistError,
+    Inputs,
+    assemble,
+    build_context,
+    build_dist,
+    network_docs,
+    render,
+    urgent_on_time,
+    write,
+)
+from surgerywaits.gates import URGENT_SLUG
 from surgerywaits.manifest import load
+from surgerywaits.waiting_times import Table
 
 Doc = dict[str, Any]
 PERIOD = f"2024{chr(0x2013)}25"
@@ -584,3 +598,21 @@ def test_the_hospital_index_carries_each_network_code_and_name() -> None:
     mapped = [r["network"] for r in rows if r["network"] is not None]
     assert mapped
     assert all(set(n) == {"code", "name", "slug"} for n in mapped)
+
+
+def test_a_renamed_urgent_category_stops_the_build() -> None:
+    ctx = build_context(fixture_inputs())
+    renamed = {
+        k: ("urgent-surgery", v[1]) if v[0] == URGENT_SLUG else v for k, v in ctx.categories.items()
+    }
+    with pytest.raises(DistError, match="urgent-elective-surgery"):
+        network_docs(replace(ctx, categories=renamed))
+
+
+def test_the_urgent_figure_says_why_it_is_absent() -> None:
+    ctx = build_context(fixture_inputs())
+    stamp = {"period": ctx.newest[Table.URGENCY], "release": ctx.release_of[Table.URGENCY]}
+    assert urgent_on_time(ctx, None) == {"status": "missing", "figure": None, **stamp}
+    old = next(o for o in ctx.latest.values() if o.table is Table.URGENCY)
+    stale = replace(old, period="1999-00")
+    assert urgent_on_time(ctx, stale)["status"] == "stale"

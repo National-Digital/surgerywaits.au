@@ -53,19 +53,62 @@
             "type": "boolean"
           },
           "surgeries": {
-            "description": "How many categories the hospital has figures for.",
-            "$ref": "common.schema.json#/$defs/count"
+            "description": "How many categories the hospital has a published figure for in the newest period of their table, with the period and release of each table.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["count", "current"],
+            "properties": {
+              "count": {
+                "$ref": "common.schema.json#/$defs/count"
+              },
+              "current": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["kind", "period", "release"],
+                  "properties": {
+                    "kind": {
+                      "$ref": "common.schema.json#/$defs/kind"
+                    },
+                    "period": {
+                      "$ref": "common.schema.json#/$defs/period"
+                    },
+                    "release": {
+                      "$ref": "common.schema.json#/$defs/date"
+                    }
+                  }
+                }
+              }
+            }
           },
           "urgent_on_time": {
-            "description": "The share of urgent patients treated on time, when the hospital has a figure in the newest period.",
-            "oneOf": [
-              {
-                "$ref": "common.schema.json#/$defs/figure"
+            "description": "The share of urgent patients treated on time, stamped with the newest period and its release. The status is the figure's own state, or stale when the hospital's latest urgent figures are from an older period, or missing when it has none.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["status", "figure", "period", "release"],
+            "properties": {
+              "status": {
+                "enum": ["published", "not_published", "not_reported", "stale", "missing"]
               },
-              {
-                "type": "null"
+              "figure": {
+                "oneOf": [
+                  {
+                    "$ref": "common.schema.json#/$defs/figure"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "period": {
+                "$ref": "common.schema.json#/$defs/period"
+              },
+              "release": {
+                "$ref": "common.schema.json#/$defs/date"
               }
-            ]
+            }
           }
         }
       },
