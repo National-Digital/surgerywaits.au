@@ -9,7 +9,7 @@ sections:
   - id: private
     heading: Private hospitals
     paragraphs:
-      - Private hospitals are excluded. The site shows no figure for a private hospital and no estimate in its place. A figure on this site therefore has no private hospital figure to sit beside.
+      - Private hospitals are excluded. The site shows no figure for a private hospital and no estimate in its place. No private hospital figure is therefore available for comparison.
   - id: covers
     heading: What the public figures cover
     paragraphs:

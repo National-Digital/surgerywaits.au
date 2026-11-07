@@ -17,7 +17,7 @@ sections:
   - id: long-waits
     heading: Long waits in the published figures
     paragraphs:
-      - 'A hospital and surgery page shows the share of patients who waited longer than {long_wait_days} days when the hospital published it. A long wait raises that share even when the median is short.'
+      - 'A hospital and surgery page shows the share of patients who waited longer than {long_wait_days} days when the hospital published it. A wait longer than {long_wait_days} days counts in that share even when the median is short.'
     links:
       - label: The longest published waits
         href: /longest-waits/

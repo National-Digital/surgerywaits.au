@@ -26,10 +26,10 @@ sections:
     paragraphs:
       - The published figures do not cover these points.
     items:
-      - The wait to see a specialist, which comes before a patient joins the surgery list.
-      - Whether a hospital accepts a referral from outside its own area.
-      - Travel time and travel cost.
-      - 'The wait of any one patient. A median describes the patients treated in {period}.'
+      - The figures leave out the wait to see a specialist, which comes before a patient joins the surgery list.
+      - The figures do not say whether a hospital accepts a referral from outside its own area.
+      - The figures give no travel time or travel cost.
+      - 'The figures do not give the wait of any one patient. A median describes the patients treated in {period}.'
   - id: questions
     heading: Questions to bring to a referral discussion
     paragraphs:

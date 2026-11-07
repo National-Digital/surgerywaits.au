@@ -9,7 +9,7 @@ sections:
   - id: pages
     heading: What a hospital and surgery page shows
     paragraphs:
-      - The page shows the median wait, the number of surgeries and the share of patients who waited longer than {long_wait_days} days, for each figure the hospital published. It shows the state and national figures for the same surgery beside the hospital's figure.
+      - The page shows each figure that the hospital published for the surgery. These figures are the median wait, the number of surgeries and the share of patients who waited longer than {long_wait_days} days. The page also shows the state and national figures for the same surgery beside the hospital's figure.
       - 'The page ranks the hospital on each published figure against every public hospital that published the same figure for the same period. It lists nearby public hospitals with a shorter median wait for the surgery, including hospitals in other states. It charts the median for each year the source published it.'
     links:
       - label: Surgery
@@ -44,12 +44,12 @@ sections:
     paragraphs:
       - The published figures do not cover these points.
     items:
-      - The wait to see a specialist. The figure counts the time on the surgery waiting list, so the time before a patient joins the list is outside it.
-      - A patient's own place on a list, and any prediction of one patient's wait.
-      - Private hospitals. The site holds no figure for a private hospital.
-      - The current state of a hospital's list. A figure describes a period that ended before the release.
-      - 'A figure that the publisher withholds. The site shows it as not published, gives it no rank and never shows it as 0.'
-      - 'A figure from an earlier period. The site shows it with its own period and gives it no rank.'
+      - The figures leave out the wait to see a specialist. They count the time on the surgery waiting list, so the time before a patient joins the list is outside it.
+      - The figures do not show a patient's own place on a list, and the site does not predict one patient's wait.
+      - The figures cover public hospitals only. The site holds no figure for a private hospital.
+      - The figures do not show the current state of a hospital's list. Each figure describes a period that ended before the release.
+      - 'The site labels a withheld figure not published and gives it no rank. It never shows a withheld figure as 0.'
+      - 'The site shows a figure from an earlier period with its own period and gives it no rank.'
   - id: queensland
     heading: Queensland quarterly figures
     paragraphs:
