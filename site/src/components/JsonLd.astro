@@ -1,0 +1,12 @@
+---
+import { serialise } from '../lib/json-ld';
+import type { JsonLdNode } from '../lib/json-ld';
+
+interface Props {
+  nodes: readonly JsonLdNode[];
+}
+
+const { nodes } = Astro.props;
+---
+
+<script type="application/ld+json" set:html={serialise(nodes)} />

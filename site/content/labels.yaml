@@ -37,6 +37,7 @@ passport_publisher: Publisher
 passport_version: Version
 passport_released: Data released
 passport_released_none: The publisher gives no release date for this dataset.
+dataset_source_description: '{title}, published by {publisher}, version {version}.'
 passport_licence: Licence
 passport_citation: How to cite this data
 preview_safety: Safety block

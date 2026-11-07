@@ -12,6 +12,8 @@ index_surgeries_one: 1 surgery with a state figure
 index_surgeries_many: '{count} surgeries with a state figure'
 title: '{state} planned surgery waiting times: {site}'
 description: 'This page shows planned surgery waiting times at public hospitals in {state}, with the national figures beside them. The latest figures cover {period}.'
+dataset_name: 'Planned surgery waiting times at public hospitals: {state}'
+dataset_description: 'Planned surgery waiting times at public hospitals in {state}, with the national figures, for {period}. The figures come from datasets published by {publishers}. The data was released on {release}.'
 lede: 'This page shows planned surgery waiting times at public hospitals in {state}, with the national figures beside them. The latest figures cover {period}. In {state}, {hospitals} published a median wait for urgency category 1.'
 figures_heading: 'Headline figures for {state}'
 figures_intro: 'Each pair of tiles shows the median wait in {state} and in Australia for one of the procedures that treated the most patients in {state}. A state figure is never ranked.'

@@ -1,9 +1,10 @@
 ---
 import { label } from '../lib/content';
+import type { Crumb } from '../lib/json-ld';
 
 interface Props {
   // The last item is the current page, so it takes no link.
-  items: { label: string; href?: string | undefined }[];
+  items: Crumb[];
 }
 
 const { items } = Astro.props;

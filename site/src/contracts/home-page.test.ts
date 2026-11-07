@@ -14,7 +14,7 @@ import { stateFiles, statePath, statesStamp } from '../lib/state-page';
 import { surgeryPath, surgeryRefs } from '../lib/surgery-page';
 import { categories, urgencyStamp } from '../lib/urgency-page';
 import { fill } from '../lib/slots';
-import { elementsOf, render, text, textsOf } from '../lib/test-render';
+import { elementsOf, render, text, textsOf, withoutJsonLd } from '../lib/test-render';
 
 const t = getHomeTemplate();
 const site = getSite();
@@ -233,6 +233,6 @@ describe('Home page', () => {
   });
 
   it('ships no script and no event handler, and no search or compare control', () => {
-    expect(/<script|\son[a-z]+=|javascript:|<form|<input/i.test(html)).toBe(false);
+    expect(/<script|\son[a-z]+=|javascript:|<form|<input/i.test(withoutJsonLd(html))).toBe(false);
   });
 });

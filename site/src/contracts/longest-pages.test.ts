@@ -42,7 +42,7 @@ import { fill } from '../lib/slots';
 import { stateFiles, statePath } from '../lib/state-page';
 import { hubRoutes, refOf, stateRoutes, surgeryPath, surgeryRefs } from '../lib/surgery-page';
 import { statePath as surgeryStatePath } from '../lib/surgery-page';
-import { elementsOf, render, text, textsOf } from '../lib/test-render';
+import { elementsOf, render, text, textsOf, withoutJsonLd } from '../lib/test-render';
 
 const t = getLongestTemplate();
 const site = getSite();
@@ -144,7 +144,10 @@ describe('Every longest-waits page', () => {
 
   it('ships no script and no event handler', () => {
     for (const { path, html } of pages) {
-      expect([path, /<script|\son[a-z]+=|javascript:/i.test(html)]).toEqual([path, false]);
+      expect([path, /<script|\son[a-z]+=|javascript:/i.test(withoutJsonLd(html))]).toEqual([
+        path,
+        false,
+      ]);
     }
   });
 

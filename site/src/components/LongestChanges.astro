@@ -44,21 +44,21 @@ const { states: stateSections, hospitals: hospitalSections } = changeSections(
   { rises: rises(hospitals), falls: falls(hospitals) },
   period,
 );
+const crumbs = [
+  { label: t.crumb_home, href: '/' },
+  { label: t.crumb_longest, href: LONGEST_PATH },
+  { label: t.crumb_changes },
+];
 ---
 
 <Base
+  {crumbs}
   title={fill(t.changes_title, { ...slots, site: getSite().name })}
   description={fill(t.changes_description, slots)}
   canonicalPath={CHANGES_PATH}
 >
   <div class="o-columns">
-    <Breadcrumbs
-      items={[
-        { label: t.crumb_home, href: '/' },
-        { label: t.crumb_longest, href: LONGEST_PATH },
-        { label: t.crumb_changes },
-      ]}
-    />
+    <Breadcrumbs items={crumbs} />
     <h1>{t.changes_heading}</h1>
     <p>{ledeText}</p>
     <p>{fill(t.stamp, { period, release: formatDate(release) })}</p>

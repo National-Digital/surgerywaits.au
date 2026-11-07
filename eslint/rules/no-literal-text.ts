@@ -59,6 +59,7 @@ interface Node {
   operator?: string;
   test?: Node;
   key?: Node;
+  expression?: Node;
   callee?: Node & { name?: string };
   openingElement?: { name?: { name?: string }; attributes?: Node[] };
   quasis?: { value: { cooked?: string | null } }[];
@@ -79,6 +80,27 @@ function inTemplate(node: Node): boolean {
     }
   }
   return false;
+}
+
+// JSON-LD is data the page describes itself with, and its text comes from the same content as the page.
+function jsonLdScript(attr: Node): boolean {
+  const element = attr.parent;
+  return (
+    element?.type === 'JSXOpeningElement' &&
+    element.parent?.openingElement?.name?.name === 'script' &&
+    (element.parent.openingElement.attributes ?? []).some(
+      (a) =>
+        a.type === 'JSXAttribute' &&
+        attrName(a) === 'type' &&
+        (a.value as Node | undefined)?.value === 'application/ld+json',
+    )
+  );
+}
+
+// Only a call to serialise(...) may fill the block, so no literal string reaches it.
+function serialised(attr: Node): boolean {
+  const call = (attr.value as Node | undefined)?.expression;
+  return call?.type === 'CallExpression' && call.callee?.name === 'serialise';
 }
 
 function hidden(node: Node): boolean {
@@ -223,7 +245,10 @@ export const noLiteralText: Rule.RuleModule = {
       }),
       JSXAttribute: on((node) => {
         const name = attrName(node);
-        if (name === 'set:html' || name === 'set:text') {
+        if (
+          (name === 'set:html' || name === 'set:text') &&
+          !(name === 'set:html' && jsonLdScript(node) && serialised(node))
+        ) {
           context.report({
             node: node as unknown as Rule.Node,
             messageId: 'html',

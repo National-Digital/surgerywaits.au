@@ -50,7 +50,7 @@ import {
 } from '../lib/surgery-page';
 import { fetchProblems, historyUses, pageProblems, sendingUses, storageUses } from '../lib/privacy';
 import { fill } from '../lib/slots';
-import { elementsOf, plain, textsOf } from '../lib/test-render';
+import { elementsOf, plain, textsOf, withoutJsonLd } from '../lib/test-render';
 import type { Found } from '../lib/test-render';
 
 const dist = new URL('../../dist/', import.meta.url);
@@ -125,6 +125,16 @@ const analysed = (): Page[] => full;
 function analyse(path: string, html: string, bytes: number, skipped: boolean): Page {
   const root = parse(html);
   const tags = elements(root);
+  const scriptTags = tags
+    .filter((t) => t.tagName === 'script')
+    .map(
+      (t) =>
+        Object.fromEntries(t.attrs.map((a) => [a.name, a.value])) as {
+          type?: string;
+          src?: string;
+        },
+    )
+    .filter((t) => !(t.type === 'application/ld+json' && t.src === undefined));
   const count = (name: string): number => tags.filter((t) => t.tagName === name).length;
   const footer = tags.find((t) => t.tagName === 'footer');
   const main = tags.find((t) => t.tagName === 'main');
@@ -148,16 +158,9 @@ function analyse(path: string, html: string, bytes: number, skipped: boolean): P
     navLabels: tags
       .filter((t) => t.tagName === 'nav')
       .map((t) => t.attrs.find((a) => a.name === 'aria-label')?.value),
-    scripts: count('script'),
-    scriptTags: tags
-      .filter((t) => t.tagName === 'script')
-      .map(
-        (t) =>
-          Object.fromEntries(t.attrs.map((a) => [a.name, a.value])) as {
-            type?: string;
-            src?: string;
-          },
-      ),
+    // JSON-LD inline is data and never runs, so only a script of another kind, or one with a src, counts.
+    scripts: scriptTags.length,
+    scriptTags,
     handlers: tags.flatMap((t) => t.attrs).filter((a) => /^on/i.test(a.name)).length,
     javascriptHref: /href="javascript:/i.test(html),
     footerText: footer && textOf(footer),
@@ -767,7 +770,7 @@ describe('Built longest-waits pages', () => {
         html.match(/<table[ >]/g)?.length ?? 0,
       );
       expect([path, html.includes('c-table__rank')]).toEqual([path, false]);
-      expect([path, /<script|\son[a-z]+=/i.test(html)]).toEqual([path, false]);
+      expect([path, /<script|\son[a-z]+=/i.test(withoutJsonLd(html))]).toEqual([path, false]);
     }
     // A page with no rows says so; the sample data has no cross-border pair.
     const nones = [
@@ -1092,7 +1095,10 @@ describe('Built health service pages', () => {
       expect(textsOf(html, 'c-plain-table__stamp').length, path).toBe(
         html.match(/<table[ >]/g)?.length ?? 0,
       );
-      expect([path, /c-table__rank|<script|\son[a-z]+=/i.test(html)]).toEqual([path, false]);
+      expect([path, /c-table__rank|<script|\son[a-z]+=/i.test(withoutJsonLd(html))]).toEqual([
+        path,
+        false,
+      ]);
     }
   });
 

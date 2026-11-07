@@ -38,15 +38,17 @@ const items = files.map((file) => {
   };
 });
 const sources = [...new Set(files.flatMap((f) => f.sources))].sort();
+const crumbs = [{ label: t.crumb_home, href: '/' }, { label: t.crumb_states }];
 ---
 
 <Base
+  {crumbs}
   title={fill(t.index_title, { site })}
   description={t.index_description}
   canonicalPath={STATES_PATH}
 >
   <div class="o-columns">
-    <Breadcrumbs items={[{ label: t.crumb_home, href: '/' }, { label: t.crumb_states }]} />
+    <Breadcrumbs items={crumbs} />
     <h1>{t.index_heading}</h1>
     <p>{t.index_lede}</p>
     <p>{fill(t.index_stamp, statesStamp())}</p>

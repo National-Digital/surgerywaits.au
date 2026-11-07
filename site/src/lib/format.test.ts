@@ -390,6 +390,13 @@ describe('formatFigure', () => {
     expect(() => format.formatLicence('ARR')).toThrow(RangeError);
   });
 
+  it('joins names with commas and a closing "and"', () => {
+    expect(format.formatList([])).toBe('');
+    expect(format.formatList(['A'])).toBe('A');
+    expect(format.formatList(['A', 'B'])).toBe('A and B');
+    expect(format.formatList(['A', 'B', 'C'])).toBe('A, B and C');
+  });
+
   it('writes a trend point', () => {
     expect(format.formatTrendPoint('median_wait', secondPoint)).toBe('35 days');
   });
@@ -413,6 +420,7 @@ describe('every export', () => {
     formatPeriodStartingIn: () => format.formatPeriodStartingIn(2024),
     formatDate: () => format.formatDate('2026-08-19'),
     formatLicence: () => format.formatLicence('CC-BY-4.0'),
+    formatList: () => format.formatList(['A', 'B']),
     formatQuarter: () => format.formatQuarter('2025-09-30'),
     formatNotPublished: () => format.formatNotPublished('too_few_patients'),
     formatMeasure: () => format.formatMeasure('volume', 0),

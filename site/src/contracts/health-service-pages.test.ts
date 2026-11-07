@@ -29,7 +29,7 @@ import { hospitalPath } from '../lib/hospital-page';
 import type { HealthService } from '../lib/dist';
 import { fill } from '../lib/slots';
 import { getHospitalTemplate } from '../lib/content';
-import { render, text, textsOf } from '../lib/test-render';
+import { render, text, textsOf, withoutJsonLd } from '../lib/test-render';
 
 const t = getHealthServiceTemplate();
 const site = getSite();
@@ -78,7 +78,10 @@ describe('Every health service page', () => {
 
   it('ships no script, carries one h1 and a canonical address', () => {
     for (const { slug, html } of everyPage) {
-      expect([slug, /<script|\son[a-z]+=|javascript:/i.test(html)]).toEqual([slug, false]);
+      expect([slug, /<script|\son[a-z]+=|javascript:/i.test(withoutJsonLd(html))]).toEqual([
+        slug,
+        false,
+      ]);
       expect(html.match(/<h1[ >]/g), slug).toHaveLength(1);
       const path = slug === '' ? HEALTH_SERVICES_PATH : healthServicePath(slug);
       expect(html, slug).toContain(`<link rel="canonical" href="${site.url}${path.slice(1)}">`);

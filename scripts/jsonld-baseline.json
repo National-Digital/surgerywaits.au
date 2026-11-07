@@ -1,0 +1,270 @@
+{
+  "origin": "https://surgerywaits.au",
+  "nodes": [
+    {
+      "id": "https://nationaldigital.com.au/#organization",
+      "type": "Organization"
+    },
+    {
+      "id": "https://surgerywaits.au/#website",
+      "type": "WebSite"
+    }
+  ],
+  "pages": [
+    {
+      "path": "/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/about/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/attribution/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/corrections/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/data/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/elective-surgery/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/gp/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/guides/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/guides/check-your-place-on-the-waiting-list/",
+      "type": "MedicalWebPage"
+    },
+    {
+      "path": "/guides/emergency-department-waiting-times/",
+      "type": "MedicalWebPage"
+    },
+    {
+      "path": "/guides/if-your-surgery-is-cancelled/",
+      "type": "MedicalWebPage"
+    },
+    {
+      "path": "/guides/public-and-private-waiting/",
+      "type": "MedicalWebPage"
+    },
+    {
+      "path": "/guides/referral-to-another-hospital/",
+      "type": "MedicalWebPage"
+    },
+    {
+      "path": "/health-service/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/hospitals/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/longest-waits/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/longest-waits/border/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/longest-waits/changes/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/methodology/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/state/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/state/act/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/state/nsw/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/state/nt/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/state/qld/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/state/sa/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/state/tas/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/state/vic/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/state/wa/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/surgery/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-1/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-1/act/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-1/nsw/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-1/nt/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-1/qld/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-1/sa/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-1/tas/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-1/vic/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-1/wa/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-2/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-2/act/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-2/nsw/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-2/nt/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-2/qld/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-2/sa/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-2/tas/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-2/vic/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-2/wa/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-3/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-3/act/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-3/nsw/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-3/nt/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-3/qld/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-3/sa/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-3/tas/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-3/vic/",
+      "type": "WebPage"
+    },
+    {
+      "path": "/urgency/category-3/wa/",
+      "type": "WebPage"
+    }
+  ],
+  "families": [
+    {
+      "family": "health-service/*",
+      "types": ["WebPage"],
+      "count": 75
+    },
+    {
+      "family": "hospital/*",
+      "types": ["WebPage"],
+      "count": 293
+    },
+    {
+      "family": "hospital/*/*",
+      "types": ["WebPage"],
+      "count": 12926
+    },
+    {
+      "family": "surgery/*",
+      "types": ["WebPage"],
+      "count": 151
+    },
+    {
+      "family": "surgery/*/*",
+      "types": ["WebPage"],
+      "count": 934
+    }
+  ]
+}

@@ -80,9 +80,17 @@ const others = categories()
   }));
 const path = state === undefined ? category.path : categoryStatePath(category, state);
 const slots = { category: category.label, within: category.within, period: surgery.period };
+const crumbs = [
+  { label: t.crumb_home, href: '/' },
+  { label: t.crumb_urgency, href: URGENCY_PATH },
+  ...(here === undefined
+    ? [{ label: category.label }]
+    : [{ label: category.label, href: category.path }, { label: here }]),
+];
 ---
 
 <Base
+  {crumbs}
   title={
     here === undefined
       ? fill(t.title, { category: category.label, site })
@@ -96,15 +104,7 @@ const slots = { category: category.label, within: category.within, period: surge
   canonicalPath={path}
 >
   <div class="o-columns">
-    <Breadcrumbs
-      items={[
-        { label: t.crumb_home, href: '/' },
-        { label: t.crumb_urgency, href: URGENCY_PATH },
-        ...(here === undefined
-          ? [{ label: category.label }]
-          : [{ label: category.label, href: category.path }, { label: here }]),
-      ]}
-    />
+    <Breadcrumbs items={crumbs} />
     <h1>
       {here === undefined
         ? category.label

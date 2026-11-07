@@ -100,7 +100,18 @@ export function pageProblems(html: string): string[] {
   for (const script of scripts(parse(html, { scriptingEnabled: false }))) {
     const src = script.attrs.find((a) => a.name === 'src')?.value.trim();
     const text = script.childNodes.map((c) => ('value' in c ? c.value : '')).join('');
-    if (src === undefined ? text.trim() !== '' : !/^\/(?!\/)/.test(src)) {
+    const type = script.attrs
+      .find((a) => a.name === 'type')
+      ?.value.trim()
+      .toLowerCase();
+    // A JSON-LD block is data the browser never runs, so only a src makes it a problem.
+    if (type === 'application/ld+json' && src === undefined) {
+      continue;
+    }
+    if (
+      type === 'application/ld+json' ||
+      (src === undefined ? text.trim() !== '' : !/^\/(?!\/)/.test(src))
+    ) {
       problems.push(`script: ${src ?? 'inline'}`);
     }
   }

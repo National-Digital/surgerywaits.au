@@ -10,9 +10,11 @@ import PlainTable from './PlainTable.astro';
 import SafetyBlock from './SafetyBlock.astro';
 import StatTile from './StatTile.astro';
 import StatTiles from './StatTiles.astro';
+import { creditsFor, readCredits, publisherList } from '../lib/credits';
 import { getSite, getStateTemplate, label } from '../lib/content';
+import { fileDataset } from '../lib/json-ld';
 import { hospitalPath } from '../lib/hospital-page';
-import { formatCount, formatHospitals } from '../lib/format';
+import { formatCount, formatDate, formatHospitals } from '../lib/format';
 import { longWaitDays } from '../lib/dist';
 import { fill } from '../lib/slots';
 import {
@@ -22,9 +24,11 @@ import {
   hospitalsIn,
   loadState,
   newestPeriod,
+  newestRelease,
   publishedUrgencyCount,
   overlayFor,
   sourcesOf,
+  stateDataPath,
   stateFiles,
   stateName,
   statePath,
@@ -76,21 +80,41 @@ const hospitalCols = hospitalColumns(hospitals?.categories ?? [], (category) =>
   fill(t.hospitals_column, { category: category.label }),
 );
 const sources = sourcesOf(file, state);
+const description = fill(t.description, { state: name, period });
+const release = newestRelease(file);
+const credits = creditsFor(file.sources, readCredits());
+const datasetDescription = fill(t.dataset_description, {
+  state: name,
+  period,
+  release: formatDate(release),
+  publishers: publisherList(credits),
+});
+const crumbs = [
+  { label: t.crumb_home, href: '/' },
+  { label: t.crumb_states, href: STATES_PATH },
+  { label: name },
+];
 ---
 
 <Base
+  {crumbs}
   title={fill(t.title, { state: name, site })}
-  description={fill(t.description, { state: name, period })}
+  description={description}
   canonicalPath={statePath(state)}
+  jsonLd={[
+    fileDataset(getSite(), {
+      path: statePath(state),
+      name: fill(t.dataset_name, { state: name }),
+      description: datasetDescription,
+      file: stateDataPath(state),
+      period,
+      release,
+      credits,
+    }),
+  ]}
 >
   <div class="o-columns">
-    <Breadcrumbs
-      items={[
-        { label: t.crumb_home, href: '/' },
-        { label: t.crumb_states, href: STATES_PATH },
-        { label: name },
-      ]}
-    />
+    <Breadcrumbs items={crumbs} />
     <h1>{name}</h1>
     <p>
       {fill(t.lede, {

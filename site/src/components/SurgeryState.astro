@@ -62,9 +62,16 @@ const others = statesWithRows(surgery)
     label: fill(t.state_link, { surgery: ref.name, state: states[s as keyof typeof states] }),
     href: statePath(ref, s),
   }));
+const crumbs = [
+  { label: t.crumb_home, href: '/' },
+  { label: t.crumb_surgery, href: SURGERY_PATH },
+  { label: ref.name, href: surgeryPath(ref) },
+  { label: stateName },
+];
 ---
 
 <Base
+  {crumbs}
   title={fill(t.state_title, { surgery: ref.name, state: stateName, site })}
   description={fill(t.state_description, {
     surgery: ref.name,
@@ -74,14 +81,7 @@ const others = statesWithRows(surgery)
   canonicalPath={statePath(ref, state)}
 >
   <div class="o-columns">
-    <Breadcrumbs
-      items={[
-        { label: t.crumb_home, href: '/' },
-        { label: t.crumb_surgery, href: SURGERY_PATH },
-        { label: ref.name, href: surgeryPath(ref) },
-        { label: stateName },
-      ]}
-    />
+    <Breadcrumbs items={crumbs} />
     <h1>{fill(t.state_link, { surgery: ref.name, state: stateName })}</h1>
     <p>
       {fill(t.state_lede, { surgery: ref.name, state: stateName, period: surgery.period, count })}

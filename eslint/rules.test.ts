@@ -159,6 +159,8 @@ describe('no-literal-text', () => {
       { line: 32, ruleId: 'site/no-literal-text' },
       { line: 33, ruleId: 'site/no-literal-text' },
       { line: 34, ruleId: 'site/no-literal-text' },
+      { line: 35, ruleId: 'site/no-literal-text' },
+      { line: 36, ruleId: 'site/no-literal-text' },
     ]);
   }, 60_000);
 

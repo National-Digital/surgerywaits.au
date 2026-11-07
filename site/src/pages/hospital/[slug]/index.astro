@@ -16,6 +16,7 @@ import { getHospitalTemplate, getSite, label } from '../../../lib/content';
 import { formatKilometres, formatQuarter } from '../../../lib/format';
 import {
   HOSPITALS_PATH,
+  coordinatesOf,
   hasCurrentFigures,
   hospitalPath,
   hospitalSlugs,
@@ -31,6 +32,7 @@ import {
   urgencyTiles,
 } from '../../../lib/hospital-page';
 import { networkPath } from '../../../lib/health-service-page';
+import { hospital as hospitalNode, hospitalId } from '../../../lib/json-ld';
 import { isBuilt } from '../../../lib/links';
 import { fill } from '../../../lib/slots';
 import { roleLabels } from '../../../lib/surgery-page';
@@ -105,7 +107,21 @@ const nearbyItems =
   })) ?? [];
 ---
 
-<Base title={title} description={description} canonicalPath={hospitalPath(hospital.slug)}>
+<Base
+  {crumbs}
+  title={title}
+  description={description}
+  canonicalPath={hospitalPath(hospital.slug)}
+  about={hospitalId(getSite(), hospitalPath(hospital.slug))}
+  jsonLd={[
+    hospitalNode(getSite(), {
+      path: hospitalPath(hospital.slug),
+      name: hospital.name,
+      region: state,
+      ...coordinatesOf(hospital.slug),
+    }),
+  ]}
+>
   <div class="o-columns">
     <Breadcrumbs items={crumbs} />
     <h1>{hospital.name}</h1>

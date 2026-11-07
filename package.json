@@ -25,7 +25,8 @@
     "a11y": "node scripts/a11y.ts",
     "html": "node scripts/html.ts",
     "links": "node scripts/links.ts",
-    "weight": "node scripts/weight.ts"
+    "weight": "node scripts/weight.ts",
+    "jsonld:parity": "node scripts/jsonld-parity.ts check"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "5.20261106.1",

@@ -41,7 +41,7 @@ import {
 } from '../lib/surgery-page';
 import { readRules } from '../lib/dist';
 import type { Rules } from '../lib/dist';
-import { render, text, textsOf } from '../lib/test-render';
+import { render, text, textsOf, withoutJsonLd } from '../lib/test-render';
 
 const methodology = getMethodology();
 const rules = readRules();
@@ -105,7 +105,7 @@ describe('Content pages', () => {
 
   it('ship no script and give every section an id its heading points at', () => {
     for (const { html } of pages) {
-      expect(html).not.toContain('<script');
+      expect(withoutJsonLd(html)).not.toContain('<script');
       for (const [, id = ''] of html.matchAll(/<section id="([^"]+)" aria-labelledby="([^"]+)"/g)) {
         expect(html).toContain(`id="${id}-heading"`);
       }

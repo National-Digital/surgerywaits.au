@@ -253,6 +253,18 @@ export function queenslandTiles(
   ];
 }
 
+const coordinates = new Map<string, { latitude: number | null; longitude: number | null }>();
+
+// The register carries the coordinates, and the hospital file does not.
+export function coordinatesOf(slug: string): { latitude: number | null; longitude: number | null } {
+  if (coordinates.size === 0) {
+    for (const row of readHospitalIndex()) {
+      coordinates.set(row.slug, { latitude: row.latitude, longitude: row.longitude });
+    }
+  }
+  return coordinates.get(slug) ?? { latitude: null, longitude: null };
+}
+
 export function sourcesOf({ hospital, trend, queensland }: HospitalData): string[] {
   return [
     ...new Set([...hospital.sources, ...trend.sources, ...(queensland?.sources ?? [])]),

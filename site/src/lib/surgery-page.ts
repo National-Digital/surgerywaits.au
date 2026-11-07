@@ -123,6 +123,10 @@ export const refOf = (kind: PageKind, urlSlug: string): SurgeryRef => {
 export const surgeryPath = (ref: Pick<SurgeryRef, 'kind' | 'urlSlug'>): string =>
   `${DIRECTORY[ref.kind]}${ref.urlSlug}/`;
 
+// The data file that holds the figures of a surgery's page.
+export const surgeryDataPath = (ref: Pick<SurgeryRef, 'kind' | 'slug'>): string =>
+  `/data-api/surgeries/${ref.kind}/${ref.slug}.json`;
+
 export const statePath = (ref: Pick<SurgeryRef, 'kind' | 'urlSlug'>, state: string): string =>
   `${surgeryPath(ref)}${stateSlug(state)}/`;
 

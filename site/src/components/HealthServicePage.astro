@@ -38,21 +38,21 @@ const stateLinks = service.states
     label: fill(t.state_link, { state: stateName(s) }),
     href: statePath(s),
   }));
+const crumbs = [
+  { label: t.crumb_home, href: '/' },
+  { label: t.crumb_index, href: HEALTH_SERVICES_PATH },
+  { label: network },
+];
 ---
 
 <Base
+  {crumbs}
   title={fill(t.title, { network, site: getSite().name })}
   description={fill(t.description, { network, states: states.join(', ') })}
   canonicalPath={healthServicePath(slug)}
 >
   <div class="o-columns">
-    <Breadcrumbs
-      items={[
-        { label: t.crumb_home, href: '/' },
-        { label: t.crumb_index, href: HEALTH_SERVICES_PATH },
-        { label: network },
-      ]}
-    />
+    <Breadcrumbs items={crumbs} />
     <h1>{fill(t.heading, { network })}</h1>
     <p>{fill(t.lede, { network, states: states.join(', ') })}</p>
     <p>
