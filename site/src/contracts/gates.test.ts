@@ -947,6 +947,19 @@ describe('Repository', () => {
   });
 });
 
+const withoutExternalRefs = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.map(withoutExternalRefs);
+  }
+  if (typeof value !== 'object' || value === null) {
+    return value;
+  }
+  const ref = (value as { $ref?: unknown }).$ref;
+  return typeof ref === 'string' && ref.startsWith('https:')
+    ? {}
+    : Object.fromEntries(Object.entries(value).map(([k, v]) => [k, withoutExternalRefs(v)]));
+};
+
 describe('OpenAPI', () => {
   // Read at collection, before another test stubs the variable to a copy it later deletes.
   const dist = distDirectory();
@@ -986,7 +999,9 @@ describe('OpenAPI', () => {
     document.paths['/data-api/ghosts.json'] = document.paths['/data-api/rules.json'];
     delete document.paths['/data-api/credits.json'];
     const problems = openApiDisagreements(document, distFiles(), schemaCatalogue());
-    expect(problems.some((p) => /^\/data-api\/hospitals\/.+ breaks .*trend/u.test(p))).toBe(true);
+    expect(
+      problems.some((p) => p.startsWith('/data-api/hospitals/') && p.endsWith('trend.schema.json')),
+    ).toBe(true);
     expect(problems).toContain('/data-api/ghosts.json matches no file');
     expect(problems).toContain('/data-api/credits.json has no path in the description');
   });
@@ -994,9 +1009,7 @@ describe('OpenAPI', () => {
   it('is a valid OpenAPI 3.1 document', async () => {
     const validator = new Validator();
     // The validator resolves internal references only; the disagreement test proves the external ones.
-    const document = JSON.parse(
-      JSON.stringify(openApiDocument()).replaceAll(/\{"\$ref":"https:[^"]*"\}/gu, '{}'),
-    ) as Record<string, unknown>;
+    const document = withoutExternalRefs(openApiDocument()) as Record<string, unknown>;
     const result = await validator.validate(document);
     expect(result.errors).toBeUndefined();
     expect(result.valid).toBe(true);
