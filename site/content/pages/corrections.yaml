@@ -1,4 +1,4 @@
-title: 'Corrections: how {site} fixes errors'
+title: 'Corrections to {site}'
 description: How to report a figure on Surgery Waits that differs from its source, how a report is checked and fixed, and the log of corrections.
 crumb_home: Home
 crumb: Corrections
@@ -18,7 +18,7 @@ sections:
   - id: other
     heading: Other ways to report
     paragraphs:
-      - To write privately, use the contact link at the foot of every page.
+      - To write privately, use the contact link in the footer of every page.
       - A security problem goes through the repository's private security advisory form and never into a public issue.
     links:
       - label: Report a security problem

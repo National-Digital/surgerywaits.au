@@ -62,4 +62,4 @@ sections:
   - id: contact
     heading: Questions
     paragraphs:
-      - To ask a question about these terms, use the contact link at the foot of every page.
+      - To ask a question about these terms, use the contact link in the footer of every page.

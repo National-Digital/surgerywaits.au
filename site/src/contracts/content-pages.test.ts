@@ -25,6 +25,7 @@ import aboutPage from '../pages/about.astro';
 import accessibilityPage from '../pages/accessibility.astro';
 import correctionsPage from '../pages/corrections.astro';
 import privacyPage from '../pages/privacy.astro';
+import PlainTable from '../components/PlainTable.astro';
 import termsPage from '../pages/terms.astro';
 import dataPage from '../pages/data.astro';
 import methodologyPage from '../pages/methodology.astro';
@@ -479,6 +480,13 @@ describe('Policy pages', () => {
     }
   });
 
+  it('carry a last-updated date that is not in the future', () => {
+    const today = new Date().toISOString().slice(0, 10);
+    for (const { name, page } of policies) {
+      expect(page.updated <= today, `${name} is dated ${page.updated}`).toBe(true);
+    }
+  });
+
   it('name the operator from the site file', () => {
     for (const { name, page } of policies) {
       const copy = rawTexts(page).join(' ');
@@ -500,7 +508,7 @@ describe('Policy pages', () => {
       'https://github.com/National-Digital/surgerywaits.au/issues/new?template=bug_report.yml',
     );
     for (const html of [privacyHtml, termsHtml, accessibilityHtml, correctionsHtml]) {
-      expect(text(html)).toContain('contact link at the foot of every page');
+      expect(text(html)).toContain('contact link in the footer of every page');
     }
   });
 
@@ -538,6 +546,26 @@ describe('Corrections log', () => {
     expect(log.entries).toEqual([]);
     expect(text(correctionsHtml)).toContain(log.empty);
     expect(correctionsHtml).not.toContain('c-plain-table');
+  });
+
+  it('renders a populated log as a captioned table in a labelled, focusable scroll region', async () => {
+    const html = await render(PlainTable, {
+      id: 'log',
+      caption: log.caption,
+      stamp: 'Last updated 1 December 2026.',
+      rowHeading: log.row_heading,
+      headings: log.headings,
+      rows: correctionRows({ ...log, entries: [entry('2026-12-01')] }),
+    });
+    expect(html).toMatch(/<div[^>]*class="o-table-scroll"[^>]*role="region"/);
+    expect(html).toContain('aria-labelledby="log-caption"');
+    expect(html).toContain('tabindex="0"');
+    expect(html).toMatch(/<caption[^>]*id="log-caption"/);
+    expect(text(html)).toContain(log.caption);
+    expect(html.match(/<th[^>]*scope="col"/g)).toHaveLength(1 + log.headings.length);
+    expect(html.match(/<th[^>]*scope="row"/g)).toHaveLength(1);
+    expect(textsOf(html, 'c-plain-table__stamp')).toHaveLength(1);
+    expect(text(html)).toContain('1 December 2026');
   });
 
   it('turns an entry into a row with a written date', () => {

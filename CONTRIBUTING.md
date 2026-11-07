@@ -187,6 +187,8 @@ loads them as Astro content collections. Components read them through `site/src/
   strings pass only as imports, object keys and the key argument of `label` or `getPage`.
   `eslint/fixtures/text-*.astro` prove the rule.
 - `quotes` in `terms.yaml` name a page slug, such as `methodology`, which is also the built page's path.
+- A change to the text of a policy page (privacy, terms, accessibility or corrections) sets its `updated` date
+  to the day of the change.
 
 ## Making a change
 

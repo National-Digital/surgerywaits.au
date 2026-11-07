@@ -40,7 +40,7 @@ sections:
     heading: Report a barrier
     paragraphs:
       - If you cannot use part of the site, open a bug report on GitHub. Give the address of the page, what you were trying to do, and the browser and assistive technology you used. A report is treated as a defect, and the fix is described in the pull request that makes it.
-      - GitHub issues are public. To write privately, use the contact link at the foot of every page.
+      - GitHub issues are public. To write privately, use the contact link in the footer of every page.
     links:
       - label: Open a bug report
         href: https://github.com/National-Digital/surgerywaits.au/issues/new?template=bug_report.yml

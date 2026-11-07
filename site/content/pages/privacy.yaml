@@ -1,5 +1,5 @@
-title: 'Privacy: what {site} collects'
-description: What Surgery Waits collects from people who read it, which is nothing of its own, and what its host processes to deliver the pages.
+title: 'Privacy policy of {site}'
+description: What Surgery Waits collects from people who read it, and what its host processes to deliver the pages.
 crumb_home: Home
 crumb: Privacy
 heading: Privacy
@@ -17,7 +17,7 @@ sections:
     heading: What the host processes
     paragraphs:
       - Cloudflare delivers the site. When your browser requests a page, Cloudflare receives the request, which includes your IP address, the address of the page and your browser's description of itself. Cloudflare processes this to deliver the site and to protect it from abuse, under its own privacy policy.
-      - The code that {operator} runs in front of the pages sets response headers. It writes no log and keeps no record of requests.
+      - The code that {operator} runs in front of the pages sets response headers. The Worker code writes no log of its own.
     links:
       - label: Cloudflare privacy policy
         href: https://www.cloudflare.com/privacypolicy/
@@ -39,4 +39,4 @@ sections:
   - id: contact
     heading: Questions
     paragraphs:
-      - To ask a question about this page, use the contact link at the foot of every page. {operator} operates the site and answers for this page.
+      - To ask a question about this page, use the contact link in the footer of every page. {operator} operates the site and answers for this page.
