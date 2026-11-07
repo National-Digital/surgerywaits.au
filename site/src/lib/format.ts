@@ -105,6 +105,7 @@ const dates = new Intl.DateTimeFormat(LOCALE, {
   year: 'numeric',
   timeZone: 'UTC',
 });
+const lists = new Intl.ListFormat(LOCALE, { type: 'conjunction' });
 const monthNames = new Intl.DateTimeFormat(LOCALE, { month: 'long', timeZone: 'UTC' });
 
 const ORDINAL_SUFFIX: Record<Intl.LDMLPluralRule, string> = {
@@ -358,4 +359,8 @@ export function formatLicence(licence: string): string {
     throw new RangeError(`unknown licence: ${licence}`);
   }
   return name;
+}
+
+export function formatList(items: readonly string[]): string {
+  return lists.format(items);
 }

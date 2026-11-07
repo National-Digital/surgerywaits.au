@@ -41,6 +41,7 @@ describe('Breadcrumbs', () => {
   it('holds no script, no JSON-LD and no copy of its own', async () => {
     const html = await render(Breadcrumbs, { items });
     expect(html).not.toContain('<script');
+    expect(html).not.toContain('BreadcrumbList');
     expect(text(html)).toBe('Home Hospitals Royal Test Hospital');
   });
 });

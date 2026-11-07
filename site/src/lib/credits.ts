@@ -1,4 +1,5 @@
 import { readDist } from './dist';
+import { formatList } from './format';
 
 export interface Credit {
   slug: string;
@@ -47,4 +48,4 @@ export function licenceUrl(licence: string): string {
 
 // The publishers of the credited datasets, each named once.
 export const publisherList = (credits: readonly Credit[]): string =>
-  [...new Set(credits.map((c) => c.publisher.name))].join(', ');
+  formatList([...new Set(credits.map((c) => c.publisher.name))]);
