@@ -5,21 +5,22 @@ all its data from [publicdata.au](https://publicdata.au/) and has no other sourc
 
 ## Status
 
-This repository is being rebuilt. Each part below is marked as planned until it exists. A part
-that is not yet built is described as it will be, and this page changes as each part lands.
+This repository is being rebuilt. Each part below is marked as planned until it exists. The data
+API, the compare tool and the extractability gate are not yet built, and this page changes as each
+part lands.
 
-## The planned shape
+## The shape
 
 ```
 publicdata.au        dated, immutable data files, each with a sha256 in a manifest
       |
-pipeline/            Python 3.13 data build (planned)
+pipeline/            Python 3.13 data build
       |
-dist                 output files, each validated against a JSON Schema in contract/ (planned)
+dist                 output files, each validated against a JSON Schema in contract/
       |
-site/                Astro, static output, strict TypeScript (planned)
+site/                Astro, static output, strict TypeScript
       |
-Cloudflare Worker    serves the static assets (planned)
+Cloudflare Worker    serves the static assets
 ```
 
 - **publicdata.au.** The build reads immutable dated version files at
@@ -34,7 +35,7 @@ Cloudflare Worker    serves the static assets (planned)
   null in the prior-year change column that the list does not name is "not reported". Any other
   unflagged null fails the build. The credit line uses the citation that publicdata.au publishes
   with each version.
-- **`pipeline/` (planned).** A Python 3.13 package built with uv, and checked with ruff, pyright
+- **`pipeline/`.** A Python 3.13 package built with uv, and checked with ruff, pyright
   in strict mode and pytest. It turns the pinned files into the output files. Its derive step
   builds ranks, trends and a nearby mesh: each located hospital gets its 8 nearest open public
   hospitals by great-circle distance, searched out to 250 km and doubled until 8 are found, across
@@ -45,7 +46,7 @@ Cloudflare Worker    serves the static assets (planned)
   file against its schema before it writes anything, and the site reads from them. A figure is
   published, not published or not reported: a published one has a value, and the others have a
   reason and no value. Every figure carries its reference period and release date.
-- **`site/` (planned).** An Astro project with static output. It consumes only the pipeline's
+- **`site/`.** An Astro project with static output. It consumes only the pipeline's
   output. `site/src/lib/dist.ts` reads it from the absolute directory in `SURGERYWAITS_DIST`, which
   has no default, so a build never reads a dist by accident. Each file is validated against its
   schema in `contract/` with Ajv, pinned exactly, and a file that fails stops the build. The folder
