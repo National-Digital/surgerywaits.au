@@ -5,7 +5,13 @@ import LongestTail from './LongestTail.astro';
 import RankingTable from './RankingTable.astro';
 import { getLongestTemplate, getSite } from '../lib/content';
 import { formatCount, formatDays, formatKilometres } from '../lib/format';
-import { BORDER_PATH, LONGEST_PATH, borderPairs, longestStamp } from '../lib/longest-page';
+import {
+  BORDER_COUNT,
+  BORDER_PATH,
+  LONGEST_PATH,
+  borderPairs,
+  longestStamp,
+} from '../lib/longest-page';
 import { borderTable, radiusText, waitText } from '../lib/longest-tables';
 import { fill } from '../lib/slots';
 import { stateName } from '../lib/state-page';
@@ -52,7 +58,7 @@ const ledeText =
     <h1>{t.border_heading}</h1>
     <p>{ledeText}</p>
     <p>{fill(t.stamp, { period: stamp.period, release: stamp.release })}</p>
-    <p>{t.border_intro}</p>
+    <p>{fill(t.border_intro, { radius })}</p>
 
     {first !== undefined && (
       <section aria-labelledby="table-heading">
@@ -61,7 +67,7 @@ const ledeText =
         </h2>
         <RankingTable
           id="border"
-          caption={fill(t.border_table_caption, { radius })}
+          caption={fill(t.border_table_caption, { radius, limit: formatCount(BORDER_COUNT) })}
           {...borderTable(pairs)}
         />
       </section>

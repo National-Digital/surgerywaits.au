@@ -102,13 +102,23 @@ export function rankable(ref: SurgeryRef, surgery: Surgery): Entry[] {
 const allRankable = (): Entry[] =>
   procedures().flatMap(({ ref, surgery }) => rankable(ref, surgery));
 
+// A list cut at a count keeps every row that ties the last one shown, so no tie is split.
+export function withTies<T>(sorted: readonly T[], count: number, key: (item: T) => number): T[] {
+  const last = sorted[count - 1];
+  if (last === undefined) {
+    return [...sorted];
+  }
+  const edge = key(last);
+  return sorted.filter((item, i) => i < count || key(item) === edge);
+}
+
 const byLongest = (a: Entry, b: Entry): number =>
   b.figure.value - a.figure.value ||
   byText(a.row.name, b.row.name) ||
   byText(a.ref.slug, b.ref.slug);
 
 export const longestEntries = (count = LONGEST_COUNT): Entry[] =>
-  allRankable().sort(byLongest).slice(0, count);
+  withTies(allRankable().sort(byLongest), count, (e) => e.figure.value);
 
 export interface Extremes {
   ref: SurgeryRef;
@@ -223,14 +233,13 @@ export function borderPairs(count = BORDER_COUNT): BorderPair[] {
       }
     }
   }
-  return found
-    .sort(
-      (a, b) =>
-        b.difference - a.difference ||
-        byText(a.from.row.name, b.from.row.name) ||
-        byText(a.ref.slug, b.ref.slug),
-    )
-    .slice(0, count);
+  found.sort(
+    (a, b) =>
+      b.difference - a.difference ||
+      byText(a.from.row.name, b.from.row.name) ||
+      byText(a.ref.slug, b.ref.slug),
+  );
+  return withTies(found, count, (p) => p.difference);
 }
 
 export interface Move {
@@ -379,9 +388,17 @@ export function hospitalMoves(): Move[] {
 }
 
 export const rises = (moves: readonly Move[], count = CHANGE_COUNT): Move[] =>
-  moves.filter((m) => m.change > 0).slice(0, count);
+  withTies(
+    moves.filter((m) => m.change > 0),
+    count,
+    (m) => m.change,
+  );
 export const falls = (moves: readonly Move[], count = CHANGE_COUNT): Move[] =>
-  moves.filter((m) => m.change < 0).slice(0, count);
+  withTies(
+    moves.filter((m) => m.change < 0),
+    count,
+    (m) => m.change,
+  );
 
 export function movePeriods(): { previous: string; period: string; release: string } {
   const { raw } = longestStamp();

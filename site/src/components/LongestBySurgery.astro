@@ -4,8 +4,15 @@ import Breadcrumbs from './Breadcrumbs.astro';
 import LongestTail from './LongestTail.astro';
 import RankingTable from './RankingTable.astro';
 import { getLongestTemplate, getSite } from '../lib/content';
-import { formatCount } from '../lib/format';
-import { BY_SURGERY_PATH, LONGEST_PATH, extremes, longestStamp, widest } from '../lib/longest-page';
+import { formatCount, formatDays } from '../lib/format';
+import {
+  BY_SURGERY_PATH,
+  LONGEST_PATH,
+  extremes,
+  longestStamp,
+  spread,
+  widest,
+} from '../lib/longest-page';
 import { extremesTable, waitText } from '../lib/longest-tables';
 import { fill } from '../lib/slots';
 import { stateName } from '../lib/state-page';
@@ -48,7 +55,7 @@ const ledeText =
     <h1>{t.by_surgery_heading}</h1>
     <p>{ledeText}</p>
     <p>{fill(t.stamp, { period: stamp.period, release: stamp.release })}</p>
-    <p>{t.by_surgery_intro}</p>
+    {top !== undefined && <p>{fill(t.by_surgery_intro, { widest: formatDays(spread(top)) })}</p>}
 
     {top !== undefined && (
       <section aria-labelledby="table-heading">

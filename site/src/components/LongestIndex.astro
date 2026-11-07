@@ -6,7 +6,7 @@ import LongestTail from './LongestTail.astro';
 import RankingTable from './RankingTable.astro';
 import { getLongestTemplate, getSite } from '../lib/content';
 import { formatCount } from '../lib/format';
-import { LONGEST_PATH, longestEntries, longestStamp } from '../lib/longest-page';
+import { LONGEST_COUNT, LONGEST_PATH, longestEntries, longestStamp } from '../lib/longest-page';
 import { longestTable, waitText } from '../lib/longest-tables';
 import { fill } from '../lib/slots';
 import { stateName } from '../lib/state-page';
@@ -38,7 +38,7 @@ const ledeText =
     <h1>{fill(t.index_heading, { count })}</h1>
     <p>{ledeText}</p>
     <p>{fill(t.stamp, { period: stamp.period, release: stamp.release })}</p>
-    <p>{fill(t.index_intro, { period: stamp.period })}</p>
+    <p>{fill(t.index_intro, { period: stamp.period, limit: formatCount(LONGEST_COUNT) })}</p>
 
     {first !== undefined && (
       <section aria-labelledby="table-heading">

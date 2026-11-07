@@ -46,7 +46,12 @@ const stamp = assertRanking({ columns, rows, span });
                     {cell.text}
                   </a>
                 )}
-                {cell.note !== undefined && <small class="c-table__note">{cell.note}</small>}
+                {cell.note !== undefined && (
+                  <>
+                    {' '}
+                    <small class="c-table__note">{cell.note}</small>
+                  </>
+                )}
               </>
             );
             // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error

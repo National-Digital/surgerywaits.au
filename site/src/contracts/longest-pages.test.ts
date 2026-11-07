@@ -28,12 +28,14 @@ import {
   borderPairs,
   byBiggest,
   extremes,
+  falls,
   hospitalMoves,
   longestStamp,
   longestEntries,
   rankable,
   rises,
   stateMoves,
+  withTies,
 } from '../lib/longest-page';
 import { pairRoutes, pairPath } from '../lib/pair-page';
 import { fill } from '../lib/slots';
@@ -83,6 +85,8 @@ const renderAll = async (): Promise<{ path: string; html: string }[]> => [
   { path: BORDER_PATH, html: await render(LongestBorder, {}) },
   { path: CHANGES_PATH, html: await render(LongestChanges, {}) },
 ];
+
+const allLongest = (): ReturnType<typeof longestEntries> => longestEntries(Number.MAX_SAFE_INTEGER);
 
 const main = (html: string): string => text(html.split('<main')[1] ?? html);
 
@@ -213,7 +217,7 @@ describe('The longest waits', () => {
   it('lists the longest current published medians, longest first, with ties sharing a rank', () => {
     const rows = rowsAfter(page(LONGEST_PATH), 'longest-caption');
     expect(rows.length).toBeGreaterThan(0);
-    expect(rows.length).toBeLessThanOrEqual(LONGEST_COUNT);
+    expect(rows.length).toBeGreaterThanOrEqual(Math.min(allLongest().length, LONGEST_COUNT));
     // Rebuilt from the surgery files alone.
     const expected = surgeryRefs()
       .filter((r) => r.kind === 'procedure')
@@ -387,7 +391,7 @@ describe('The border page', () => {
     nearBorder();
     const pairs = borderPairs();
     expect(pairs.length).toBeGreaterThan(0);
-    expect(pairs.length).toBeLessThanOrEqual(BORDER_COUNT);
+    expect(pairs.length).toBeGreaterThanOrEqual(Math.min(borderPairs(1000).length, BORDER_COUNT));
     const index = new Map(readHospitalIndex().map((h) => [h.slug, h]));
     for (const p of pairs) {
       const from = located(index.get(p.from.row.slug));
@@ -475,7 +479,7 @@ describe('The changes page', () => {
     expect(sizes).toEqual([...sizes].sort((a, b) => b - a));
     const html = page(CHANGES_PATH);
     const rises = rowsAfter(html, 'state-rises-caption');
-    expect(rises.length).toBeLessThanOrEqual(CHANGE_COUNT);
+    expect(rises.length).toBeGreaterThanOrEqual(1);
     for (const row of rises) {
       expect(row[4]).toMatch(/^up [\d,]+ days?$/);
     }
@@ -521,15 +525,15 @@ describe('The changes page', () => {
     expect(withVolume(MOVE_VOLUME_FLOOR - 1)).toBe(false);
   });
 
-  it('cuts a tie at the list length by state, hospital name, then surgery, in any input order', () => {
+  it('keeps every row that ties the last one shown, in a fixed order whatever the input order', () => {
     const figure = { state: 'published' as const, value: 1, period: '2023–24', release: 'r' };
-    const move = (hospital: string, state: string, slug: string): Move => ({
+    const move = (hospital: string, state: string, slug: string, change = 10): Move => ({
       ref: { slug, name: slug, kind: 'procedure' } as Move['ref'],
       state,
       hospital: { slug: hospital, name: hospital },
       from: figure,
-      to: { ...figure, value: 11 },
-      change: 10,
+      to: { ...figure, value: 1 + change },
+      change,
       href: '/',
     });
     const tied = [
@@ -538,15 +542,65 @@ describe('The changes page', () => {
       move('Bravo', 'vic', 'y'),
       move('Bravo', 'vic', 'x'),
       move('Charlie', 'nsw', 'x'),
+      move('Echo', 'nsw', 'x', 4),
     ];
-    const expected = ['Charlie/x', 'Alpha/x', 'Bravo/x'];
+    const expected = ['Charlie/x', 'Alpha/x', 'Bravo/x', 'Bravo/y', 'Delta/x'];
     for (const order of [tied, [...tied].reverse(), [...tied.slice(2), ...tied.slice(0, 2)]]) {
       const cut = rises([...order].sort(byBiggest), 3).map(
         (m) => `${m.hospital?.name ?? ''}/${m.ref.slug}`,
       );
       expect(cut).toEqual(expected);
     }
+    const falling = tied.map((m) => ({ ...m, change: -m.change }));
+    expect(falls([...falling].sort(byBiggest), 3)).toHaveLength(5);
+    expect(falls([...falling].sort(byBiggest), 5)).toHaveLength(5);
+    expect(rises([...tied].sort(byBiggest), 6)).toHaveLength(6);
   });
+
+  it('cuts the other lists on the same rule', () => {
+    const items = [9, 8, 7, 7, 7, 5, 4];
+    expect(withTies(items, 2, (n) => n)).toEqual([9, 8]);
+    expect(withTies(items, 3, (n) => n)).toEqual([9, 8, 7, 7, 7]);
+    expect(withTies(items, 4, (n) => n)).toEqual([9, 8, 7, 7, 7]);
+    expect(withTies(items, 20, (n) => n)).toEqual(items);
+  });
+
+  it.skipIf(process.env['SURGERYWAITS_DIST'] === undefined)(
+    'ends each list on a value that no omitted row shares',
+    () => {
+      const stamp = longestStamp();
+      expect(stamp.period).not.toBe('');
+      const states = stateMoves();
+      const hospitals = hospitalMoves();
+      const cuts: { shown: Move[]; all: Move[] }[] = [
+        { shown: rises(states), all: states.filter((m) => m.change > 0) },
+        { shown: falls(states), all: states.filter((m) => m.change < 0) },
+        { shown: rises(hospitals), all: hospitals.filter((m) => m.change > 0) },
+        { shown: falls(hospitals), all: hospitals.filter((m) => m.change < 0) },
+      ];
+      for (const { shown, all } of cuts) {
+        expect(shown).toEqual(all.slice(0, shown.length));
+        const last = shown.at(-1);
+        const next = all[shown.length];
+        if (last !== undefined && next !== undefined) {
+          expect(Math.abs(next.change)).toBeLessThan(Math.abs(last.change));
+        }
+        expect(shown.length).toBeGreaterThanOrEqual(Math.min(all.length, CHANGE_COUNT));
+      }
+      const longest = allLongest();
+      const shownLongest = longestEntries();
+      const nextLongest = longest[shownLongest.length];
+      if (nextLongest !== undefined) {
+        expect(nextLongest.figure.value).toBeLessThan(shownLongest.at(-1)?.figure.value ?? 0);
+      }
+      const pairs = borderPairs();
+      const more = borderPairs(1000)[pairs.length];
+      if (more !== undefined) {
+        expect(more.difference).toBeLessThan(pairs.at(-1)?.difference ?? 0);
+      }
+      expect(shownLongest.length).toBeGreaterThanOrEqual(Math.min(longest.length, LONGEST_COUNT));
+    },
+  );
 
   it('states both periods in every row and one span in every caption', () => {
     const html = page(CHANGES_PATH);

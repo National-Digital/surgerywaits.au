@@ -32,6 +32,13 @@ const place = (e: Entry, template: string, others = 0): RankCell => ({
   figure: e.figure,
 });
 
+const absent = (stamp: Figure): Figure => ({
+  state: 'not_published',
+  reason: 'not_published_by_aihw',
+  period: stamp.period,
+  release: stamp.release,
+});
+
 export function longestTable(entries: readonly Entry[]): RankingModel {
   const c = t();
   const ranks = competitionRanks(entries.map((e) => e.figure.value));
@@ -60,8 +67,9 @@ export function longestTable(entries: readonly Entry[]): RankingModel {
           { text: e.ref.name, href: surgeryPath(e.ref) },
           { text: stateCode(e.row.state) },
           { text: formatFigure('median_wait', e.figure), figure: e.figure },
+          // A pair with no volume measure reads as not published, as in the other tables.
           volume === undefined
-            ? { text: '' }
+            ? { text: formatFigure('volume', absent(e.figure)), figure: absent(e.figure) }
             : { text: formatFigure('volume', volume), figure: volume },
         ],
       };

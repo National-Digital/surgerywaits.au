@@ -4,9 +4,10 @@ import Breadcrumbs from './Breadcrumbs.astro';
 import LongestTail from './LongestTail.astro';
 import RankingTable from './RankingTable.astro';
 import { getLongestTemplate, getSite } from '../lib/content';
-import { formatDate, formatDays } from '../lib/format';
+import { formatCount, formatDate, formatDays } from '../lib/format';
 import {
   CHANGES_PATH,
+  CHANGE_COUNT,
   LONGEST_PATH,
   falls,
   hospitalMoves,
@@ -61,7 +62,7 @@ const { states: stateSections, hospitals: hospitalSections } = changeSections(
     <h1>{t.changes_heading}</h1>
     <p>{ledeText}</p>
     <p>{fill(t.stamp, { period, release: formatDate(release) })}</p>
-    <p>{fill(t.changes_intro, slots)}</p>
+    <p>{fill(t.changes_intro, { ...slots, limit: formatCount(CHANGE_COUNT) })}</p>
 
     {stateSections.map((section) => (
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
