@@ -41,14 +41,14 @@ const SVG_REF_TAGS = new Set(['use', 'image']);
 const META_IMAGE = new Set(['og:image', 'twitter:image']);
 const OPAQUE = /^(mailto|tel|sms|data|javascript|blob):/i;
 
-function srcsetUrls(value: string): string[] {
+export function srcsetUrls(value: string): string[] {
   return value
     .split(',')
     .map((part) => part.trim().split(/\s+/)[0] ?? '')
     .filter((u) => u !== '');
 }
 
-function walk(node: Node, visit: (el: Element) => void): void {
+export function walk(node: Node, visit: (el: Element) => void): void {
   if ('tagName' in node) {
     visit(node);
   }
