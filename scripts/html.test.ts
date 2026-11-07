@@ -1,6 +1,8 @@
 import { spawnSync } from 'node:child_process';
 import type { SpawnSyncReturns } from 'node:child_process';
-import { resolve } from 'node:path';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 // The checker needs Java, so only the job that installs it runs these, with HTML_TEST=1.
@@ -32,5 +34,18 @@ describe('the HTML gate', () => {
     const r = check('fail-warning');
     expect(r.status).toBe(1);
     expect(r.stderr).toContain('Section lacks heading');
+  });
+
+  it('fails when the directory is missing or holds no HTML file', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'html-'));
+    try {
+      const empty = check(dir);
+      expect(empty.status).toBe(1);
+      expect(empty.stderr).toContain('no HTML files');
+      const missing = check(join(dir, 'absent'));
+      expect(missing.status).toBe(1);
+    } finally {
+      await rm(dir, { recursive: true });
+    }
   });
 });

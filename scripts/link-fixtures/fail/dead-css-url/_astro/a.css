@@ -1,0 +1,5 @@
+@layer utilities {
+  @font-face {
+    src: url(./nope.woff2);
+  }
+}

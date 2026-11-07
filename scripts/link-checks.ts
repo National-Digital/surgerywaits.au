@@ -35,6 +35,9 @@ const URL_ATTRS: Record<string, string[]> = {
   object: ['data'],
   form: ['action'],
 };
+// SVG references and the social image metas carry an address in an attribute no other element uses.
+const SVG_REF_TAGS = new Set(['use', 'image']);
+const META_IMAGE = new Set(['og:image', 'twitter:image']);
 const OPAQUE = /^(mailto|tel|sms|data|javascript|blob):/i;
 
 function srcsetUrls(value: string): string[] {
@@ -73,6 +76,21 @@ export function scan(html: string): Page {
     if (el.tagName === 'a' && name !== undefined) {
       ids.add(name);
     }
+    if (SVG_REF_TAGS.has(el.tagName)) {
+      for (const a of ['href', 'xlink:href']) {
+        const v = attr(a);
+        if (v !== undefined) {
+          urls.push(v.trim());
+        }
+      }
+    }
+    if (el.tagName === 'meta') {
+      const key = attr('property') ?? attr('name');
+      const content = attr('content');
+      if (key !== undefined && META_IMAGE.has(key) && content !== undefined) {
+        urls.push(content.trim());
+      }
+    }
     for (const a of URL_ATTRS[el.tagName] ?? []) {
       const v = attr(a);
       if (v === undefined) {
@@ -82,6 +100,18 @@ export function scan(html: string): Page {
     }
   });
   return { urls, ids };
+}
+
+// Every url(...) reference in a stylesheet, other than data: URIs and fragments inside the sheet.
+export function cssUrls(css: string): string[] {
+  const out: string[] = [];
+  for (const m of css.matchAll(/url\(\s*(?:"([^"]*)"|'([^']*)'|([^)"'\s]*))\s*\)/gi)) {
+    const u = (m[1] ?? m[2] ?? m[3] ?? '').trim();
+    if (u !== '' && !u.startsWith('#')) {
+      out.push(u);
+    }
+  }
+  return out;
 }
 
 async function htmlFiles(dir: string, base = ''): Promise<string[]> {
@@ -117,7 +147,7 @@ const pagePath = (file: string): string => `/${file}`.replace(/index\.html$/, ''
 export async function checkLinks(
   dist: string,
   origin: string,
-  redirects: Set<string>,
+  redirects: Map<string, string>,
 ): Promise<Report> {
   const files = await fileSet(dist);
   const pages = await htmlFiles(dist);
@@ -125,14 +155,26 @@ export async function checkLinks(
   for (const file of pages) {
     scanned.set(`/${file}`, scan(await readFile(join(dist, file), 'utf8')));
   }
+  // A stylesheet's addresses are relative to the stylesheet, so each one is checked from its own path.
+  const sheets = new Map<string, string[]>();
+  for (const f of files) {
+    if (f.endsWith('.css')) {
+      sheets.set(f, cssUrls(await readFile(join(dist, f), 'utf8')));
+    }
+  }
   const host = new URL(origin).host;
   const report: Report = { pages: pages.length, internal: 0, problems: [], external: new Map() };
   const bad = (page: string, url: string, why: string): void => {
     report.problems.push({ page, url, why });
   };
 
-  for (const [file, { urls }] of scanned) {
-    const here = pagePath(file.slice(1));
+  const sources: [string, string[]][] = [
+    ...[...scanned].map(([file, { urls }]): [string, string[]] => [pagePath(file.slice(1)), urls]),
+    ...sheets,
+  ];
+  const builtPage = (path: string): boolean =>
+    files.has(path.endsWith('/') ? `${path}index.html` : path);
+  for (const [here, urls] of sources) {
     for (const raw of urls) {
       if (raw === '' || OPAQUE.test(raw)) {
         continue;
@@ -164,7 +206,11 @@ export async function checkLinks(
         bad(here, raw, 'has a malformed percent escape');
         continue;
       }
-      if (redirects.has(path)) {
+      const redirect = redirects.get(path);
+      if (redirect !== undefined) {
+        if (!builtPage(redirect)) {
+          bad(here, raw, `is a redirect to ${redirect}, which is not a built page`);
+        }
         continue;
       }
       const target = path.endsWith('/') ? `${path}index.html` : path;

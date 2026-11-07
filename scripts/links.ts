@@ -22,11 +22,15 @@ if (origin === undefined) {
   throw new Error('site/content/site.yaml has no url');
 }
 const redirectsFile = JSON.parse(await readFile(new URL('data/redirects.json', root), 'utf8')) as {
-  redirects: { from: string }[];
+  redirects: { from: string; to: string }[];
 };
-const redirects = new Set(redirectsFile.redirects.map((r) => r.from));
+const redirects = new Map(redirectsFile.redirects.map((r) => [r.from, r.to]));
 
 const report = await checkLinks(resolve(dist), origin, redirects);
+if (report.pages === 0) {
+  out(`FAIL no built pages under ${dist}`);
+  process.exit(1);
+}
 for (const p of report.problems.slice(0, 200)) {
   out(`FAIL ${p.page} ${p.url} ${p.why}`);
 }

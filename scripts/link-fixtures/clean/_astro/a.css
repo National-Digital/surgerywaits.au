@@ -1,0 +1,11 @@
+@layer utilities {
+  .u-a {
+    background: url(../pic.svg);
+  }
+  .u-b {
+    background: url('/pic.svg');
+  }
+  .u-c {
+    background: url(data:image/png;base64,AAAA);
+  }
+}
