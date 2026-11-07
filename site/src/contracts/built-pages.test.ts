@@ -19,7 +19,11 @@ import {
   termsSchema,
   urgencyTemplateSchema,
 } from '../lib/content-schema';
+import { getHomeTemplate, getHospitalTemplate } from '../lib/content';
 import { readHospitalIndex } from '../lib/dist';
+import { formatCount } from '../lib/format';
+import { COMMON_COUNT } from '../lib/home-page';
+import { hospitalGroups, reportingCounts } from '../lib/index-pages';
 import { indexablePairPaths, pairRoutes, thinPairPaths } from '../lib/pair-page';
 import { stateFiles } from '../lib/state-page';
 import { categories } from '../lib/urgency-page';
@@ -137,7 +141,7 @@ function analyse(path: string, html: string, bytes: number, skipped: boolean): P
     footerText: footer && textOf(footer),
     footerHrefs: footer ? anchors(footer) : [],
     breadcrumbHrefs: breadcrumb ? anchors(breadcrumb) : [],
-    mainHrefs: main && /^(?:hospitals|surgery)\/index\.html$/.test(path) ? anchors(main) : [],
+    mainHrefs: main && /^(?:(?:hospitals|surgery)\/)?index\.html$/.test(path) ? anchors(main) : [],
     compareBar: html.includes('c-compare-bar'),
     canonical: html.includes(
       `<link rel="canonical" href="https://surgerywaits.au${address(path)}">`,
@@ -607,7 +611,7 @@ describe('Built state and urgency pages', () => {
     for (const { path, html } of mine()) {
       expect(textsOf(html, 'c-stamp'), path).toHaveLength(textsOf(html, 'c-figure').length);
       expect(
-        textsOf(html, 'c-table__stamp').length + textsOf(html, 'c-qld-table__stamp').length,
+        textsOf(html, 'c-table__stamp').length + textsOf(html, 'c-plain-table__stamp').length,
         path,
       ).toBe(html.match(/<table[ >]/g)?.length ?? 0);
     }
@@ -637,11 +641,14 @@ describe('Built state and urgency pages', () => {
 
   it('keep the Queensland overlay on the Queensland page and rank nothing in it', () => {
     for (const { path, html } of mine()) {
-      expect([path, html.includes('c-qld-table')]).toEqual([path, path === 'state/qld/index.html']);
+      expect([path, html.includes('id="qld-caption"')]).toEqual([
+        path,
+        path === 'state/qld/index.html',
+      ]);
     }
     const html = mine().find(({ path }) => path === 'state/qld/index.html')?.html ?? '';
     const overlay = html.split('id="qld-heading"')[1]?.split('</section>')[0] ?? '';
-    expect(overlay).toContain('c-qld-table');
+    expect(overlay).toContain('id="qld-caption"');
     expect(overlay).not.toMatch(/c-table__rank|nationally/);
   });
 
@@ -787,3 +794,46 @@ function expectedThinCount(): number {
   }
   return thin;
 }
+
+describe('Built home page', () => {
+  it('links only to built pages and carries the exclusion and one passport', () => {
+    const built = new Set(paths);
+    const home = pageAt('index.html');
+    const links = home.mainHrefs.filter((h) => h.startsWith('/'));
+    expect(links.length).toBeGreaterThan(0);
+    for (const href of links) {
+      expect(built.has(`${href.slice(1)}index.html`), href).toBe(true);
+    }
+    expect(home.mainText).toContain('Private hospitals are excluded');
+    expect(home.passports).toBe(1);
+  });
+
+  it('holds the surgery table and the state table, with the counts of the data', () => {
+    const home = pageAt('index.html');
+    const states = stateFiles().length;
+    expect(home.tables).toBe(2);
+    expect(home.rows).toHaveLength(2 + COMMON_COUNT + states);
+    expect(home.cells).toHaveLength(COMMON_COUNT * 3 + states * 4);
+    const hospitals = home.cells
+      .slice(0, COMMON_COUNT * 3)
+      .filter((_, i) => i % 3 === 2)
+      .map((cell) => Number(cell.text.replaceAll(',', '')));
+    expect(hospitals).toEqual([...hospitals].sort((a, b) => b - a));
+    const t = getHomeTemplate();
+    const counts = [
+      fill(t.surgery_note_many, { count: formatCount(surgeryRefs().length) }),
+      fill(t.hospitals_note_many, { count: formatCount(readHospitalIndex().length) }),
+      fill(t.states_note_many, { count: formatCount(states) }),
+      fill(t.urgency_note_many, { count: formatCount(categories().length) }),
+    ];
+    for (const count of counts) {
+      expect(home.mainText).toContain(count);
+    }
+    const reporting = home.cells
+      .slice(COMMON_COUNT * 3)
+      .filter((_, i) => i % 4 === 0)
+      .map((cell) => Number(cell.text.replaceAll(',', '')));
+    const groups = hospitalGroups(Object.keys(getHospitalTemplate().states));
+    expect(reporting.reduce((a, b) => a + b, 0)).toBe(reportingCounts(groups).reporting);
+  });
+});

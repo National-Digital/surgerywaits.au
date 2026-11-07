@@ -263,7 +263,7 @@ interface QueenslandCell {
   withheld: boolean;
 }
 
-export interface QueenslandRow {
+interface QueenslandRow {
   name: string;
   href?: string;
   treated: QueenslandCell;

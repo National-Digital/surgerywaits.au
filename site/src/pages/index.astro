@@ -1,12 +1,5 @@
 ---
-import Prose from '../components/Prose.astro';
-import Base from '../layouts/Base.astro';
-import { getPage, label } from '../lib/content';
-
-const page = getPage('home');
+import HomePage from '../components/HomePage.astro';
 ---
 
-<Base title={label('title_home')}>
-  <h1>{page.heading}</h1>
-  <Prose paragraphs={page.paragraphs} />
-</Base>
+<HomePage />

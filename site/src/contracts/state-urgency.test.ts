@@ -189,7 +189,7 @@ describe('Every page', () => {
     for (const { path, html } of pages) {
       expect(textsOf(html, 'c-stamp'), path).toHaveLength(textsOf(html, 'c-figure').length);
       expect(
-        textsOf(html, 'c-table__stamp').length + textsOf(html, 'c-qld-table__stamp').length,
+        textsOf(html, 'c-table__stamp').length + textsOf(html, 'c-plain-table__stamp').length,
         path,
       ).toBe(html.match(/<table[ >]/g)?.length ?? 0);
     }
@@ -290,7 +290,7 @@ describe('State pages', () => {
     for (const { path, html } of pages) {
       const here = path === '/state/qld/';
       expect([path, html.includes('id="qld-heading"')]).toEqual([path, here]);
-      expect([path, html.includes('c-qld-table')]).toEqual([path, here]);
+      expect([path, html.includes('id="qld-caption"')]).toEqual([path, here]);
     }
     const html = page('/state/qld/');
     expect(main(html)).toContain(st.qld_intro);
@@ -300,7 +300,7 @@ describe('State pages', () => {
     expect(overlay).toMatch(/July to September 2025, released \d{1,2} \w+ \d{4}/);
     // The national tables sit before it, and none of them holds a Queensland Health figure.
     const national = html.split('id="qld-heading"')[0] ?? '';
-    expect(national).not.toContain('c-qld-table');
+    expect(national).not.toContain('id="qld-caption"');
   });
 
   it('lists every state on the index with its counts and links it', () => {

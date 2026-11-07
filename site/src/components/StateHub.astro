@@ -6,7 +6,7 @@ import DataPassport from './DataPassport.astro';
 import DataTable from './DataTable.astro';
 import IndexList from './IndexList.astro';
 import LinkList from './LinkList.astro';
-import QueenslandTable from './QueenslandTable.astro';
+import PlainTable from './PlainTable.astro';
 import SafetyBlock from './SafetyBlock.astro';
 import StatTile from './StatTile.astro';
 import StatTiles from './StatTiles.astro';
@@ -203,16 +203,17 @@ const sources = sourcesOf(file, state);
         <p>{t.qld_intro}</p>
         <p>{fill(t.qld_count, { count: formatCount(queensland.rows.length) })}</p>
       </div>
-      <QueenslandTable
+      <PlainTable
         id="qld"
         caption={fill(t.qld_caption, { quarter: queensland.quarter })}
         stamp={queensland.stamp}
         rowHeading={t.qld_row_heading}
-        headings={{
-          treated: label('qld_treated'),
-          timely: label('qld_percent_treated_in_time'),
-        }}
-        rows={queensland.rows}
+        headings={[label('qld_treated'), label('qld_percent_treated_in_time')]}
+        rows={queensland.rows.map((row) => ({
+          name: row.name,
+          href: row.href,
+          cells: [row.treated, row.timely],
+        }))}
       />
     </section>
   )}
