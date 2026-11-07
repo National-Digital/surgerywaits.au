@@ -9,9 +9,9 @@ import SafetyBlock from './SafetyBlock.astro';
 import { getHomeTemplate, getSite } from '../lib/content';
 import { readHospitalSources, readSurgeryIndexSources } from '../lib/dist';
 import { formatCount } from '../lib/format';
-import { commonProcedures, homeCounts, stateSummary } from '../lib/home-page';
+import { commonProcedures, homeCounts, homeStamps, stateSummary } from '../lib/home-page';
 import { HOSPITALS_PATH } from '../lib/hospital-page';
-import { hospitalStamp, surgeryStamp } from '../lib/index-pages';
+import { surgeryStamp } from '../lib/index-pages';
 import { fill } from '../lib/slots';
 import { STATES_PATH } from '../lib/state-page';
 import { SPECIALTY_PATH, SURGERY_PATH } from '../lib/surgery-page';
@@ -19,7 +19,6 @@ import { URGENCY_PATH, categories } from '../lib/urgency-page';
 
 const t = getHomeTemplate();
 const stamp = surgeryStamp();
-const hospitalsAt = hospitalStamp();
 const counts = homeCounts();
 const common = commonProcedures();
 const stateTable = stateSummary(t.state_extreme);
@@ -62,9 +61,7 @@ const sources = [
   <div class="o-columns">
     <h1>{t.heading}</h1>
     <p>{fill(t.lede, { period: stamp.period })}</p>
-    <p>
-      {fill(t.stamp, stamp)} {fill(t.hospitals_stamp, hospitalsAt)}
-    </p>
+    <p>{homeStamps(t)}</p>
 
     <section aria-labelledby="start-heading">
       <h2 id="start-heading">{t.start_heading}</h2>

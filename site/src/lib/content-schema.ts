@@ -522,6 +522,7 @@ export const homeTemplateSchema = z.strictObject({
   description: slotted('period'),
   heading: slotted(),
   lede: slotted('period'),
+  stamp_shared: slotted('period', 'release'),
   stamp: slotted('period', 'release'),
   hospitals_stamp: slotted('period', 'release'),
   start_heading: slotted(),

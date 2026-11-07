@@ -7,9 +7,8 @@ interface Props {
   rowHeading: string;
   headings: string[];
   rows: {
-    code: string;
     name: string;
-    href: string;
+    href?: string | undefined;
     cells: { text: string; withheld: boolean }[];
   }[];
 }
@@ -37,7 +36,7 @@ const { id, caption, stamp, rowHeading, headings, rows } = Astro.props;
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
         <tr>
           <th scope="row">
-            <a href={row.href}>{row.name}</a>
+            {row.href === undefined ? row.name : <a href={row.href}>{row.name}</a>}
           </th>
           {row.cells.map((cell) => (
             // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error

@@ -4,9 +4,9 @@ import { describe, expect, it } from 'vitest';
 
 import HomePage from '../components/HomePage.astro';
 import { getHomeTemplate, getSite } from '../lib/content';
-import { readHospitalIndex, readSurgeryIndex } from '../lib/dist';
-import { formatCount } from '../lib/format';
-import { COMMON_COUNT, commonProcedures } from '../lib/home-page';
+import { readHospital, readHospitalIndex, readSurgeryIndex } from '../lib/dist';
+import { formatCount, formatDays } from '../lib/format';
+import { COMMON_COUNT, commonProcedures, homeStamps, midSentence } from '../lib/home-page';
 import { hospitalStamp, surgeryStamp } from '../lib/index-pages';
 import { stateFiles, statePath } from '../lib/state-page';
 import { surgeryPath, surgeryRefs } from '../lib/surgery-page';
@@ -90,8 +90,6 @@ describe('Home page', () => {
     );
     expect(main).toContain(fill(t.states_note_many, { count: formatCount(stateFiles().length) }));
     expect(main).toContain(fill(t.urgency_note_many, { count: formatCount(categories().length) }));
-    expect(main).toContain(fill(t.stamp, surgeryStamp()));
-    expect(main).toContain(fill(t.hospitals_stamp, hospitalStamp()));
     expect(t.hospitals_note_many).toContain('on the register');
   });
 
@@ -135,20 +133,76 @@ describe('Home page', () => {
     expect(html.includes('c-figure')).toBe(false);
   });
 
-  it('gives one row for each state, linked, with the counts and the shortest and longest median', () => {
+  it('gives one row for each state, linked, with figures computed from the dist', () => {
     const table = html.split('id="states-caption"')[1]?.split('</table>')[0] ?? '';
-    const links = [...table.matchAll(/href="(\/state\/[^"]+)"/g)].map((m) => m[1]);
-    expect(links).toEqual(stateFiles().map((file) => statePath(file.state)));
-    const rows = elementsOf(`<table>${table}</table>`, 'td');
-    expect(rows).toHaveLength(stateFiles().length * 4);
-    for (const [i, cell] of rows.entries()) {
-      if (i % 4 < 2) {
-        expect(cell.text).toMatch(/^\d[\d,]*$/);
-      } else {
-        expect(cell.text).toMatch(/^[\d,]+ days? for \S/);
-      }
+    const rows = elementsOf(`<table>${table}</table>`, 'tr').filter((row) => row.text !== '');
+    const cells = elementsOf(`<table>${table}</table>`, 'td').map((cell) => cell.text);
+    const files = stateFiles();
+    expect(cells).toHaveLength(files.length * 4);
+    expect(rows.length).toBeGreaterThanOrEqual(files.length);
+    const refs = surgeryRefs();
+    for (const [i, file] of files.entries()) {
+      const reporting = readHospitalIndex().filter(
+        (h) => h.state === file.state && readHospital(h.slug).surgeries.some((s) => !s.stale),
+      ).length;
+      const medians = file.surgeries.flatMap((s) =>
+        s.kind === 'procedure' && s.measures.median_wait?.state === 'published'
+          ? [{ wait: s.measures.median_wait.value, slug: s.slug }]
+          : [],
+      );
+      const waits = medians.map((m) => m.wait);
+      const named = (wait: number): string[] =>
+        medians
+          .filter((m) => m.wait === wait)
+          .flatMap((m) => refs.filter((r) => r.kind === 'procedure' && r.slug === m.slug))
+          .map((r) =>
+            fill(t.state_extreme, { wait: formatDays(wait), surgery: midSentence(r.name) }),
+          );
+      const [hospitals, types, shortest, longest] = cells.slice(i * 4, i * 4 + 4);
+      expect(table).toContain(`href="${statePath(file.state)}"`);
+      expect(hospitals).toBe(formatCount(reporting));
+      expect(types).toBe(formatCount(medians.length));
+      expect(named(Math.min(...waits))).toContain(shortest);
+      expect(named(Math.max(...waits))).toContain(longest);
     }
     expect(textsOf(html, 'c-plain-table__stamp')).toHaveLength(2);
+  });
+
+  it('says each release once, and one sentence for each scope', () => {
+    const stamps = homeStamps(t);
+    const { release } = surgeryStamp();
+    const shared =
+      surgeryStamp().period === hospitalStamp().period && release === hospitalStamp().release;
+    expect(main).toContain(stamps);
+    expect(stamps.split(release).length - 1).toBe(shared ? 1 : 2);
+    const sentences = stamps.split('. ');
+    expect(new Set(sentences).size).toBe(sentences.length);
+    const differ = homeStamps(
+      t,
+      { period: '2024–25', release: '19 August 2026' },
+      { period: '2023–24', release: '1 July 2025' },
+    );
+    expect(differ).toContain(
+      fill(t.hospitals_stamp, { period: '2023–24', release: '1 July 2025' }),
+    );
+    expect(differ).not.toContain(t.stamp_shared.slice(0, 20));
+  });
+
+  it('keeps a capital on a proper noun and on an acronym, and lowers a plain first word', () => {
+    expect(midSentence("Dupuytren's contracture surgery")).toBe("Dupuytren's contracture surgery");
+    expect(midSentence("Bartholin's abscess drainage")).toBe("Bartholin's abscess drainage");
+    expect(midSentence('ACL reconstruction')).toBe('ACL reconstruction');
+    expect(midSentence('LLETZ procedure')).toBe('LLETZ procedure');
+    expect(midSentence('Hip replacement')).toBe('hip replacement');
+    expect(midSentence('Out-turned eyelid repair')).toBe('out-turned eyelid repair');
+    expect(midSentence('Tonsillectomy')).toBe('tonsillectomy');
+    for (const ref of surgeryRefs()) {
+      const lowered = midSentence(ref.name);
+      const first = ref.name.split(' ')[0] ?? '';
+      const proper = /[A-Z].*[A-Z]|'|’/.test(first);
+      expect([ref.name, lowered === ref.name]).toEqual([ref.name, proper]);
+      expect(lowered.slice(1)).toBe(ref.name.slice(1));
+    }
   });
 
   it('states the private hospital exclusion, the safety block once and the passport once', () => {

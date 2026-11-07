@@ -2,8 +2,9 @@ title: 'Planned surgery waiting times at public hospitals in Australia: {site}'
 description: 'This site shows how long patients waited for planned surgery at public hospitals in Australia. Find a surgery, a hospital, a state or territory or an urgency category. The latest figures cover {period}.'
 heading: How long will I wait for planned surgery?
 lede: 'This site shows how long patients waited for planned surgery at public hospitals in Australia. The latest figures cover {period}. Each figure comes from published government data, and each figure shows the period it covers.'
-stamp: 'The surgery, state and urgency counts on this page are for {period}. The data was released on {release}.'
-hospitals_stamp: 'The hospital count is for {period}. The data was released on {release}.'
+stamp_shared: 'The surgery, state, urgency and hospital counts on this page are for {period}. The data was released on {release}.'
+stamp: 'The surgery, state and urgency counts on this page are for {period} and were released on {release}.'
+hospitals_stamp: 'The hospital count is for {period} and was released on {release}.'
 start_heading: Find your waiting time
 start_intro: Choose how you want to look. Each page shows the published figures and the period they cover.
 surgery_link: Surgery
@@ -28,7 +29,7 @@ common_median: National median wait
 common_surgeries: Surgeries, Australia
 common_hospitals: Hospitals reporting
 states_heading: Waiting times by state and territory
-states_intro: Each state and territory page shows its waiting times beside the national figures and ranks its public hospitals by median wait. The table gives the number of hospitals that report in each state or territory and the shortest and longest state median wait.
+states_intro: Each state and territory page shows its waiting times beside the national figures and ranks its public hospitals by median wait. The table gives the number of public hospitals with a current figure in each state or territory, the number of surgery types with a published median wait, and the shortest and longest state median wait.
 states_caption: Hospitals reporting, surgery types and state median waits by state and territory
 states_row_heading: State or territory
 states_hospitals: Hospitals reporting

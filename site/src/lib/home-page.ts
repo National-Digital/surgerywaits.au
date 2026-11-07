@@ -2,7 +2,9 @@ import { readHospitalIndex, readSurgery, readSurgeryIndex } from './dist';
 import { formatCount, formatDays, formatFigure, formatStamp, isPublished } from './format';
 import type { Figure } from './format';
 import { fill } from './slots';
-import { stateFiles, stateName, statePath, statesStamp, hospitalsIn } from './state-page';
+import { getHospitalTemplate } from './content';
+import { hospitalGroups, hospitalStamp, reportingCounts, surgeryStamp } from './index-pages';
+import { stateFiles, stateName, statePath, statesStamp } from './state-page';
 import { surgeryPath, surgeryRefs } from './surgery-page';
 import { categories } from './urgency-page';
 
@@ -14,7 +16,6 @@ export interface PlainCell {
 }
 
 export interface PlainRow {
-  code: string;
   name: string;
   href: string;
   cells: PlainCell[];
@@ -39,9 +40,11 @@ export const homeCounts = (): HomeCounts => ({
   categories: categories().length,
 });
 
-// A name sits mid-sentence in a table cell, so its first letter drops to lower case unless it opens an acronym.
-const midSentence = (name: string): string =>
-  /^[A-Z][a-z]/.test(name) ? `${name.charAt(0).toLowerCase()}${name.slice(1)}` : name;
+// A plain first word drops to lower case mid-sentence; an acronym, a possessive or any other proper noun keeps its capital.
+export const midSentence = (name: string): string =>
+  /^[A-Z][a-z]+([-/][a-z]+)*,?(\s|$)/.test(name)
+    ? `${name.charAt(0).toLowerCase()}${name.slice(1)}`
+    : name;
 
 const collator = new Intl.Collator('en-AU');
 
@@ -93,7 +96,6 @@ export function commonProcedures(count = COMMON_COUNT): PlainTable & { sources: 
     stamps.add(formatStamp(volume));
     surgery.sources.forEach((s) => sources.add(s));
     return {
-      code: ref.urlSlug,
       name: ref.name,
       href: surgeryPath(ref),
       cells: [
@@ -112,6 +114,9 @@ export function commonProcedures(count = COMMON_COUNT): PlainTable & { sources: 
 // One row for each state: the hospitals that report, the surgery types, and the shortest and longest state median.
 export function stateSummary(extreme: string): PlainTable {
   const refs = surgeryRefs();
+  const groups = hospitalGroups(Object.keys(getHospitalTemplate().states));
+  const reportingIn = (state: string): number =>
+    reportingCounts(groups.filter((group) => group.state === state)).reporting;
   const rows = stateFiles().map((file): PlainRow => {
     const ranked = file.surgeries
       .filter((s) => s.kind === 'procedure')
@@ -137,11 +142,10 @@ export function stateSummary(extreme: string): PlainTable {
       withheld: false,
     });
     return {
-      code: file.state,
       name: stateName(file.state),
       href: statePath(file.state),
       cells: [
-        { text: formatCount(hospitalsIn(file.state).length), withheld: false },
+        { text: formatCount(reportingIn(file.state)), withheld: false },
         { text: formatCount(ranked.length), withheld: false },
         cell(shortest),
         cell(longest),
@@ -149,5 +153,23 @@ export function stateSummary(extreme: string): PlainTable {
     };
   });
   const { period, release } = statesStamp();
+  const register = hospitalStamp();
+  if (register.period !== period || register.release !== release) {
+    throw new RangeError(
+      'the state table counts hospitals from the register, so the register and the state files must share one period and release',
+    );
+  }
   return { rows, stamp: `${period}, released ${release}` };
+}
+
+// One sentence for each scope, and one release date when the surgery data and the hospital register share it.
+export function homeStamps(
+  t: { stamp_shared: string; stamp: string; hospitals_stamp: string },
+  surgery = surgeryStamp(),
+  hospitals = hospitalStamp(),
+): string {
+  if (surgery.period === hospitals.period && surgery.release === hospitals.release) {
+    return fill(t.stamp_shared, surgery);
+  }
+  return `${fill(t.stamp, surgery)} ${fill(t.hospitals_stamp, hospitals)}`;
 }
