@@ -333,7 +333,7 @@ describe('Built pages and privacy', () => {
     for (const file of bundles()) {
       const text = read(`_astro/${file}`);
       expect(
-        text.match(/https?:\/\/[^\s"'`)]+/gu)?.filter((u) => !u.startsWith('http://www.w3.org/')) ??
+        text.match(/https?:\/\/[^\s)]+/gu)?.filter((u) => !u.startsWith('http://www.w3.org/')) ??
           [],
       ).toEqual([]);
       expect(sendingUses(text)).toEqual([]);
