@@ -19,6 +19,7 @@ from surgerywaits.gates import URGENT_SLUG, check_docs, check_freshness
 from surgerywaits.hospitals import STATES, Hospital, Register
 from surgerywaits.manifest import Entry, as_credit
 from surgerywaits.queensland import FacilityQuarter, Overlay
+from surgerywaits.rules import rules_doc
 from surgerywaits.suburbs import Suburbs
 from surgerywaits.suppression import Figure, FigureState, SuppressedTable
 from surgerywaits.waiting_times import NATIONAL_SCOPE, Table
@@ -761,6 +762,7 @@ def assemble(inputs: Inputs) -> dict[str, tuple[str, Doc]]:
     )
     docs.update(_queensland(inputs, names, ctx.slugs))
     docs["credits.json"] = ("credits", _credits(inputs.entries, set(READ_SOURCES)))
+    docs["rules.json"] = ("rules", rules_doc())
     docs["index.json"] = ("index", _index_doc(ctx, docs))
     check_docs(inputs.entries, docs)
     return docs

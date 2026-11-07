@@ -113,7 +113,7 @@ Cloudflare Worker    serves the static assets (planned)
   `site/content/templates/health-service.yaml`. The Built pages test compares the addresses with the earlier site's list.
   `/methodology/`, `/data/` and `/about/` are the addresses the earlier site used. Each is one YAML file in `site/content/pages/`
   with its own schema. The methodology states each number the pipeline and the site use, and `site/src/contracts/content-pages.test.ts`
-  fills the copy from the constants the code exports. The numbers that live in the pipeline are pinned once in `site/src/lib/pipeline-rules.json`, and `pipeline/tests/test_site_rules.py` fails when the pipeline differs from the pin. The data page shows every dataset in `credits.json` through the data
+  fills the copy from the constants the code exports. The numbers and names that live in the pipeline reach the copy through `rules.json` in the dist, which the pipeline writes from its own constants (`pipeline/tests/test_rules.py`) and the site reads against `contract/rules.schema.json`. The data page shows every dataset in `credits.json` through the data
   passport, and the Built pages test compares them with `data/manifest.json`. The word "elective" appears only in the methodology and in the titles and citations that the data passport quotes from the publishers, and `terms.yaml` lists each of those quotes.
   `npm run build:preview` adds a development page for the figure, the stat tile, the data table, the chart, the wait bars, the safety block, the breadcrumbs and the data passport at
   `/dev/primitives/` and writes to a `dist-preview` folder in `site/`, so the published build never holds it. The

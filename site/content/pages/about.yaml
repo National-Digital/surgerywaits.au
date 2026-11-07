@@ -3,12 +3,12 @@ description: Who builds and runs Surgery Waits, why it exists, how its data reac
 crumb_home: Home
 crumb: About
 heading: About Surgery Waits
-lede: Surgery Waits shows how long patients waited for planned surgery at public hospitals in Australia. National Digital builds and runs the site.
+lede: Surgery Waits shows how long patients waited for planned surgery at public hospitals in Australia. {operator} builds and runs the site.
 sections:
   - id: who
     heading: Who runs the site
     paragraphs:
-      - National Digital builds and operates Surgery Waits from Burleigh Heads, Queensland. National Digital also publishes publicdata.au, the source of every dataset on this site.
+      - '{operator} builds and operates Surgery Waits from Burleigh Heads, Queensland. {operator} also publishes publicdata.au, the source of every dataset on this site.'
   - id: why
     heading: Why the site exists
     paragraphs:
@@ -20,7 +20,7 @@ sections:
   - id: funding
     heading: Funding and advertising
     paragraphs:
-      - National Digital pays for the site. The site carries no advertising and no sponsorship, and it sells nothing.
+      - '{operator} pays for the site. The site carries no advertising and no sponsorship, and it sells nothing.'
   - id: independence
     heading: Independence from the publishers
     paragraphs:

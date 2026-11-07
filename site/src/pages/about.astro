@@ -1,10 +1,11 @@
 ---
 import ArticlePage from '../components/ArticlePage.astro';
 import { getAbout, getSite } from '../lib/content';
-import { ABOUT_PATH } from '../lib/article-pages';
+import { ABOUT_PATH, aboutFacts, fillSections, fillText } from '../lib/article-pages';
 import { fill } from '../lib/slots';
 
 const t = getAbout();
+const facts = aboutFacts();
 ---
 
 <ArticlePage
@@ -13,7 +14,7 @@ const t = getAbout();
   path={ABOUT_PATH}
   crumbHome={t.crumb_home}
   crumb={t.crumb}
-  heading={t.heading}
-  intro={[t.lede]}
-  sections={t.sections}
+  heading={fillText(t.heading, facts)}
+  intro={[fillText(t.lede, facts)]}
+  sections={fillSections(t.sections, facts)}
 />

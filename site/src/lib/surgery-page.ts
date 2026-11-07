@@ -40,6 +40,8 @@ export const NEAR_RADIUS_KM = 25;
 export const MAX_SPREAD_KM = 120;
 export const MIN_RANKED = 2;
 export const MAX_OUTSIDE = 2;
+// A network with fewer open hospitals than this cannot make a place.
+export const MIN_OPEN_HOSPITALS = 2;
 // A place with fewer pages than this is too thin to stand as a place of its own.
 export const MIN_PLACE_PAGES = 3;
 export const SMALL_STATE = 5;
@@ -320,7 +322,7 @@ function areasFor(surgery: Surgery): NearArea[] {
       return at !== undefined && distanceKm(centre.position, at.position) <= NEAR_RADIUS_KM;
     });
     // A network that mostly lies farther out cannot lend its name to one cluster of it.
-    if (open.length < 2 || near.length * 2 < open.length) {
+    if (open.length < MIN_OPEN_HOSPITALS || near.length * 2 < open.length) {
       continue;
     }
     const inside = near.flatMap((m) => rowOf.get(m.code) ?? []);

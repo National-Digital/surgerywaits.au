@@ -20,7 +20,7 @@ sections:
   - id: measures
     heading: What each measure means
     paragraphs:
-      - 'The site uses four of the measures AIHW publishes. The pipeline accepts a measure only when its name and unit match this list, and the build stops when a name or unit changes.'
+      - 'The site uses {measure_count} of the measures AIHW publishes. The pipeline accepts a measure only when its name and unit match this list, and the build stops when a name or unit changes.'
     items:
       - '{median_name}, in days. Half of the patients waited this many days or fewer.'
       - '{volume_name}. This is the count of surgeries in the period.'
@@ -29,14 +29,14 @@ sections:
   - id: median
     heading: What a median shows
     paragraphs:
-      - A median is the middle waiting time. Half of the patients waited less than the median, and half waited longer. Some patients waited far longer than the median, so the share of patients who waited longer than 365 days appears beside it.
+      - A median is the middle waiting time. Half of the patients waited less than the median, and half waited longer. The median does not show how long the longest waits ran, so the share of patients who waited longer than 365 days appears beside it.
       - A specialty figure covers many operations. Hospitals perform different mixes of them, so two specialty figures can describe different work.
       - A procedure figure covers one operation and suits a comparison between hospitals.
   - id: counted-time
     heading: What the waiting time counts
     paragraphs:
       - AIHW counts the time a patient spends on the waiting list for surgery. The time before a patient joins the list is outside the figure, so the wait to see a specialist is outside it too.
-      - A median that rests on few surgeries moves more when one patient's wait changes. The number of surgeries appears beside each median so that a reader can see how many surgeries it rests on.
+      - A median that rests on fewer than {volume_floor} surgeries moves more when one patient's wait changes. The number of surgeries appears beside each median so that a reader can see how many surgeries it rests on.
     links:
       - label: Urgency categories
         href: /urgency/
@@ -44,13 +44,13 @@ sections:
     heading: The word elective
     paragraphs:
       - 'AIHW names its collection "elective surgery". In the source the term describes surgery that can be booked in advance. This site uses the term planned surgery for the same category.'
-      - Planned surgery is still necessary surgery. A doctor places a patient on the waiting list because the patient needs the operation, and the date can be set in advance instead of being fixed by an emergency.
-      - This page is the only page that uses the word elective, and it uses the word to quote the source.
+      - Planned surgery is still necessary surgery. A doctor places a patient on the waiting list because the patient needs the operation. The hospital can set the date of planned surgery in advance.
+      - The site uses the word elective only where it quotes a source or explains the source's word, as this section does.
   - id: not-published
     heading: Figures that are not published
     paragraphs:
       - A publisher withholds a figure when its data cannot support the figure. The site shows such a figure as not published and gives the publisher's reason. The site never shows such a figure as 0 and never leaves it blank. It gives such a figure no rank.
-      - 'AIHW marks a withheld hospital figure with one of three codes. The site gives each code its own wording.'
+      - 'AIHW marks a withheld hospital figure with one of {hospital_code_count} codes. The site gives each code its own wording.'
     items:
       - '"{code_too_few_patients}" means too few patients. The site says "{wording_too_few_patients}".'
       - '"{code_no_patients_reported}" means no patients were reported. The site says "{wording_no_patients_reported}".'
@@ -110,7 +110,7 @@ sections:
       - "The list holds the network's open hospitals that lie within {near_radius} km of the main hospital and have a current published median. It adds up to {max_outside} hospitals from other networks that lie within {near_radius} km of a listed hospital. Hospitals of the network within {near_radius} km that have no current published median are shown after these and are not ranked."
       - 'The build drops a place for a surgery in any of these cases.'
     items:
-      - The network has fewer than 2 open hospitals, or fewer than half of its open hospitals lie within {near_radius} km of the main hospital.
+      - The network has fewer than {min_open} open hospitals, or fewer than half of its open hospitals lie within {near_radius} km of the main hospital.
       - Fewer than {min_ranked} of its hospitals have a current published median.
       - Two listed hospitals lie more than {max_spread} km apart. The build then drops the whole place for that surgery and does not remove hospitals from its list.
       - The page would repeat the state page. This happens when the list already holds every hospital of the state that reported the surgery. It also happens when the state has {small_state} or fewer of them, the list is missing at most one and the list holds no hospital from another state.
@@ -126,7 +126,7 @@ sections:
     heading: Pages that search engines skip
     paragraphs:
       - A hospital and surgery page is marked so that search engines do not list it when it carries little beyond one figure. The page is still built and linked.
-      - 'A page is marked when its median is not published. A page is also marked when it has none of these four things: an earlier published year of the same median, an open hospital on its nearby list with a published median, a share of patients who waited longer than 365 days beside a national share, or a nearest suburb in its state.'
+      - 'A page is marked when its median is not published. A page is also marked when it has none of these four things: an earlier published year of the same median, an open hospital on its nearby list that also has a current published median for the surgery, a share of patients who waited longer than 365 days beside a national share, or a nearest suburb in its state.'
   - id: longest
     heading: The longest waits pages
     paragraphs:

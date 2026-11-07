@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://surgerywaits.au/contract/rules.schema.json",
+  "title": "Rules",
+  "description": "rules.json: the limits and names the pipeline applies, which the site copy states.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "neighbours",
+    "start_radius_km",
+    "max_period_age_years",
+    "max_qld_lag_days",
+    "hand_matched_facilities",
+    "measures",
+    "withheld_codes",
+    "lower_is_better"
+  ],
+  "properties": {
+    "neighbours": { "type": "integer", "minimum": 1 },
+    "start_radius_km": { "type": "number", "exclusiveMinimum": 0 },
+    "max_period_age_years": { "type": "integer", "minimum": 0 },
+    "max_qld_lag_days": { "type": "integer", "minimum": 0 },
+    "hand_matched_facilities": { "type": "integer", "minimum": 0 },
+    "measures": {
+      "description": "The name of each measure by its role.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["median_wait", "volume", "long_wait", "on_time"],
+      "properties": {
+        "median_wait": { "$ref": "common.schema.json#/$defs/text" },
+        "volume": { "$ref": "common.schema.json#/$defs/text" },
+        "long_wait": { "$ref": "common.schema.json#/$defs/text" },
+        "on_time": { "$ref": "common.schema.json#/$defs/text" }
+      }
+    },
+    "withheld_codes": {
+      "description": "The reason the pipeline gives each code AIHW uses for a withheld figure.",
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "common.schema.json#/$defs/text" }
+    },
+    "lower_is_better": {
+      "description": "The rank direction of each measure: true ranks the lowest first, false the highest first, null is never ranked.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["median_wait", "volume", "long_wait", "on_time"],
+      "properties": {
+        "median_wait": { "type": ["boolean", "null"] },
+        "volume": { "type": ["boolean", "null"] },
+        "long_wait": { "type": ["boolean", "null"] },
+        "on_time": { "type": ["boolean", "null"] }
+      }
+    }
+  }
+}

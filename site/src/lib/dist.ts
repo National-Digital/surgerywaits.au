@@ -25,6 +25,7 @@ export type SchemaName =
   | 'index'
   | 'queensland'
   | 'queensland-index'
+  | 'rules'
   | 'state'
   | 'suburbs'
   | 'surgery'
@@ -37,6 +38,7 @@ const ROOT_FILES: Record<string, SchemaName> = {
   'hospitals.json': 'hospital-index',
   'index.json': 'index',
   'queensland.json': 'queensland-index',
+  'rules.json': 'rules',
   'suburbs.json': 'suburbs',
   'surgeries.json': 'surgery-index',
 };
@@ -337,6 +339,22 @@ export function readState(slug: string): StateBenchmarks {
 
 export function readSurgery(kind: Kind, slug: string): Surgery {
   return readDist(`surgeries/${kind}/${slug}.json`) as Surgery;
+}
+
+export interface Rules {
+  neighbours: number;
+  start_radius_km: number;
+  max_period_age_years: number;
+  max_qld_lag_days: number;
+  hand_matched_facilities: number;
+  measures: Record<Role, string>;
+  // AIHW's code for a withheld figure, with the reason the pipeline gives it.
+  withheld_codes: Record<string, string>;
+  lower_is_better: Record<Role, boolean | null>;
+}
+
+export function readRules(): Rules {
+  return readDist('rules.json') as Rules;
 }
 
 export function readSuburbs(): [string, string, State, number, number][] {

@@ -6,10 +6,11 @@ import { readCredits } from '../lib/credits';
 import { formatCount } from '../lib/format';
 import { homeCounts } from '../lib/home-page';
 import { surgeryStamp } from '../lib/index-pages';
-import { DATA_PATH } from '../lib/article-pages';
+import { DATA_PATH, dataFacts, fillSections, fillText } from '../lib/article-pages';
 import { fill } from '../lib/slots';
 
 const t = getDataPage();
+const facts = dataFacts();
 const counts = homeCounts();
 ---
 
@@ -19,17 +20,17 @@ const counts = homeCounts();
   path={DATA_PATH}
   crumbHome={t.crumb_home}
   crumb={t.crumb}
-  heading={t.heading}
+  heading={fillText(t.heading, facts)}
   intro={[
-    t.lede,
+    fillText(t.lede, facts),
     fill(t.stamp, surgeryStamp()),
     fill(t.counts, {
       hospitals: formatCount(counts.hospitals),
       surgeries: formatCount(counts.surgeries),
     }),
   ]}
-  sections={t.sections}
-  after={t.after}
+  sections={fillSections(t.sections, facts)}
+  after={fillSections(t.after, facts)}
 >
   <DataPassport sources={readCredits().map((credit) => credit.slug)} />
 </ArticlePage>
