@@ -14,7 +14,7 @@ const env = {
       return Promise.resolve(
         pathname === '/missing/'
           ? new Response('gone', { status: 404 })
-          : new Response('<p>page</p>', {
+          : new Response(request.method === 'HEAD' ? null : '<p>page</p>', {
               status: 200,
               headers: { 'Content-Type': 'text/html; charset=utf-8' },
             }),
@@ -159,7 +159,10 @@ describe('methods and failures', () => {
   });
 
   it('answers HEAD on a page from the assets', async () => {
-    expect((await send('/state/nsw/', 'HEAD')).status).toBe(200);
+    const response = await send('/state/nsw/', 'HEAD');
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Content-Type')).toBe('text/html; charset=utf-8');
+    expect(await response.text()).toBe('');
   });
 
   it('returns a plain 500 with the security headers when the assets fail', async () => {
