@@ -28,7 +28,13 @@ import { healthServicePath, healthServiceSlugs } from '../lib/health-service-pag
 import { formatCount, formatDate, formatPeriod } from '../lib/format';
 import { COMMON_COUNT } from '../lib/home-page';
 import { hospitalGroups, reportingCounts } from '../lib/index-pages';
-import { BORDER_PATH, BY_SURGERY_PATH, CHANGES_PATH, LONGEST_PATH } from '../lib/longest-page';
+import {
+  BORDER_PATH,
+  BY_SURGERY_PATH,
+  CHANGES_PATH,
+  LONGEST_PATH,
+  borderPairs,
+} from '../lib/longest-page';
 import { indexablePairPaths, pairRoutes, thinPairPaths } from '../lib/pair-page';
 import { stateFiles } from '../lib/state-page';
 import { categories } from '../lib/urgency-page';
@@ -725,6 +731,14 @@ describe('Built longest-waits pages', () => {
       expect([path, nones.some((t) => html.includes(t))]).toEqual([path, true]);
     }
     expect(mine().some(({ html }) => html.includes('<table'))).toBe(true);
+  });
+
+  // The fixture has no cross-border pair, so this bites only on the real dist.
+  it('rank at least one border row when the dist has a border pair', () => {
+    const html = read('longest-waits/border/index.html');
+    const rows = (html.split('<tbody>')[1]?.split('</tbody>')[0] ?? '').match(/<tr[ >]/g) ?? [];
+    expect(rows.length > 0).toBe(borderPairs().length > 0);
+    expect(html.includes('<table')).toBe(borderPairs().length > 0);
   });
 
   it('link only to pages that are built', () => {
