@@ -86,7 +86,7 @@ export function pageProblems(html: string): string[] {
   const problems: string[] = [];
   for (const tag of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/giu)) {
     const src = /\ssrc=["']?([^"'\s>]+)/iu.exec(tag[1] ?? '')?.[1];
-    if (src === undefined ? (tag[2] ?? '').trim() !== '' : !src.startsWith('/')) {
+    if (src === undefined ? (tag[2] ?? '').trim() !== '' : !/^\/(?!\/)/.test(src)) {
       problems.push(`script: ${src ?? 'inline'}`);
     }
   }

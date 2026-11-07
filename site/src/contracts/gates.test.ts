@@ -550,6 +550,9 @@ describe('Privacy', () => {
       ),
     ).toEqual(['script: https://static.cloudflareinsights.com/beacon.min.js', 'beacon']);
     expect(pageProblems('<script type="module" src="/_astro/a.js"></script><p>hi</p>')).toEqual([]);
+    expect(pageProblems('<script src="//x.example/a.js"></script>')).toEqual([
+      'script: //x.example/a.js',
+    ]);
   });
 
   it('the privacy check allows exactly the Web Analytics beacon and report hosts', () => {
