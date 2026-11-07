@@ -1,6 +1,8 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, it } from 'vitest';
 
+import { distSlug, readContent, replacedTerms } from '../lib/content-files';
+import { termsSchema } from '../lib/content-schema';
 import { licenceUrl, readCredits } from '../lib/credits';
 import { readHospitalIndex } from '../lib/dist';
 import { textsOf } from '../lib/test-render';
@@ -43,8 +45,8 @@ const VOCAB: Readonly<Record<string, readonly string[]>> = {
   DataDownload: ['contentUrl', 'encodingFormat'],
 };
 // The only properties that hold a number.
-// What every Dataset must say, wherever it sits.
-const DATASET_REQUIRED = ['name', 'description', 'url', 'license', 'citation', 'distribution'];
+// What every Dataset must say, wherever it sits; only a source dataset on /data/ quotes a citation.
+const DATASET_REQUIRED = ['name', 'description', 'url', 'license'];
 const NUMBERS = new Set(['position', 'latitude', 'longitude']);
 const DATES = new Set(['dateModified', 'datePublished']);
 
@@ -55,6 +57,17 @@ interface Page {
   nodes: Json[];
   scripts: number;
 }
+// What the cheap checks read from every built page, which the sampled pages share.
+interface Seen {
+  path: string;
+  scripts: number;
+  stray: string[];
+  contexts: unknown[];
+  ids: string[];
+  types: Map<string, string>;
+  replaced: string[];
+}
+const terms = termsSchema.parse(readContent().find(({ path }) => path === 'terms.yaml')?.data);
 
 const BLOCK = /<script([^>]*)>(.*?)<\/script>/gsu;
 const files = readdirSync(dist, { recursive: true, encoding: 'utf8' })
@@ -63,6 +76,7 @@ const files = readdirSync(dist, { recursive: true, encoding: 'utf8' })
 // The real dist holds thousands of pairs, so its per-page checks cover one pair in every STEP.
 const STEP = files.length > 5000 ? 25 : 1;
 const pages: Page[] = [];
+const seen: Seen[] = [];
 
 function walk(
   value: unknown,
@@ -81,22 +95,54 @@ function walk(
   }
 }
 
+// An address is not prose, and a credited dataset's address spells the publisher's word.
+const ADDRESS = /^https?:\/\/\S+$/u;
+
+function stringsOf(value: unknown, out: string[] = []): string[] {
+  if (typeof value === 'string') {
+    if (!ADDRESS.test(value)) {
+      out.push(value);
+    }
+  } else if (typeof value === 'object' && value !== null) {
+    Object.values(value).forEach((item) => stringsOf(item, out));
+  }
+  return out;
+}
+
 beforeAll(() => {
   files.forEach((file, index) => {
-    if (/^(hospital|surgery)\/[^/]+\/.+\/index\.html$/u.test(file) && index % STEP !== 0) {
-      return;
-    }
     const html = readFileSync(new URL(file, dist), 'utf8');
+    const path = `/${file.replace(/index\.html$/u, '')}`;
     const nodes: Json[] = [];
-    let scripts = 0;
+    const found: Seen = {
+      path,
+      scripts: 0,
+      stray: [],
+      contexts: [],
+      ids: [],
+      types: new Map(),
+      replaced: [],
+    };
     for (const [, attrs = '', body = ''] of html.matchAll(BLOCK)) {
       if (attrs === ' type="application/ld+json"') {
-        scripts += 1;
-        const { '@graph': graph } = JSON.parse(body) as { '@graph': Json[] };
-        nodes.push(...graph);
+        found.scripts += 1;
+        const document = JSON.parse(body) as Json;
+        found.contexts.push(document['@context']);
+        nodes.push(...(document['@graph'] as Json[]));
+      } else if (!attrs.startsWith(' type="module" src="/_astro/')) {
+        // The compare tool's module is the one script that runs.
+        found.stray.push(attrs);
       }
     }
-    pages.push({ path: `/${file.replace(/index\.html$/u, '')}`, html, nodes, scripts });
+    for (const node of nodes) {
+      found.ids.push(String(node['@id']));
+      found.types.set(String(node['@id']), String(node['@type']));
+    }
+    found.replaced = replacedTerms(distSlug(file), stringsOf(nodes), terms);
+    seen.push(found);
+    if (!(/^(hospital|surgery)\/[^/]+\/.+\/index\.html$/u.test(file) && index % STEP !== 0)) {
+      pages.push({ path, html, nodes, scripts: found.scripts });
+    }
   });
 });
 
@@ -113,7 +159,7 @@ const stampsOf = (html: string): { period: string; release: string }[] =>
   [...html.matchAll(STAMP)].map((m) => ({ period: m[1] ?? '', release: isoOf(m[2] ?? '') }));
 
 const canonicalOf = (html: string): string | undefined =>
-  /<link rel="canonical" href="([^"]+)"/u.exec(html)?.[1];
+  /<link rel="canonical" href="(.+?)"/u.exec(html)?.[1];
 const titleOf = (html: string): string => /<title>([^<]*)<\/title>/u.exec(html)?.[1] ?? '';
 const decode = (text: string): string =>
   text.replaceAll('&amp;', '&').replaceAll('&#39;', "'").replaceAll('&quot;', '"');
@@ -121,26 +167,32 @@ const ofType = (page: Page, type: string): Json[] => page.nodes.filter((n) => n[
 
 describe('JSON-LD on every page', () => {
   it('sits in script elements of the ld+json type apart from the compare tool, each holding one JSON document in the schema.org context', () => {
-    expect(pages.length).toBeGreaterThan(0);
-    for (const { path, html } of pages) {
-      for (const [, attrs = '', body = ''] of html.matchAll(BLOCK)) {
-        // The compare tool's module is the one script that runs.
-        if (attrs.startsWith(' type="module" src="/_astro/')) {
-          continue;
-        }
-        expect([path, attrs]).toEqual([path, ' type="application/ld+json"']);
-        expect([path, (JSON.parse(body) as Json)['@context']]).toEqual([
-          path,
-          'https://schema.org',
-        ]);
-      }
+    expect(seen.length).toBe(files.length);
+    for (const { path, stray, contexts } of seen) {
+      expect([path, stray]).toEqual([path, []]);
+      expect([path, contexts]).toEqual([path, ['https://schema.org']]);
     }
   });
 
   it('holds exactly one JSON-LD block on every page', () => {
-    for (const { path, scripts } of pages) {
+    for (const { path, scripts } of seen) {
       expect([path, scripts]).toEqual([path, 1]);
     }
+  });
+
+  it('holds none of the terms the terms file replaces in any string of any page, apart from its quote pages', () => {
+    expect(seen.flatMap((page) => page.replaced)).toEqual([]);
+  });
+
+  it('catches a replaced term in a graph, and excuses it only on a quote page', () => {
+    const graph = [
+      { '@type': 'Dataset', name: 'Elective surgery waiting times', note: ['elective'] },
+    ];
+    expect(replacedTerms('surgery/knee/', stringsOf(graph), terms)).not.toEqual([]);
+    expect(replacedTerms('data', stringsOf(graph), terms)).toEqual([]);
+    expect(replacedTerms('data', stringsOf([{ name: 'n/a' }]), terms)).not.toEqual([]);
+    const address = [{ url: 'https://publicdata.au/d/au-elective-surgery/v/1/' }];
+    expect(replacedTerms('surgery/knee/', stringsOf(address), terms)).toEqual([]);
   });
 
   it('uses only the schema.org types and properties the site has pinned', () => {
@@ -173,13 +225,10 @@ describe('JSON-LD on every page', () => {
 
   it('gives each @id one type across the site, and no page two nodes of one id', () => {
     const types = new Map<string, Set<string>>();
-    for (const { path, nodes } of pages) {
-      const own = new Set<string>();
-      for (const node of nodes) {
-        const id = node['@id'] as string;
-        expect([path, id, own.has(id)]).toEqual([path, id, false]);
-        own.add(id);
-        types.set(id, (types.get(id) ?? new Set()).add(node['@type'] as string));
+    for (const { path, ids, types: own } of seen) {
+      expect([path, ids.length - new Set(ids).size]).toEqual([path, 0]);
+      for (const [id, type] of own) {
+        types.set(id, (types.get(id) ?? new Set()).add(type));
       }
     }
     for (const [id, set] of types) {
@@ -239,7 +288,7 @@ describe('JSON-LD on every page', () => {
     }
   });
 
-  it('gives every Dataset a name, a description, a licence, a citation and a download', () => {
+  it('gives every Dataset a name, a description, a licence and an address, and a citation only on the data page', () => {
     for (const page of pages) {
       for (const node of ofType(page, 'Dataset')) {
         for (const key of DATASET_REQUIRED) {
@@ -250,6 +299,11 @@ describe('JSON-LD on every page', () => {
             false,
           ]);
         }
+        expect([page.path, node['@id'], 'citation' in node]).toEqual([
+          page.path,
+          node['@id'],
+          page.path === '/data/',
+        ]);
         expect([page.path, typeof node['name'], typeof node['description']]).toEqual([
           page.path,
           'string',
@@ -362,7 +416,7 @@ describe('JSON-LD for data', () => {
     }
   });
 
-  it('points each surgery and state dataset at a data file the site serves, citing only credited sources', () => {
+  it('points each surgery and state dataset at a data file the site serves, based only on credited sources', () => {
     const own = pages.filter(({ path }) => /^\/(surgery|specialty|state)\/[^/]+\/$/u.test(path));
     const known = new Set(credits.map((c) => c.dataset_url));
     expect(own.length).toBeGreaterThan(0);
@@ -377,10 +431,6 @@ describe('JSON-LD for data', () => {
         true,
         true,
       ]);
-      expect([page.path, node?.['citation']]).toEqual([
-        page.path,
-        sources.map((s) => credits.find((c) => c.dataset_url === s)?.citation),
-      ]);
       const used = sources.map((s) => credits.find((c) => c.dataset_url === s));
       expect([page.path, node?.['license']]).toEqual([
         page.path,
@@ -394,7 +444,6 @@ describe('JSON-LD for data', () => {
           '@type': 'Dataset',
           '@id': c?.dataset_url,
           url: c?.dataset_url,
-          name: c?.title,
         })),
       ]);
       // The visible stamp gives the period and release the dataset repeats.

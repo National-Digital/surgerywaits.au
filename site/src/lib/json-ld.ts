@@ -142,7 +142,7 @@ export interface FileDataset {
   credits: readonly Credit[];
 }
 
-// A page's own figures as a dataset, with the file that holds them and the sources it draws on.
+// A page's own data file as a dataset; its sources carry no title or citation, which only the data page may quote.
 export function fileDataset(site: Site, facts: FileDataset): JsonLdNode {
   const coverage = financialYear(facts.period);
   return {
@@ -154,12 +154,10 @@ export function fileDataset(site: Site, facts: FileDataset): JsonLdNode {
     inLanguage: 'en-AU',
     isAccessibleForFree: true,
     license: licences(facts.credits),
-    citation: facts.credits.map((c) => c.citation),
     isBasedOn: facts.credits.map((c) => ({
       '@type': 'Dataset',
       '@id': c.dataset_url,
       url: c.dataset_url,
-      name: c.title,
     })),
     publisher: { '@id': publisherId(site) },
     ...(coverage === undefined ? {} : { temporalCoverage: coverage }),

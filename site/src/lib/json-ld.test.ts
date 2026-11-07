@@ -75,13 +75,15 @@ describe('json-ld', () => {
     expect(node).toHaveProperty('dateModified', '2026-01-02');
     expect(node).not.toHaveProperty('datePublished');
     expect(node['isBasedOn']).toEqual([
-      { '@type': 'Dataset', '@id': credit.dataset_url, url: credit.dataset_url, name: 'Dataset A' },
+      { '@type': 'Dataset', '@id': credit.dataset_url, url: credit.dataset_url },
     ]);
+    expect(node).not.toHaveProperty('citation');
   });
 
-  it('describes a source dataset and gives the release of the publisher as its publication date', () => {
+  it('describes a source dataset with its citation and gives the release of the publisher as its publication date', () => {
     const node = sourceDataset(credit, 'About A');
     expect(node).toHaveProperty('description', 'About A');
+    expect(node).toHaveProperty('citation', credit.citation);
     expect(node).toHaveProperty('datePublished', '2026-01-02');
   });
 
