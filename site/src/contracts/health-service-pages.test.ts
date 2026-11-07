@@ -140,6 +140,9 @@ describe('Every health service page', () => {
       '/urgency/',
       '/urgency/category-1/',
       HEALTH_SERVICES_PATH,
+      '/methodology/',
+      '/data/',
+      '/about/',
     ]);
     for (const slug of slugs) {
       built.add(healthServicePath(slug));

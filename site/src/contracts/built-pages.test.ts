@@ -1063,6 +1063,11 @@ describe('Built health service pages', () => {
           member.slug,
           expect.stringContaining(`href="${healthServicePath(slug)}"`),
         ]);
+      }
+    }
+  });
+});
+
 describe('Built content pages', () => {
   it('hold the methodology, data and about pages at the earlier addresses', () => {
     for (const path of ['methodology', 'data', 'about']) {
