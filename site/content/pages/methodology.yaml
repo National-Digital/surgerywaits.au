@@ -3,7 +3,7 @@ description: How Surgery Waits gets its planned surgery waiting times, handles f
 crumb_home: Home
 crumb: Methodology
 heading: Methodology
-lede: This page describes what the build does with the published data, in the order the data moves through it. Each rule here is one the code applies.
+lede: The methodology describes what the build does with the published data, in the order the data moves through it. Each rule it states is one the code applies.
 stamp: 'The national figures on this site cover {period} and were released on {release}.'
 jump_heading: On this page
 jump_label: Methodology sections
@@ -49,7 +49,7 @@ sections:
   - id: not-published
     heading: Figures that are not published
     paragraphs:
-      - A publisher withholds a figure when its data cannot support the figure. The site shows such a figure as not published and gives the publisher's reason. The site never shows such a figure as 0 and never leaves it blank. It gives such a figure no rank.
+      - A publisher withholds a figure when it gives a code or a withheld mark instead of a number. The site shows such a figure as not published and gives the publisher's reason. The site never shows such a figure as 0 and never leaves it blank. It gives such a figure no rank.
       - 'AIHW marks a withheld hospital figure with one of {hospital_code_count} codes. The site gives each code its own wording.'
     items:
       - '"{code_too_few_patients}" means too few patients. The site says "{wording_too_few_patients}".'
@@ -82,7 +82,7 @@ sections:
   - id: trends
     heading: Changes over time
     paragraphs:
-      - A chart shows a figure for each year the source published it. A year with no published figure is a gap in the line, and the table under the chart gives the reason.
+      - Each yearly trend chart on the site shows a figure for each year the source published it. A year with no published figure is a gap in the line, and the data table that comes with the chart gives the reason.
       - 'The change from one year to the next is the later value minus the earlier value. The site shows a change only when both years are consecutive and both figures are published.'
   - id: queensland
     heading: Queensland quarterly figures

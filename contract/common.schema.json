@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://surgerywaits.au/contract/common.schema.json",
   "title": "Shared definitions",
-  "description": "Definitions that the dist file schemas share: figures, ranks, measures and identifiers.",
+  "description": "Definitions that the other schemas in this folder share, such as dates, periods, identifiers, figures, ranks, measures and sources. It describes no file of its own.",
   "$defs": {
     "date": {
       "type": "string",

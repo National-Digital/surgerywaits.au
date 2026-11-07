@@ -3,6 +3,7 @@ import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 import {
   aboutSchema,
+  agentsSchema,
   areasSchema,
   compareTemplateSchema,
   healthServiceTemplateSchema,
@@ -86,10 +87,24 @@ export const collections = {
   }),
   articles: defineCollection({
     loader: glob({
-      pattern: ['methodology.yaml', 'data.yaml', 'about.yaml', 'gp.yaml', 'guides.yaml'],
+      pattern: [
+        'methodology.yaml',
+        'data.yaml',
+        'about.yaml',
+        'gp.yaml',
+        'guides.yaml',
+        'agents.yaml',
+      ],
       base: './content/pages',
     }),
-    schema: z.union([methodologySchema, dataPageSchema, aboutSchema, gpSchema, guidesIndexSchema]),
+    schema: z.union([
+      methodologySchema,
+      dataPageSchema,
+      aboutSchema,
+      gpSchema,
+      guidesIndexSchema,
+      agentsSchema,
+    ]),
   }),
   guides: defineCollection({
     loader: glob({ pattern: '*.yaml', base: './content/pages/guides' }),

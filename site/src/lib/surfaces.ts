@@ -1,10 +1,23 @@
 import { readdirSync } from 'node:fs';
 
+import { MCP_CARD_PATH } from '../../../worker/mcp';
 import { dataApiPaths } from './data-api';
 import { contractSchemas } from './dist';
 import { OPENAPI_PATH } from './openapi';
 import { SECURITY_TXT_PATH } from './security-txt';
 import { stateChartFiles } from './state-chart';
+
+// A file that llms.txt lists, with its address inside the site.
+export interface Listed {
+  // Keys the line about the file in site/content/pages/agents.yaml.
+  id: string;
+  label: string;
+  path: string;
+  // Given when the file carries its own note; otherwise agents.yaml holds it under the id.
+  note?: string;
+}
+
+export type ListGroup = 'data' | 'schemas' | 'site';
 
 export interface Surface {
   id: string;
@@ -16,7 +29,64 @@ export interface Surface {
   expected?: () => string[];
   // Why a body is not what this surface promises, beyond what its media type needs.
   check?: (body: string) => string | undefined;
+  // The files /llms.txt lists for this surface, and the section they go under.
+  group?: ListGroup;
+  listed?: () => Listed[];
 }
+
+// The data files that name the others; each is listed only when the build writes it.
+const DATA_ENTRIES: readonly Listed[] = [
+  {
+    label: 'Counts and scope',
+    path: '/data-api/index.json',
+    id: 'data-files.index',
+  },
+  {
+    label: 'Credits',
+    path: '/data-api/credits.json',
+    id: 'data-files.credits',
+  },
+  {
+    label: 'Rules',
+    path: '/data-api/rules.json',
+    id: 'data-files.rules',
+  },
+  { label: 'Surgeries', path: '/data-api/surgeries.json', id: 'data-files.surgeries' },
+  { label: 'Hospitals', path: '/data-api/hospitals.json', id: 'data-files.hospitals' },
+  {
+    label: 'Health services',
+    path: '/data-api/health-services.json',
+    id: 'data-files.health-services',
+  },
+];
+
+// Each schema says in its own description what it covers, so the router repeats that text.
+export const schemaNote = (name: string, schema: unknown): string => {
+  const { description } = schema as { description?: unknown };
+  if (typeof description !== 'string' || description.trim() === '') {
+    throw new Error(`${name}.schema.json has no description`);
+  }
+  // A leading file name becomes the subject, and a placeholder in a path stays literal in Markdown.
+  const [, file, rest] = /^(\S+\.json): (.+)$/su.exec(description) ?? [];
+  const text =
+    file === undefined || rest === undefined ? description : `The file ${file} holds ${rest}`;
+  return text.replace(/\S*<[a-z]+>\S*?\.json/gu, (path) => `\`${path}\``);
+};
+
+// llms.txt format: an H1, a blockquote, then H2 sections of links, each with an absolute address.
+const llmsProblem = (body: string): string | undefined => {
+  const lines = body.trimEnd().split('\n');
+  if (!/^# \S/u.test(lines[0] ?? '')) {
+    return 'no H1 on the first line';
+  }
+  if (!lines.some((line) => line.startsWith('> '))) {
+    return 'no blockquote summary';
+  }
+  if (!lines.some((line) => line.startsWith('## '))) {
+    return 'no H2 section';
+  }
+  return undefined;
+};
 
 const robotsProblem = (body: string): string | undefined => {
   if (!/^User-agent: \S/mu.test(body)) {
@@ -56,6 +126,11 @@ export const SURFACES: readonly Surface[] = [
     mediaType: 'application/json',
     purpose: 'The dist files the pages are built from, each valid against its published schema.',
     expected: () => dataApiPaths().map((path) => `/data-api/${path}`),
+    group: 'data',
+    listed: (): Listed[] => {
+      const built = new Set(dataApiPaths().map((path) => `/data-api/${path}`));
+      return DATA_ENTRIES.filter((entry) => built.has(entry.path));
+    },
   },
   {
     id: 'openapi',
@@ -64,6 +139,8 @@ export const SURFACES: readonly Surface[] = [
     purpose: 'The OpenAPI 3.1 description of the data files, generated from the schemas.',
     expected: () => [OPENAPI_PATH],
     check: openApiProblem,
+    group: 'data',
+    listed: () => [{ id: 'openapi', label: 'OpenAPI description', path: OPENAPI_PATH }],
   },
   {
     id: 'schemas',
@@ -71,12 +148,21 @@ export const SURFACES: readonly Surface[] = [
     mediaType: 'application/json',
     purpose: 'The JSON Schema for each family of data file.',
     expected: () => contractSchemas().map(([name]) => `/contract/${name}.schema.json`),
+    group: 'schemas',
+    listed: () =>
+      contractSchemas().map(([name, schema]) => ({
+        id: `schemas.${name}`,
+        label: `${name}.schema.json`,
+        path: `/contract/${name}.schema.json`,
+        note: schemaNote(name, schema),
+      })),
   },
   {
     id: 'charts',
     pattern: /^\/charts\/[a-z0-9-]+\.svg$/u,
     mediaType: 'image/svg+xml',
-    purpose: 'One median-wait chart for each procedure, as a standalone SVG.',
+    purpose:
+      'A chart of the median wait in each state for each procedure that has a state figure, as a standalone SVG.',
     expected: () => stateChartFiles().map(({ slug }) => `/charts/${slug}.svg`),
   },
   {
@@ -95,6 +181,8 @@ export const SURFACES: readonly Surface[] = [
     mediaType: 'application/xml',
     purpose: 'The sitemap index and one file for each family of indexable pages.',
     expected: () => ['/sitemap.xml'],
+    group: 'site',
+    listed: () => [{ id: 'sitemaps', label: 'Sitemap', path: '/sitemap.xml' }],
   },
   {
     id: 'robots',
@@ -103,6 +191,27 @@ export const SURFACES: readonly Surface[] = [
     purpose: 'The crawl rules and the content signals for search and AI use.',
     expected: () => ['/robots.txt'],
     check: robotsProblem,
+    group: 'site',
+    listed: () => [{ id: 'robots', label: 'robots.txt', path: '/robots.txt' }],
+  },
+  {
+    id: 'llms',
+    pattern: /^\/llms\.txt$/u,
+    mediaType: 'text/plain',
+    purpose:
+      'The router that links to the pages and files an agent reads first, grouped by heading.',
+    expected: () => ['/llms.txt'],
+    check: llmsProblem,
+  },
+  {
+    id: 'llms-full',
+    pattern: /^\/llms-full\.txt$/u,
+    mediaType: 'text/plain',
+    purpose: 'The about, methodology and data pages and the credits as one plain-text file.',
+    expected: () => ['/llms-full.txt'],
+    check: llmsProblem,
+    group: 'site',
+    listed: () => [{ id: 'llms-full', label: 'llms-full.txt', path: '/llms-full.txt' }],
   },
   {
     id: 'security',
@@ -118,6 +227,8 @@ export const SURFACES: readonly Surface[] = [
     mediaType: 'application/json',
     purpose: 'The MCP server card, served by the Worker, so no build file carries it.',
     expected: () => [],
+    group: 'site',
+    listed: () => [{ id: 'mcp-server-card', label: 'MCP server card', path: MCP_CARD_PATH }],
   },
 ];
 

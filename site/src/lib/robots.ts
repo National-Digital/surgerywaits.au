@@ -1,7 +1,11 @@
 export const SITE = 'https://surgerywaits.au';
 
 // The Content Signals Policy form: search and AI answers allowed, model training not.
-export const CONTENT_SIGNAL = 'Content-Signal: search=yes, ai-input=yes, ai-train=no';
+export const CONTENT_SIGNALS = { search: 'yes', 'ai-input': 'yes', 'ai-train': 'no' } as const;
+
+export const CONTENT_SIGNAL = `Content-Signal: ${Object.entries(CONTENT_SIGNALS)
+  .map(([name, value]) => `${name}=${value}`)
+  .join(', ')}`;
 
 // The AI crawlers the site names, in the order the file lists them.
 export const NAMED_CRAWLERS: readonly string[] = [
@@ -23,5 +27,5 @@ const group = (agent: string): string => `User-agent: ${agent}\n${CONTENT_SIGNAL
 
 export function robotsTxt(): string {
   const groups = ['*', ...NAMED_CRAWLERS].map(group).join('\n');
-  return `# ${SITE}: public hospital waiting times for planned surgery in Australia.\n\n${groups}\nSitemap: ${SITEMAP_URL}\n`;
+  return `# ${SITE}: public hospital waiting times for planned surgery in Australia.\n# For AI agents: ${SITE}/agents/ and ${SITE}/llms.txt\n\n${groups}\nSitemap: ${SITEMAP_URL}\n`;
 }

@@ -31,6 +31,7 @@ import {
   surgeryNamesSchema,
   surgeryTemplateSchema,
   termsSchema,
+  agentsSchema,
   urgencyTemplateSchema,
   healthServiceTemplateSchema,
 } from '../lib/content-schema';
@@ -724,7 +725,7 @@ describe('Copy', () => {
       );
     expect(found).toEqual([]);
     expect(terms.some((t) => t.replaces.includes('elective'))).toBe(true);
-    expect(quotes.every((q) => ['methodology', 'data'].includes(q.page))).toBe(true);
+    expect(quotes.every((q) => ['methodology', 'data', 'llms-full'].includes(q.page))).toBe(true);
   });
   it('the terminology check catches a replaced term and honours a quote listed for its page', () => {
     const terms = [{ preferred: 'planned surgery', replaces: ['elective surgery', 'elective'] }];
@@ -821,6 +822,7 @@ describe('Copy', () => {
       'pages/methodology.yaml': methodologySchema,
       'pages/data.yaml': dataPageSchema,
       'pages/about.yaml': aboutSchema,
+      'pages/agents.yaml': agentsSchema,
       'pages/gp.yaml': gpSchema,
       'pages/guides.yaml': guidesIndexSchema,
     };
