@@ -10,6 +10,7 @@ import { chromium } from 'playwright';
 import type { Browser, Page } from 'playwright';
 import { HOUSE, TEXT_SPACING, exceptionsFor, house, paintedContrast } from './a11y-checks.ts';
 import type { Exception, Found, Mode } from './a11y-checks.ts';
+import { TOOL_STATES } from './a11y-states.ts';
 
 const require = createRequire(import.meta.url);
 const TAGS = [
@@ -252,6 +253,7 @@ export async function auditPage(a: AuditArgs): Promise<Finding[]> {
     if (resp?.status() !== 200) {
       return [{ rule: 'http', lines: [`HTTP ${String(resp?.status() ?? 'none')}`] }];
     }
+    await TOOL_STATES[path]?.(page);
     await page.addScriptTag({ path: require.resolve('axe-core/axe.min.js') });
     const result = await page.evaluate(
       ({ tags, rules }) =>

@@ -8,6 +8,7 @@ import type { z } from 'astro/zod';
 
 import {
   areasSchema,
+  compareTemplateSchema,
   homeTemplateSchema,
   aboutSchema,
   dataPageSchema,
@@ -21,6 +22,7 @@ import {
   longestTemplateSchema,
   navigationSchema,
   pageSchema,
+  procedureSynonymsSchema,
   pairTemplateSchema,
   siteSchema,
   stateTemplateSchema,
@@ -597,6 +599,8 @@ describe('Copy', () => {
       'templates/surgery.yaml': surgeryTemplateSchema,
       'areas.yaml': areasSchema,
       'surgery-names.yaml': surgeryNamesSchema,
+      'procedure-synonyms.yaml': procedureSynonymsSchema,
+      'templates/compare.yaml': compareTemplateSchema,
       'templates/hospitals.yaml': hospitalsIndexSchema,
       'templates/state.yaml': stateTemplateSchema,
       'templates/urgency.yaml': urgencyTemplateSchema,
@@ -638,7 +642,7 @@ describe('Copy', () => {
   });
   it('no literal user-visible text appears in components; copy lives in YAML under content/', async () => {
     const eslint = new ESLint({ cwd: fileURLToPath(new URL('../../../', import.meta.url)) });
-    const results = await eslint.lintFiles(['site/src/**/*.astro']);
+    const results = await eslint.lintFiles(['site/src/**/*.astro', 'site/src/tool/*.ts']);
     const found = results.flatMap((r) =>
       r.messages
         .filter((m) => m.ruleId === 'site/no-literal-text')

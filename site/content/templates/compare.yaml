@@ -1,0 +1,49 @@
+title: 'Compare planned surgery waiting times near you: {site}'
+description: 'Choose a surgery and a place to see the public hospitals nearest to that place and their median waits for the surgery. The latest figures cover {period}.'
+heading: Compare waiting times near you
+lede: 'Choose a surgery and a place. The page lists the public hospitals nearest to that place that report the surgery, with the median wait at each. The latest figures cover {period}.'
+form_heading: Choose a surgery and a place
+fallback_heading: Find the same figures without scripts
+fallback_intro: This search needs scripts, and scripts are switched off or have not loaded. The pages below hold the same figures and need no script.
+fallback_surgery_name: Surgery
+fallback_surgery_note: Each surgery page lists every hospital that reports it, by state, with the shortest median wait first.
+fallback_hospitals_name: Public hospitals
+fallback_hospitals_note: Each hospital page shows its figures for every surgery it reports and the hospitals near it.
+fallback_states_name: States and territories
+fallback_states_note: Each state and territory page ranks its public hospitals by median wait.
+load_failed: The search data did not load. Reload the page to try again, or use the pages above.
+privacy_heading: What this page keeps
+privacy: Nothing you type on this page is stored on your device, added to the address or sent anywhere. The search runs in your browser against one data file from this site.
+distance_note: The distance on this page is measured in a straight line between two points on the map. A road journey is longer than that, and this page gives no travel time.
+tool:
+  surgery_label: Surgery
+  surgery_hint: Type a surgery name or an everyday word, such as cataract or knee replacement.
+  place_label: Suburb or locality
+  place_hint: Type the name of a suburb or locality.
+  submit: Compare near you
+  count_one: 1 match is listed. Use the arrow keys to move through it.
+  count_many: '{count} matches are listed. Use the arrow keys to move through them.'
+  count_none: No match was found. Check the spelling or try another word.
+  found_as: 'found as {term}'
+  need_surgery: Choose a surgery from the list.
+  need_place: Choose a place from the list.
+  results_heading: '{surgery} near {place}'
+  results_intro_one: 'The nearest public hospital to {place} that reports this surgery is listed below. Its figures cover {period}.'
+  results_intro_many: 'The {count} public hospitals nearest to {place} that report this surgery are listed below. The nearest hospital comes first, and the list follows distance from there.'
+  results_none: 'No public hospital with a location reports this surgery in the data.'
+  results_ready: 'The results for {surgery} near {place} are listed below.'
+  distance: '{distance} away in a straight line'
+  median: Median wait
+  volume: Number of surgeries
+  period: Period and release
+  history: Median wait by year
+  history_none: No median wait is published for earlier years.
+  history_label: '{hospital}: median wait by year. {points}.'
+  history_point: '{period}, {figure}'
+  rank: 'Ranked {rank} among public hospitals'
+  earlier_period: This figure is from an earlier period than the latest figures, so it carries no rank.
+  withheld_rank: This hospital carries no rank because it has no published median wait.
+  closed_note: Closed hospitals are not listed.
+  print: Print this sheet
+  print_source: These figures come from published government data through publicdata.au. Each figure shows the period it covers and the date it was released.
+  print_note: The printed sheet shows these results and the source of the figures.

@@ -8,6 +8,7 @@ import { cssUrls, srcsetUrls, walk } from './link-checks.ts';
 export interface Budget {
   documentBytes: number;
   pageBytes: number;
+  scriptBytes: number;
 }
 export interface PageWeight {
   page: string;
@@ -29,6 +30,9 @@ const LOADED_ATTRS: Record<string, string[]> = {
   embed: ['src'],
   object: ['data'],
 };
+
+// The earlier site's tool weighed 44.9 KB, and the script budget may never rise past it.
+export const CEILING_BYTES = 44_900;
 
 const size = (name: string, bytes: Buffer): number =>
   TEXT.has(extname(name)) ? gzipSync(bytes, { level: 9 }).length : bytes.length;
@@ -114,4 +118,29 @@ export function overBudget(weights: PageWeight[], budget: Budget): string[] {
       ? [`${w.page} page ${String(w.pageBytes)} B, budget ${String(budget.pageBytes)} B`]
       : []),
   ]);
+}
+
+// The compare page's module script, as it sits in the dist, with the JSON it fetches later left out.
+export async function scriptWeight(dist: string): Promise<{ file: string; bytes: number }> {
+  const html = await readFile(join(dist, 'compare', 'index.html'), 'utf8');
+  let src: string | undefined;
+  walk(parse(html, { scriptingEnabled: false }), (el) => {
+    src ??= el.tagName === 'script' ? el.attrs.find((a) => a.name === 'src')?.value : undefined;
+  });
+  const file = src === undefined ? null : local(src, '/compare/index.html');
+  if (file === null) {
+    throw new Error('the compare page loads no local script');
+  }
+  return { file: `/${file}`, bytes: (await readFile(join(dist, file))).byteLength };
+}
+
+export function overScript(bytes: number, budget: Budget): string[] {
+  if (budget.scriptBytes > CEILING_BYTES) {
+    return [
+      `the script budget of ${String(budget.scriptBytes)} B is above the ${String(CEILING_BYTES)} B ceiling`,
+    ];
+  }
+  return bytes > budget.scriptBytes
+    ? [`the tool script is ${String(bytes)} B, budget ${String(budget.scriptBytes)} B`]
+    : [];
 }

@@ -171,4 +171,12 @@ describe('no-literal-text', () => {
   it('accepts keys, non-copy attributes, comparisons, punctuation and style blocks', async () => {
     expect(await problems('text-good.astro')).toEqual([]);
   }, 60_000);
+
+  it('rejects literal text in a tool module and accepts copy read from content', async () => {
+    expect(await problems('text-tool-bad.ts')).toEqual([
+      { line: 1, ruleId: 'site/no-literal-text' },
+      { line: 2, ruleId: 'site/no-literal-text' },
+    ]);
+    expect(await problems('text-tool-good.ts')).toEqual([]);
+  }, 60_000);
 });

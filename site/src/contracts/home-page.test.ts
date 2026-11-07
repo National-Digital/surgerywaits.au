@@ -36,7 +36,14 @@ function hrefs(source: string): string[] {
 }
 
 // Pages that are built, so a link to a page still to come fails here.
-const BUILT = new Set(['/surgery/', '/specialty/', '/hospitals/', '/state/', '/urgency/']);
+const BUILT = new Set([
+  '/surgery/',
+  '/specialty/',
+  '/hospitals/',
+  '/state/',
+  '/urgency/',
+  '/compare/',
+]);
 
 describe('Home page', () => {
   it('has one h1, a title and canonical address from content, and no breadcrumbs', () => {

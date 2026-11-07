@@ -9,6 +9,7 @@ const COLLECTIONS = new Map([
   ['terms.yaml', 'terms'],
   ['areas.yaml', 'areas'],
   ['surgery-names.yaml', 'surgery-names'],
+  ['procedure-synonyms.yaml', 'procedure-synonyms'],
 ]);
 
 function entries(collection: string): { id: string; data: unknown }[] {
@@ -29,6 +30,7 @@ function entries(collection: string): { id: string; data: unknown }[] {
       (collection === 'state' && path === 'templates/state.yaml') ||
       (collection === 'urgency' && path === 'templates/urgency.yaml') ||
       (collection === 'home' && path === 'templates/home.yaml') ||
+      (collection === 'compare' && path === 'templates/compare.yaml') ||
       (collection === 'longest' && path === 'templates/longest.yaml')
     ) {
       return [{ id: collection, data }];

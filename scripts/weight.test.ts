@@ -3,12 +3,12 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { measurePages, overBudget } from './page-weight.ts';
+import { CEILING_BYTES, measurePages, overBudget, overScript, scriptWeight } from './page-weight.ts';
 import type { Budget } from './page-weight.ts';
 
 // Each case is proven on a page built to fail it; the budget here is small so the fixtures stay small.
 const fixtures = resolve(import.meta.dirname, 'weight-fixtures');
-const budget: Budget = { documentBytes: 1000, pageBytes: 5000 };
+const budget: Budget = { documentBytes: 1000, pageBytes: 5000, scriptBytes: 1000 };
 const problems = async (dir: string): Promise<string[]> =>
   overBudget(await measurePages(resolve(fixtures, dir)), budget);
 const command = (...args: string[]): { status: number | null; stdout: string } =>
@@ -37,6 +37,26 @@ describe('the page-weight gate', () => {
     expect(found[0]).toMatch(/^\/ page \d+ B, budget 5000 B$/);
   });
 
+  it('measures the script the compare page loads, as built and not the data it fetches', async () => {
+    expect(await scriptWeight(resolve(fixtures, 'light'))).toEqual({ file: '/tool.js', bytes: 23 });
+    expect(overScript(1000, budget)).toEqual([]);
+    expect(overScript(1001, budget)).toEqual(['the tool script is 1001 B, budget 1000 B']);
+  });
+
+  it('counts the script in the weight of the compare page and fails one over the script budget', async () => {
+    const pages = await measurePages(resolve(fixtures, 'heavy-script'));
+    const compare = pages.find((w) => w.page === '/compare/');
+    expect(compare?.pageBytes).toBeGreaterThan(compare?.documentBytes ?? 0);
+    const file = resolve(fixtures, 'budget.json');
+    const r = command(resolve(fixtures, 'heavy-script'), '--budget', file);
+    expect(r.status).toBe(1);
+    expect(r.stdout).toMatch(/FAIL the tool script is \d+ B, budget 1000 B/);
+  });
+
+  it('refuses a script budget above the earlier tool weight', () => {
+    expect(overScript(1, { ...budget, scriptBytes: CEILING_BYTES + 1 })[0]).toContain('ceiling');
+  });
+
   it('fails from the command on a heavy page and passes on a light one', () => {
     const file = resolve(fixtures, 'budget.json');
     expect(command(resolve(fixtures, 'heavy-assets'), '--budget', file).status).toBe(1);
@@ -58,10 +78,11 @@ describe('the page-weight gate', () => {
     const real = JSON.parse(
       await readFile(new URL('./page-weight-budget.json', import.meta.url), 'utf8'),
     ) as Budget;
-    expect(Object.keys(real).sort()).toEqual(['documentBytes', 'pageBytes']);
+    expect(Object.keys(real).sort()).toEqual(['documentBytes', 'pageBytes', 'scriptBytes']);
     for (const bytes of Object.values(real)) {
       expect(Number.isInteger(bytes) && bytes > 0).toBe(true);
     }
     expect(real.pageBytes).toBeGreaterThanOrEqual(real.documentBytes);
+    expect(real.scriptBytes).toBeLessThanOrEqual(CEILING_BYTES);
   });
 });

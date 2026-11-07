@@ -281,8 +281,7 @@ no framework and no islands runtime. Scripts find their elements through `js-` c
 attributes and never through styling classes, so a CSS rename cannot break behaviour. The tool keeps
 no storage, URL state or history, fetches only from its own site and sends nothing a person types
 ([D8][d8]). A weight check holds the module to a set byte budget and fails when it grows past it.
-Browser support follows Baseline "widely available", and newer APIs sit behind a feature check. The
-weight check is planned.
+Browser support follows Baseline "widely available", and newer APIs sit behind a feature check.
 
 Why: this records how the site works, so that adding a framework or a second script needs a new
 record. Pages that work without scripts are easier to make accessible and to read for tools that do

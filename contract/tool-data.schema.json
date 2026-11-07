@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://surgerywaits.au/contract/tool-data.schema.json",
+  "title": "Compare tool data",
+  "description": "/tool/data.json: the one file the compare tool fetches. The site build writes it from the dist. A value is its number when published, and -1 minus the place of its reason in reasons when it is not. A hospital row is [slug, name, state, latitude, longitude]. A place is [name, state, latitude, longitude]. A figure row is [hospital index, stamp index, median wait, volume, rank or null, median history or null], and the history is the first year followed by one value for each later year, with null for a year the hospital did not report.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "figures",
+    "hospitals",
+    "neighbours",
+    "places",
+    "procedures",
+    "reasons",
+    "stamps",
+    "strings"
+  ],
+  "properties": {
+    "neighbours": { "type": "integer", "minimum": 1 },
+    "reasons": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/text" } },
+    "strings": {
+      "type": "object",
+      "additionalProperties": { "$ref": "common.schema.json#/$defs/text" }
+    },
+    "stamps": {
+      "description": "Each reference period with the date its figures were released.",
+      "type": "array",
+      "items": {
+        "type": "array",
+        "prefixItems": [
+          { "$ref": "common.schema.json#/$defs/period" },
+          { "$ref": "common.schema.json#/$defs/date" }
+        ],
+        "items": false,
+        "minItems": 2
+      }
+    },
+    "procedures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "of", "path", "period", "slug", "terms"],
+        "properties": {
+          "name": { "$ref": "common.schema.json#/$defs/text" },
+          "of": {
+            "description": "The number of hospitals the national rank is out of, or 0 when no hospital is ranked.",
+            "type": "integer",
+            "minimum": 0
+          },
+          "path": { "$ref": "common.schema.json#/$defs/text" },
+          "period": { "$ref": "common.schema.json#/$defs/period" },
+          "slug": { "$ref": "common.schema.json#/$defs/slug" },
+          "terms": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/text" } }
+        }
+      }
+    },
+    "hospitals": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "prefixItems": [
+          { "$ref": "common.schema.json#/$defs/slug" },
+          { "$ref": "common.schema.json#/$defs/text" },
+          { "$ref": "common.schema.json#/$defs/state" },
+          { "$ref": "common.schema.json#/$defs/latitude" },
+          { "$ref": "common.schema.json#/$defs/longitude" }
+        ],
+        "items": false,
+        "minItems": 5
+      }
+    },
+    "places": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "prefixItems": [
+          { "$ref": "common.schema.json#/$defs/text" },
+          { "$ref": "common.schema.json#/$defs/state" },
+          { "$ref": "common.schema.json#/$defs/latitude" },
+          { "$ref": "common.schema.json#/$defs/longitude" }
+        ],
+        "items": false,
+        "minItems": 4
+      }
+    },
+    "figures": {
+      "type": "object",
+      "propertyNames": { "$ref": "common.schema.json#/$defs/slug" },
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "array",
+          "prefixItems": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "integer", "minimum": 0 },
+            { "$ref": "#/$defs/value" },
+            { "$ref": "#/$defs/value" },
+            { "type": ["integer", "null"], "minimum": 1 },
+            {
+              "type": ["array", "null"],
+              "items": { "oneOf": [{ "$ref": "#/$defs/value" }, { "type": "null" }] },
+              "minItems": 2
+            }
+          ],
+          "items": false,
+          "minItems": 6
+        }
+      }
+    }
+  },
+  "$defs": {
+    "value": { "type": "number", "minimum": -1000000 }
+  }
+}

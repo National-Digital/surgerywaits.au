@@ -85,7 +85,7 @@ jobs:
       - run: npm run html -- site/dist
       # Every internal link, asset and fragment resolves; external addresses are listed, not fetched.
       - run: npm run links -- site/dist --external
-      # Every page stays inside the compressed-size budget in scripts/page-weight-budget.json.
+      # Every page, and the compare tool script, stays inside the budget in scripts/page-weight-budget.json.
       - run: npm run weight -- site/dist
       # Proves each gate fails a page built to fail it.
       - run: npx vitest run scripts/html.test.ts scripts/links.test.ts
@@ -129,13 +129,14 @@ jobs:
       - run: uv run --locked python tests/fixture_dist.py "$SURGERYWAITS_DIST"
         working-directory: pipeline
       - run: npm run build
-      - run: npm run a11y -- site/dist / /404.html /hospital/armidale-hospital/ /guides/ /guides/referral-to-another-hospital/ /gp/
+      - run: npm run a11y -- site/dist / /404.html /hospital/armidale-hospital/ /guides/ /guides/referral-to-another-hospital/ /gp/ /compare/ /compare/?state=options /compare/?state=results
       # The preview build adds the figure and tile page, which the published build leaves out.
       - run: npm run build:preview
       - run: npm run a11y -- site/dist-preview /dev/primitives/
-      - run: npx vitest run scripts/a11y.test.ts scripts/layout.test.ts
+      - run: npx vitest run scripts/a11y.test.ts scripts/layout.test.ts scripts/tool.test.ts
         env:
           A11Y_TEST: '1'
+          TOOL_TEST: '1'
 
   pipeline:
     name: Pipeline checks

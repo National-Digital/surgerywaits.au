@@ -1,0 +1,278 @@
+# Everyday words people use for a surgery, listed under the procedure each word finds.
+synonyms:
+  abdominal-or-thoracic-aortic-aneurysm-repair-replacement:
+    - 'aaa'
+    - 'aaa repair'
+    - 'aneurysm repair'
+    - 'aortic aneurysm repair'
+  acromioplasty-arthroscopy-shoulder-sub-acromial-decompression:
+    - 'shoulder decompression'
+  adenoidectomy:
+    - 'adenoid removal'
+    - 'adenoids'
+  anterior-cruciate-ligament-reconstruction:
+    - 'acl'
+    - 'acl reconstruction'
+    - 'acl repair'
+    - 'knee reco'
+    - 'knee reconstruction'
+  arthrodesis:
+    - 'joint fusion'
+  arthroplasty-revision-of:
+    - 'joint replacement revision'
+  arthroscopy:
+    - 'keyhole joint surgery'
+    - 'knee scope'
+  axillary-node-dissection:
+    - 'armpit lymph nodes'
+  blepharoplasty:
+    - 'eye bag removal'
+    - 'eyelid lift'
+    - 'eyelid reduction'
+  breast-lump-excision-and-or-biopsy:
+    - 'lumpectomy'
+  breast-prosthesis-removal-of:
+    - 'breast implant removal'
+  cataract-extraction-with-or-without-intra-ocular-lens-insertion:
+    - 'cataract removal'
+    - 'cataracts'
+  cerebral-haematoma-evacuation-of:
+    - 'brain bleed surgery'
+  cervical-discectomy-and-fusion:
+    - 'neck disc surgery'
+    - 'neck fusion'
+  chalazion-excision-of:
+    - 'eyelid cyst'
+  cholecystectomy-open-laparoscopic:
+    - 'gall bladder'
+    - 'gallbladder'
+    - 'gallbladder removal'
+    - 'gallstones'
+    - 'keyhole gallbladder surgery'
+  circumcision:
+    - 'foreskin removal'
+    - 'phimosis'
+    - 'tight foreskin'
+  colectomy-anterior-resection-large-bowel-resection:
+    - 'bowel cancer surgery'
+    - 'bowel surgery'
+  common-peroneal-nerve-release:
+    - 'foot drop'
+  corneal-graft:
+    - 'cornea transplant'
+    - 'corneal transplant'
+  coronary-artery-bypass-grafting:
+    - 'bypass surgery'
+    - 'cabg'
+    - 'heart bypass'
+  cranioplasty:
+    - 'skull repair'
+  craniotomy:
+    - 'brain surgery'
+  curettage-and-evacuation-of-uterus:
+    - 'curette'
+  cystectomy:
+    - 'bladder removal'
+  cystoscopy:
+    - 'bladder camera'
+    - 'bladder scope'
+  dacryocystorhinostomy:
+    - 'blocked tear duct'
+    - 'watery eye surgery'
+  dialysis-access-surgery:
+    - 'av fistula'
+    - 'dialysis fistula'
+  discectomy:
+    - 'disc removal'
+    - 'herniated disc surgery'
+    - 'sciatica surgery'
+    - 'slipped disc surgery'
+  dupytrens-contracture-release:
+    - 'dupuytren'
+    - "dupuytren's contracture"
+  ectropion-correction-of:
+    - 'turned-out eyelid'
+  examination-of-eye-under-anaesthesia:
+    - 'eye exam under anaesthetic'
+  exostosis-excision-of:
+    - 'bone spur'
+    - 'bone spur removal'
+  female-sterilisation:
+    - 'tubal ligation'
+    - 'tubes tied'
+  femoro-popliteal-bypass-graft:
+    - 'leg artery bypass'
+    - 'leg bypass'
+  fundoplication:
+    - 'reflux surgery'
+  ganglion-excision-of:
+    - 'wrist cyst'
+  haemorrhoidectomy:
+    - 'haemorrhoids'
+    - 'hemorrhoids'
+    - 'piles'
+  hammer-claw-mallet-toe-correction-of:
+    - 'claw toe'
+    - 'hammer toe'
+    - 'hammertoe'
+    - 'mallet toe'
+    - 'toe straightening'
+  herniorrhaphy:
+    - 'belly button hernia'
+    - 'femoral hernia'
+    - 'hernia'
+    - 'hernia repair'
+    - 'incisional hernia'
+    - 'umbilical hernia'
+  hydrocele-repair-of:
+    - 'water on the testicle'
+  hysterectomy-abdominal-vaginal-laparoscopic:
+    - 'uterus removal'
+    - 'womb removal'
+  hysteroscopy-dilatation-and-curettage:
+    - 'd and c'
+    - 'd&c'
+  inguinal-herniotomy-herniorrhaphy:
+    - 'groin hernia'
+    - 'inguinal hernia'
+  insertion-of-ventricular-peritoneal-shunt:
+    - 'brain shunt'
+    - 'hydrocephalus'
+    - 'vp shunt'
+  laparoscopy:
+    - 'endometriosis surgery'
+    - 'keyhole surgery'
+  laryngectomy:
+    - 'voice box removal'
+  lingual-or-maxillary-frenulum-surgery:
+    - 'tongue tie'
+    - 'tongue tie release'
+  lithotripsy:
+    - 'shockwave stone treatment'
+  mastectomy:
+    - 'breast removal'
+  meniscectomy:
+    - 'knee cartilage surgery'
+    - 'meniscus surgery'
+    - 'meniscus tear'
+    - 'torn cartilage'
+  microlaryngoscopy:
+    - 'voice box examination'
+  muscle-or-tendon-length-change-of:
+    - 'tendon lengthening'
+  myomectomy:
+    - 'fibroid removal'
+    - 'fibroids'
+  myringoplasty-tympanoplasty:
+    - 'eardrum repair'
+  myringotomy:
+    - 'eardrum incision'
+  nasal-cautery:
+    - 'nosebleed treatment'
+    - 'nosebleeds'
+  nasal-polypectomy:
+    - 'nasal polyps'
+    - 'sinus polyps'
+  nasendoscopy:
+    - 'nose camera'
+  nephrectomy:
+    - 'kidney removal'
+  nerve-decompression:
+    - 'cubital tunnel'
+    - 'pinched nerve surgery'
+    - 'ulnar nerve release'
+  orchidectomy:
+    - 'testicle removal'
+  orchidopexy:
+    - 'undescended testicle'
+  osteotomy:
+    - 'bone realignment'
+  parotidectomy-submandibular-gland-excision-of:
+    - 'salivary gland removal'
+  pedicle-screw-fusion:
+    - 'spinal fusion'
+  pilonidal-sinus-surgery:
+    - 'tailbone cyst'
+  pressure-equalising-tubes-grommets-insertion-of:
+    - 'ear tubes'
+    - 'glue ear'
+  probing-of-naso-lacrimal-duct:
+    - 'tear duct probing'
+  prostatectomy-transurethral-or-open:
+    - 'enlarged prostate surgery'
+    - 'prostate rebore'
+    - 'turp'
+  pterygium-excision-of:
+    - "surfer's eye"
+  ptosis-repair-of:
+    - 'droopy eyelid'
+  pyeloplasty-correction-of-ureteropelvic-junction:
+    - 'kidney blockage repair'
+  removal-of-intracranial-lesion:
+    - 'brain tumor removal'
+    - 'brain tumour removal'
+  rhinoplasty:
+    - 'nose job'
+    - 'nose reshaping'
+  salpingo-oophorectomy-oophorectomy-ovarian-cystectomy:
+    - 'cyst on ovary'
+    - 'ovary removal'
+  scar-revision:
+    - 'keloid removal'
+  septoplasty:
+    - 'crooked septum'
+    - 'deviated septum'
+    - 'septum repair'
+    - 'septum surgery'
+  shoulder-joint-replacement:
+    - 'shoulder replacement'
+  skin-lesion-excision-of:
+    - 'bcc removal'
+    - 'lipoma removal'
+    - 'melanoma removal'
+    - 'mole removal'
+    - 'sebaceous cyst removal'
+    - 'skin cancer removal'
+  stapedectomy:
+    - 'stapes surgery'
+  stone-s-urinary-tract-removal-of:
+    - 'bladder stones'
+    - 'kidney stone removal'
+    - 'kidney stones'
+  stress-incontinence-surgery:
+    - 'bladder leakage surgery'
+    - 'bladder sling'
+    - 'leaking bladder'
+  thyroglossal-remnant-removal-of:
+    - 'thyroglossal cyst'
+  thyroidectomy-hemi-thyroidectomy:
+    - 'goitre'
+    - 'thyroid removal'
+  toenail-surgery:
+    - 'ingrown toenail'
+  tonsillectomy-with-or-without-adenoidectomy:
+    - 'tonsil removal'
+    - 'tonsils'
+    - 'tonsils and adenoids'
+  trabeculectomy:
+    - 'glaucoma surgery'
+  trigger-finger-thumb-release:
+    - 'trigger thumb'
+  turbinectomy:
+    - 'turbinate reduction'
+    - 'turbinate surgery'
+  untethering-of-spinal-cord:
+    - 'tethered cord'
+  ureteric-stent-insertion-of:
+    - 'ureter stent'
+  urethra-dilatation-of:
+    - 'urethral stricture'
+  vaginal-repair-anterior-posterior:
+    - 'pelvic floor repair'
+    - 'prolapse repair'
+    - 'prolapse surgery'
+  varicose-veins-treatment:
+    - 'vein stripping'
+  vitrectomy-including-buckling-cryotherapy:
+    - 'retina surgery'
+    - 'retinal detachment surgery'

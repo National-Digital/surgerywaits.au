@@ -778,3 +778,74 @@ export const guidesIndexSchema = z.strictObject({
 
 // A guide is an article with a summary for the index, and the file name gives its address.
 export const guideSchema = z.strictObject({ ...article, summary: text });
+
+const synonymTerm = z
+  .string()
+  .regex(/^[a-z0-9][a-z0-9&' -]*$/)
+  .max(60);
+
+export const procedureSynonymsSchema = z.strictObject({
+  synonyms: z.record(
+    z.string().regex(/^[a-z0-9-]+$/),
+    z
+      .array(synonymTerm)
+      .min(1)
+      .refine((terms) => new Set(terms).size === terms.length, {
+        message: 'a term is listed twice',
+      }),
+  ),
+});
+
+export const compareTemplateSchema = z.strictObject({
+  title: slotted('site'),
+  description: slotted('period'),
+  heading: slotted(),
+  lede: slotted('period'),
+  form_heading: slotted(),
+  fallback_heading: slotted(),
+  fallback_intro: slotted(),
+  fallback_surgery_name: slotted(),
+  fallback_surgery_note: slotted(),
+  fallback_hospitals_name: slotted(),
+  fallback_hospitals_note: slotted(),
+  fallback_states_name: slotted(),
+  fallback_states_note: slotted(),
+  privacy_heading: slotted(),
+  privacy: slotted(),
+  distance_note: slotted(),
+  load_failed: slotted(),
+  // The tool reads this table as JSON, so each key is the only way to name a string.
+  tool: z.strictObject({
+    surgery_label: slotted(),
+    surgery_hint: slotted(),
+    place_label: slotted(),
+    place_hint: slotted(),
+    submit: slotted(),
+    count_one: slotted(),
+    count_many: slotted('count'),
+    count_none: slotted(),
+    found_as: slotted('term'),
+    need_surgery: slotted(),
+    need_place: slotted(),
+    results_heading: slotted('surgery', 'place'),
+    results_intro_one: slotted('place', 'period'),
+    results_intro_many: slotted('count', 'place'),
+    results_none: slotted(),
+    results_ready: slotted('surgery', 'place'),
+    distance: slotted('distance'),
+    median: slotted(),
+    volume: slotted(),
+    period: slotted(),
+    history: slotted(),
+    history_none: slotted(),
+    history_label: slotted('hospital', 'points'),
+    history_point: slotted('period', 'figure'),
+    rank: slotted('rank'),
+    earlier_period: slotted(),
+    withheld_rank: slotted(),
+    closed_note: slotted(),
+    print: slotted(),
+    print_source: slotted(),
+    print_note: slotted(),
+  }),
+});

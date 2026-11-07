@@ -4,6 +4,7 @@ import { z } from 'astro/zod';
 import {
   aboutSchema,
   areasSchema,
+  compareTemplateSchema,
   healthServiceTemplateSchema,
   dataPageSchema,
   gpSchema,
@@ -13,6 +14,7 @@ import {
   hospitalsIndexSchema,
   hospitalTemplateSchema,
   pairTemplateSchema,
+  procedureSynonymsSchema,
   labelsSchema,
   longestTemplateSchema,
   methodologySchema,
@@ -36,6 +38,14 @@ export const collections = {
   'surgery-names': defineCollection({
     loader: file('surgery-names.yaml'),
     schema: surgeryNamesSchema,
+  }),
+  'procedure-synonyms': defineCollection({
+    loader: file('procedure-synonyms.yaml'),
+    schema: procedureSynonymsSchema,
+  }),
+  compare: defineCollection({
+    loader: glob({ pattern: 'compare.yaml', base: './content/templates' }),
+    schema: compareTemplateSchema,
   }),
   terms: defineCollection({ loader: file('terms.yaml'), schema: termsSchema }),
   templates: defineCollection({
