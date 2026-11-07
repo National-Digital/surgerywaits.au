@@ -45,7 +45,11 @@ export interface ToolPlaces {
   places: PlaceRow[];
 }
 
-// Loaded when results are needed; `pairs` lists the hospitals that have a page for this surgery.
+// Loaded with the other procedures when the surgery box is first used; `pairs` lists the hospitals that have a page for this surgery.
+export interface ToolFigures {
+  procedures: Record<string, ToolProcedure>;
+}
+
 export interface ToolProcedure {
   pairs: number[];
   rows: FigureRow[];

@@ -96,18 +96,24 @@ browsers('The compare tool', () => {
 
   it('gives a figure from an earlier period its period and no rank', { timeout: T }, async () => {
     const page = await up(browser).newPage();
-    await page.route('**/tool/procedures/total-knee-replacement.json', async (route) => {
+    await page.route('**/tool/figures.json', async (route) => {
       const response = await route.fetch();
-      const data = (await response.json()) as {
-        stamps: [string, string][];
-        rows: (number | null | number[])[][];
+      const all = (await response.json()) as {
+        procedures: Record<
+          string,
+          { stamps: [string, string][]; rows: (number | null | number[])[][] }
+        >;
       };
+      const data = all.procedures['total-knee-replacement'];
+      if (data === undefined) {
+        throw new Error('no knee replacement in the figures');
+      }
       data.stamps.push(['2019–20', '2020-08-19']);
       for (const row of data.rows) {
         row[1] = data.stamps.length - 1;
         row[4] = null;
       }
-      await route.fulfill({ response, json: data });
+      await route.fulfill({ response, json: all });
     });
     await compare(page, 'knee', 'Armidale');
     const text = await page.locator(RESULTS).innerText();
@@ -118,13 +124,24 @@ browsers('The compare tool', () => {
   });
 
   it(
-    'keeps nothing, and loads places only when the place box is used and a surgery file only for results',
+    'keeps nothing, loads each file on first use and sends no request that carries a choice',
     { timeout: T },
     async () => {
       const context = await up(browser).newContext();
       const page = await context.newPage();
       const requests: string[] = [];
-      page.on('request', (request) => requests.push(request.url()));
+      const records: string[] = [];
+      page.on('request', (request) => {
+        requests.push(request.url());
+        records.push(
+          [
+            request.method(),
+            request.url(),
+            JSON.stringify(request.headers()),
+            request.postData() ?? '',
+          ].join(' '),
+        );
+      });
       await open(page);
       const before = await page.evaluate(() => history.length);
       const jsonNow = (): string[] =>
@@ -133,7 +150,7 @@ browsers('The compare tool', () => {
           .map((url) => url.slice(up(server).base.length));
       expect(jsonNow()).toEqual(['/tool/index.json']);
       await choose(page, 0, 'knee');
-      expect(jsonNow()).toEqual(['/tool/index.json']);
+      expect(jsonNow()).toEqual(['/tool/index.json', '/tool/figures.json']);
       await choose(page, 1, 'Armidale');
       await page.locator('button[type="submit"]').click();
       await page.locator(`${RESULTS} li`).first().waitFor();
@@ -157,12 +174,10 @@ browsers('The compare tool', () => {
       expect(await context.cookies()).toEqual([]);
       const other = requests.filter((url) => !url.startsWith(up(server).base));
       expect(other).toEqual([]);
-      expect(jsonNow()).toEqual([
-        '/tool/index.json',
-        '/tool/places.json',
-        '/tool/procedures/total-knee-replacement.json',
-      ]);
-      expect(requests.filter((url) => /armidale/i.test(url))).toEqual([]);
+      expect(jsonNow()).toEqual(['/tool/index.json', '/tool/figures.json', '/tool/places.json']);
+      // No URL, header or body of any request holds what was chosen or typed.
+      expect(records.length).toBeGreaterThan(3);
+      expect(records.filter((r) => /knee|armidale|total-knee-replacement/i.test(r))).toEqual([]);
       await context.close();
     },
   );

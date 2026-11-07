@@ -42,7 +42,7 @@ export type SchemaName =
   | 'surgery-index'
   | 'tool-index'
   | 'tool-places'
-  | 'tool-procedure'
+  | 'tool-figures'
   | 'trend';
 
 const ROOT_FILES: Record<string, SchemaName> = {

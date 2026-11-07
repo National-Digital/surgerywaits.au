@@ -10,7 +10,7 @@ import {
   stableJson,
   toolIndexJson,
   toolPlacesJson,
-  toolProcedureJson,
+  toolFiguresJson,
   unknownSynonyms,
 } from './tool-data';
 
@@ -20,12 +20,11 @@ const files = procedureSlugs().map((slug) => buildToolProcedure(slug));
 
 describe('the compare tool data', () => {
   it('validates each file against its schema and writes the same bytes twice', () => {
-    const slug = procedureSlugs()[0] ?? '';
     validateDocument('tool-index', JSON.parse(toolIndexJson()));
     validateDocument('tool-places', JSON.parse(toolPlacesJson()));
-    validateDocument('tool-procedure', JSON.parse(toolProcedureJson(slug)));
+    validateDocument('tool-figures', JSON.parse(toolFiguresJson()));
     expect(toolIndexJson()).toBe(toolIndexJson());
-    expect(toolProcedureJson(slug)).toBe(toolProcedureJson(slug));
+    expect(toolFiguresJson()).toBe(toolFiguresJson());
   });
 
   it('sorts keys at every depth', () => {
@@ -52,7 +51,7 @@ describe('the compare tool data', () => {
     }
   });
 
-  it('keeps the index free of figures and places, and gives each procedure one file', () => {
+  it('keeps the index free of figures and places, and gives every procedure a row set in one figures file', () => {
     expect(Object.keys(index).sort()).toEqual([
       'hospitals',
       'neighbours',
@@ -62,6 +61,8 @@ describe('the compare tool data', () => {
     ]);
     expect(index.procedures.map((p) => p.slug).sort()).toEqual([...procedureSlugs()].sort());
     expect(buildToolPlaces().places.length).toBeGreaterThan(0);
+    const figures = JSON.parse(toolFiguresJson()) as { procedures: Record<string, unknown> };
+    expect(Object.keys(figures.procedures).sort()).toEqual([...procedureSlugs()].sort());
   });
 
   it('lists only open hospitals with a location, and every figure row points at one', () => {

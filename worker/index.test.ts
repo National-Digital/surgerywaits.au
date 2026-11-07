@@ -195,14 +195,16 @@ describe('the compare tool files', () => {
     const policy = SECURITY_HEADERS['Content-Security-Policy'] ?? '';
     expect(policy).toMatch(/script-src 'self'/u);
     expect(policy).toMatch(/connect-src 'self'/u);
-    for (const path of ['/tool/index.json', '/tool/places.json', '/tool/procedures/x.json']) {
+    for (const path of ['/tool/index.json', '/tool/places.json', '/tool/figures.json']) {
       const response = await get(path);
       expect(response.headers.get('Content-Security-Policy'), path).toBe(policy);
       expect(response.headers.get('Cache-Control'), path).toBe(
         'public, max-age=0, must-revalidate',
       );
       expect(response.headers.get('Access-Control-Allow-Origin'), path).toBeNull();
+      expect(response.headers.get('X-Robots-Tag'), path).toBe('noindex');
     }
+    expect((await get('/compare/')).headers.get('X-Robots-Tag')).toBeNull();
   });
 });
 

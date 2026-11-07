@@ -14,7 +14,7 @@ export const SEL = {
 export const ATTR = {
   src: 'data-src',
   places: 'data-places',
-  procedures: 'data-procedures',
+  figures: 'data-figures',
   failed: 'data-failed',
 } as const;
 export const attr = (node: Element, name: string): string => node.getAttribute(name) ?? '';

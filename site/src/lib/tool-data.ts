@@ -264,8 +264,16 @@ export const toolIndexJson = (): string =>
   checked('tool-index', buildToolIndex(), '/tool/index.json');
 export const toolPlacesJson = (): string =>
   checked('tool-places', buildToolPlaces(), '/tool/places.json');
-export const toolProcedureJson = (slug: string): string =>
-  checked('tool-procedure', buildToolProcedure(slug), `/tool/procedures/${slug}.json`);
+export const toolFiguresJson = (): string =>
+  checked(
+    'tool-figures',
+    {
+      procedures: Object.fromEntries(
+        procedureSlugs().map((slug) => [slug, buildToolProcedure(slug)]),
+      ),
+    },
+    '/tool/figures.json',
+  );
 
 // Every source the tool's data file draws on, by credit key.
 export const toolSources = (): string[] =>

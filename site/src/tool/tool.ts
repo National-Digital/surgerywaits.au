@@ -1,6 +1,6 @@
 import { combo } from './combo';
 import type { Combo, Option } from './combo';
-import type { PlaceRow, ToolIndex, ToolPlaces, ToolProcedure } from './data';
+import type { PlaceRow, ToolFigures, ToolIndex, ToolPlaces } from './data';
 import { ATTR, EVENT, SEL, attr } from './dom';
 import { normalise, rank, rankPlaces } from './match';
 import type { Candidate, Place } from './match';
@@ -50,6 +50,12 @@ function wire(root: HTMLElement, data: ToolIndex): void {
     value: i,
     fields: [normalise(p.name), ...p.terms.map(normalise)],
   }));
+  const say = (text: string): void => {
+    message.textContent = text;
+  };
+  const count = (n: number): string =>
+    n === 0 ? t.count_none : n === 1 ? t.count_one : fill(t.count_many, { count: String(n) });
+
   let place: Combo | null = null;
   let places: (Place & { value: number })[] = [];
   let spots: PlaceRow[] = [];
@@ -69,25 +75,20 @@ function wire(root: HTMLElement, data: ToolIndex): void {
       place?.refresh();
     }, failed);
   };
-  const procedureFiles = new Map<string, Promise<ToolProcedure>>();
-  const loadProcedure = (slug: string): Promise<ToolProcedure> => {
-    const known = procedureFiles.get(slug);
-    if (known !== undefined) {
-      return known;
-    }
-    const file = load<ToolProcedure>(fill(attr(root, ATTR.procedures), { slug }));
-    procedureFiles.set(slug, file);
-    file.catch(() => procedureFiles.delete(slug));
-    return file;
+  let figures: Promise<ToolFigures> | null = null;
+  // One file for every surgery, so no request depends on what a person chose.
+  const loadFigures = (): Promise<ToolFigures> => {
+    figures ??= load<ToolFigures>(attr(root, ATTR.figures));
+    figures.catch(() => {
+      figures = null;
+    });
+    return figures;
   };
-
-  const say = (text: string): void => {
-    message.textContent = text;
-  };
-  const count = (n: number): string =>
-    n === 0 ? t.count_none : n === 1 ? t.count_one : fill(t.count_many, { count: String(n) });
 
   const surgery: Combo | null = combo(surgeryField, {
+    used: () => {
+      loadFigures().catch(failed);
+    },
     search: (query): Option[] =>
       rank(procedures, query, LISTED).map(({ item, field }): Option => {
         const procedure = data.procedures[item.value];
@@ -141,7 +142,11 @@ function wire(root: HTMLElement, data: ToolIndex): void {
     if (procedure === undefined || spot === undefined) {
       return;
     }
-    loadProcedure(procedure.slug).then((file) => {
+    loadFigures().then(({ procedures: byslug }) => {
+      const file = byslug[procedure.slug];
+      if (file === undefined) {
+        return;
+      }
       const rows = file.rows.flatMap((row) => {
         const hospital = data.hospitals[row[0]];
         return hospital === undefined
