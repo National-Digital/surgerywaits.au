@@ -1069,8 +1069,16 @@ describe('Built health service pages', () => {
 });
 
 describe('Built content pages', () => {
-  it('hold the methodology, data and about pages at the earlier addresses', () => {
-    for (const path of ['methodology', 'data', 'about']) {
+  it('hold the content and policy pages at the earlier addresses', () => {
+    for (const path of [
+      'methodology',
+      'data',
+      'about',
+      'privacy',
+      'terms',
+      'accessibility',
+      'corrections',
+    ]) {
       expect(paths).toContain(`${path}/index.html`);
       expect(pageAt(`${path}/index.html`).h1).toBe(1);
     }

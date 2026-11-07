@@ -724,12 +724,15 @@ export const homeTemplateSchema = z.strictObject({
   exclusion: slotted(),
 });
 
+// A section may link to another page of the site or to a page on another host.
+const sectionLink = z.strictObject({ label: text, href: z.union([sitePath, httpsUrl]) });
+
 const section = z.strictObject({
   id: z.string().regex(/^[a-z]+(?:-[a-z]+)*$/, 'lower-case words joined by hyphens'),
   heading: text,
   paragraphs: z.array(text).min(1),
   items: z.array(text).min(1).optional(),
-  links: z.array(link).min(1).optional(),
+  links: z.array(sectionLink).min(1).optional(),
 });
 
 export type ArticleSection = z.output<typeof section>;
@@ -759,3 +762,32 @@ export const dataPageSchema = z.strictObject({
 });
 
 export const aboutSchema = z.strictObject(article);
+
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'a date written year-month-day');
+
+// A policy page shows the date its text last changed.
+export const policySchema = z.strictObject({
+  ...article,
+  updated: isoDate,
+  updated_line: slotted('date'),
+});
+
+const correction = z.strictObject({ date: isoDate, pages: text, wrong: text, fix: text });
+
+export const correctionsSchema = z.strictObject({
+  ...article,
+  updated: isoDate,
+  updated_line: slotted('date'),
+  log: z.strictObject({
+    heading: text,
+    caption: text,
+    empty: text,
+    row_heading: text,
+    headings: z.tuple([text, text, text]),
+    entries: z
+      .array(correction)
+      .refine((all) => all.every((c, i) => i === 0 || (all[i - 1]?.date ?? '') >= c.date), {
+        message: 'the corrections run from newest to oldest',
+      }),
+  }),
+});

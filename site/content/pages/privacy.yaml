@@ -1,0 +1,42 @@
+title: 'Privacy: what {site} collects'
+description: What Surgery Waits collects from people who read it, which is nothing of its own, and what its host processes to deliver the pages.
+crumb_home: Home
+crumb: Privacy
+heading: Privacy
+lede: Surgery Waits has no accounts and no forms, and it stores nothing about the people who read it. This page states what the site does when your browser asks for a page.
+updated: '2026-11-07'
+updated_line: 'Last updated {date}.'
+sections:
+  - id: collects
+    heading: What the site collects
+    paragraphs:
+      - The site asks you for no information. It has no accounts and no forms.
+      - The site sets no cookies. It writes nothing to local storage or session storage, because its pages contain no JavaScript.
+      - The site loads no analytics, advertising or social media service. Every page, style sheet and font file comes from surgerywaits.au.
+  - id: host
+    heading: What the host processes
+    paragraphs:
+      - Cloudflare delivers the site. When your browser requests a page, Cloudflare receives the request, which includes your IP address, the address of the page and your browser's description of itself. Cloudflare processes this to deliver the site and to protect it from abuse, under its own privacy policy.
+      - The code that {operator} runs in front of the pages sets response headers. It writes no log and keeps no record of requests.
+    links:
+      - label: Cloudflare privacy policy
+        href: https://www.cloudflare.com/privacypolicy/
+  - id: counting
+    heading: Page counting
+    paragraphs:
+      - The site does not count page views today. Its content security policy permits the two hosts of Cloudflare Web Analytics, but no page loads the script from them.
+      - If the site adds page counting, this page will describe what is counted before the change reaches readers.
+  - id: browser
+    heading: Headers the site sends
+    paragraphs:
+      - The site sends the header Referrer-Policy with the value no-referrer. A website you reach through a link on this site receives no information about the page you came from.
+      - The site sends a Permissions-Policy header that turns off geolocation, camera, microphone, payment and USB access for its pages.
+  - id: other
+    heading: Other websites
+    paragraphs:
+      - Some pages link to other websites, such as GitHub and publicdata.au. Each of those websites handles information under its own policy.
+      - A GitHub issue is public. A person who reports a problem there should leave out personal information.
+  - id: contact
+    heading: Questions
+    paragraphs:
+      - To ask a question about this page, use the contact link at the foot of every page. {operator} operates the site and answers for this page.

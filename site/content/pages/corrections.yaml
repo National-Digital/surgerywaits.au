@@ -1,0 +1,56 @@
+title: 'Corrections: how {site} fixes errors'
+description: How to report a figure on Surgery Waits that differs from its source, how a report is checked and fixed, and the log of corrections.
+crumb_home: Home
+crumb: Corrections
+heading: Corrections
+lede: Each figure on this site must match the figure its publisher released for that hospital, surgery and period. A figure that does not match is an error. This page explains how to report one and how it is fixed and recorded.
+updated: '2026-11-07'
+updated_line: 'Last updated {date}.'
+sections:
+  - id: report
+    heading: Report a figure
+    paragraphs:
+      - "Open a data problem issue on GitHub. Give the address of the page, the hospital, the figure the page shows and the value in the publisher's own data. A link to the publisher's copy helps the check."
+      - GitHub issues are public. Leave out any personal information and any detail about your own care.
+    links:
+      - label: Open a data problem issue
+        href: https://github.com/National-Digital/surgerywaits.au/issues/new?template=data-problem.yml
+  - id: other
+    heading: Other ways to report
+    paragraphs:
+      - To write privately, use the contact link at the foot of every page.
+      - A security problem goes through the repository's private security advisory form and never into a public issue.
+    links:
+      - label: Report a security problem
+        href: https://github.com/National-Digital/surgerywaits.au/security/advisories/new
+  - id: check
+    heading: How a report is checked
+    paragraphs:
+      - A maintainer compares the figure on the page with the pinned publicdata.au version that the build read. The maintainer then compares both with the publisher's own value.
+    items:
+      - If the pinned version and the publisher agree with each other and differ from the page, the error is in this site's processing. The maintainer fixes it.
+      - If the pinned version differs from the publisher, the error is in the publicdata.au copy. The maintainer reports it to publicdata.au.
+      - If the page matches the publisher, the figure is correct. The maintainer closes the issue and links the publisher's value.
+  - id: publisher
+    heading: Errors at the publisher
+    paragraphs:
+      - A publisher corrects its own error. The next version of the dataset on publicdata.au carries the correction, and the site shows it after the next data refresh.
+      - A revised figure that the publisher releases later is a data update. The earlier page showed what the publisher had released at the time, so the log below does not list it.
+    links:
+      - label: Data and attribution
+        href: /data/
+  - id: fix
+    heading: How a fix is made
+    paragraphs:
+      - A fix to this site's processing is a pull request that corrects the cause and adds a test that fails without the fix. The pull request describes the pages and figures it affects.
+      - After the fix is published, a maintainer adds the correction to the log on this page with its date.
+log:
+  heading: Correction log
+  caption: Corrections to published figures, newest first
+  empty: The site has no corrections to log. A correction will appear here with its date, the pages it affected, what was wrong and what changed.
+  row_heading: Date
+  headings:
+    - Pages affected
+    - What was wrong
+    - What changed
+  entries: []

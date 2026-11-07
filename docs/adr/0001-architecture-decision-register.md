@@ -363,10 +363,9 @@ Why: tooling changes quickly, and a cited page lets a reviewer check the pattern
   A rule may name a pending test until the test lands.
 - The toolchain guide now lives in `CONTRIBUTING.md`, and `README.md` and `AGENTS.md` follow this
   split.
-- The corrections policy and its log, and the accessibility statement, are planned to move into the
-  site's own content. They are served at `/corrections/` and `/accessibility/` and each has a
-  Markdown twin. The data-problem issue template links the corrections page. Until the site has
-  pages, `docs/CORRECTIONS.md` and `docs/ACCESSIBILITY.md` stay in `docs/` and move then.
+- The corrections policy and its log, and the accessibility statement, are site content in
+  `site/content/pages/`. They are served at `/corrections/` and `/accessibility/`, and each will
+  have a Markdown twin. The data-problem issue template links the corrections page.
 
 Why: readers find governance files where GitHub shows them, and each policy is written once. A
 corrections log kept in the repository and again on the site would drift apart.
