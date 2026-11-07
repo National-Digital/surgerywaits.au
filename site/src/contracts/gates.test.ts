@@ -565,6 +565,18 @@ describe('Privacy', () => {
     ]);
   });
 
+  it('the privacy check exempts only a JSON-LD data block, by type', () => {
+    const ld = '{"@context":"https://schema.org"}';
+    expect(pageProblems(`<script type="application/ld+json">${ld}</script>`)).toEqual([]);
+    expect(pageProblems(`<script type=" Application/LD+JSON ">${ld}</script>`)).toEqual([]);
+    expect(pageProblems('<script type="text/javascript">track()</script>')).toEqual([
+      'script: inline',
+    ]);
+    expect(pageProblems('<script type="application/ld+json" src="/data.json"></script>')).toEqual([
+      'script: /data.json',
+    ]);
+  });
+
   it('the privacy check allows exactly the Web Analytics beacon and report hosts', () => {
     expect(policyProblems(policy)).toEqual([]);
     const third = policy.replace(
