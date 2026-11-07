@@ -11,6 +11,16 @@ const schemaFiles = import.meta.glob<Record<string, unknown>>('../../../contract
   import: 'default',
 });
 
+// The schemas the dist files are held to, by name, for publishing at the addresses their ids name.
+export function contractSchemas(): [string, unknown][] {
+  return Object.entries(schemaFiles)
+    .map(([path, schema]): [string, unknown] => [
+      path.slice(path.lastIndexOf('/') + 1, -'.schema.json'.length),
+      schema,
+    ])
+    .sort(([a], [b]) => (a < b ? -1 : 1));
+}
+
 const ajv = new Ajv2020({ strict: true, allErrors: true });
 for (const schema of Object.values(schemaFiles)) {
   ajv.addSchema(schema);

@@ -21,6 +21,18 @@ sections:
       - The Australian Institute of Health and Welfare (AIHW) supplies three tables of waiting times, one for urgency categories, one for procedures and one for specialties. It also supplies the register of hospitals with their names, states, health networks and locations, and the lists of measures and reporting units that describe them.
       - Queensland Health supplies quarterly figures by urgency category and by specialty. The Australian Bureau of Statistics supplies the suburb and locality boundaries that give each suburb a centre.
 after:
+  - id: files
+    heading: The data files
+    paragraphs:
+      - The site publishes the data behind its pages as JSON files under /data-api/. Each is a file the pages are built from.
+      - Each file has its keys in alphabetical order. Any web page on any site may read the files, and a browser may keep a file for an hour.
+      - Every file lists its sources in a sources entry. The file /data-api/credits.json gives the publisher, licence, version and citation for each source. A person who reuses a file credits the publisher it names, under the licence it names.
+      - A figure that a publisher withholds has a state of not_published or not_reported and a reason, and it has no value. A withheld figure is never a zero. Every published figure states its reference period and its release date.
+      - The file /data-api/index.json gives the counts and the scope of the data. The files /data-api/surgeries.json, /data-api/hospitals.json and /data-api/health-services.json list every surgery, hospital and health service with its slug.
+      - Each of those has its own files in a folder of the same name, and the surgeries are in a folder for each kind. The folder /data-api/states/ holds the state benchmarks, /data-api/trends/ holds the yearly trend for each hospital and /data-api/queensland/ holds the Queensland quarterly figures.
+      - The file /data-api/suburbs.json holds the centre point of each suburb.
+      - A JSON Schema for each kind of file is published at /contract/, named for the kind, as in /contract/hospital.schema.json. The build checks every published file against its schema.
+      - A chart of the median wait in each state for one procedure is published as an SVG file at /charts/, with the name of the procedure's page address and the ending .svg. A state with a withheld figure appears in the chart with its reason and has no bar.
   - id: reuse
     heading: Reusing the data
     paragraphs:
