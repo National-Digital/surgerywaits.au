@@ -1,3 +1,6 @@
+import { parse } from 'parse5';
+import type { DefaultTreeAdapterTypes } from 'parse5';
+
 // The scans behind the privacy gates; each takes source text so a fixture can fail it.
 const BEACON_SCRIPT_HOST = 'https://static.cloudflareinsights.com';
 const BEACON_REPORT_HOST = 'https://cloudflareinsights.com';
@@ -81,12 +84,21 @@ export const fetchProblems = (source: string): string[] =>
     .filter((m) => !TOOL_FETCH.test(source.slice(m.index, m.index + 80)))
     .map((m) => `fetch: ${source.slice(m.index, m.index + 40).replace(/\s+/gu, ' ')}`);
 
+// A parser reads script tags as a browser does, whatever their spacing or case.
+function scripts(node: DefaultTreeAdapterTypes.ParentNode): DefaultTreeAdapterTypes.Element[] {
+  return node.childNodes.flatMap((child) => [
+    ...('tagName' in child && child.tagName === 'script' ? [child] : []),
+    ...('childNodes' in child ? scripts(child) : []),
+  ]);
+}
+
 // What a built page loads from elsewhere, or runs inline, or names as the beacon.
 export function pageProblems(html: string): string[] {
   const problems: string[] = [];
-  for (const tag of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/giu)) {
-    const src = /\ssrc=["']?([^"'\s>]+)/iu.exec(tag[1] ?? '')?.[1];
-    if (src === undefined ? (tag[2] ?? '').trim() !== '' : !/^\/(?!\/)/.test(src)) {
+  for (const script of scripts(parse(html))) {
+    const src = script.attrs.find((a) => a.name === 'src')?.value.trim();
+    const text = script.childNodes.map((c) => ('value' in c ? c.value : '')).join('');
+    if (src === undefined ? text.trim() !== '' : !/^\/(?!\/)/.test(src)) {
       problems.push(`script: ${src ?? 'inline'}`);
     }
   }

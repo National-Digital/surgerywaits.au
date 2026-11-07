@@ -553,6 +553,10 @@ describe('Privacy', () => {
     expect(pageProblems('<script src="//x.example/a.js"></script>')).toEqual([
       'script: //x.example/a.js',
     ]);
+    expect(pageProblems('<SCRIPT>track()</script >')).toEqual(['script: inline']);
+    expect(pageProblems('<p>hi</p><script\nsrc=https://x.example/a.js></script\t>')).toEqual([
+      'script: https://x.example/a.js',
+    ]);
   });
 
   it('the privacy check allows exactly the Web Analytics beacon and report hosts', () => {
