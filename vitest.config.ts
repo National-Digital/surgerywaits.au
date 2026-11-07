@@ -4,6 +4,7 @@ import { configDefaults } from 'vitest/config';
 // The browser proofs need Chromium, so only the Accessibility job runs them, with A11Y_TEST=1.
 // The built-CSS proof needs a build, so only the build job runs it, with BUILT_CSS=1.
 // The built-page proofs also need a build, and the same job runs them with BUILT_PAGES=1.
+// The HTML gate proofs need Java, so only the job that installs it runs them, with HTML_TEST=1.
 // The determinism proof builds a second time and compares, so it is opt-in with BUILD_TWICE=1.
 const exclude = [...configDefaults.exclude];
 if (process.env['A11Y_TEST'] !== '1') {
@@ -14,6 +15,9 @@ if (process.env['BUILT_CSS'] !== '1') {
 }
 if (process.env['BUILT_PAGES'] !== '1') {
   exclude.push('site/src/contracts/built-pages.test.ts', 'site/src/contracts/sitemaps.test.ts');
+}
+if (process.env['HTML_TEST'] !== '1') {
+  exclude.push('scripts/html.test.ts');
 }
 if (process.env['BUILD_TWICE'] !== '1') {
   exclude.push('site/src/contracts/determinism.test.ts');

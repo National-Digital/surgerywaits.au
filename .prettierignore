@@ -6,3 +6,4 @@ pipeline/
 package-lock.json
 worker/worker-configuration.d.ts
 dist-preview/
+scripts/html-fixtures/
