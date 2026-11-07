@@ -16,7 +16,7 @@ link_pair: '{hospital}, {surgery}'
 link_surgery_state: '{surgery}, {state}'
 link_longest: The longest published waits
 link_by_surgery: The shortest and longest wait for each surgery
-link_border: Where crossing a state border cuts the wait
+link_border: Where published waits differ across a state border
 link_changes: Where waits rose and fell year on year
 index_title: 'The {count} longest public hospital surgery waits, {period}: {site}'
 index_description: 'This page lists the {count} longest published median waits for planned surgery in Australian public hospitals in {period}. Each row names the hospital, the surgery and the median wait.'
@@ -42,17 +42,19 @@ by_surgery_intro: 'The same surgery can have a published median that differs by 
 by_surgery_table_heading: Shortest and longest, surgery by surgery
 by_surgery_table_caption: The shortest and longest published median wait for each surgery that at least two public hospitals published a median for
 by_surgery_place: '{state} · {median}'
+tied_one: '{count} other hospital published the same median.'
+tied_many: '{count} other hospitals published the same median.'
 column_shortest: Shortest published median
 column_longest: Longest published median
 column_hospitals: Hospitals
-border_title: 'Where crossing a state border cuts the wait, {period}: {site}'
+border_title: 'Where published waits differ across a state border, {period}: {site}'
 border_description: 'This page ranks the {count} places where a public hospital in another state published a shorter median wait for the same surgery in {period}, within {radius} of the first hospital.'
-border_heading: Where crossing a state border cuts the wait
+border_heading: Where published waits differ across a state border
 border_lede: 'The biggest published cross-border difference in {period} was {difference}. The median wait for {surgery} was {from_median} at {from_hospital} in {from_state}, and {to_median} at {to_hospital}, {distance} away in {to_state}.'
 border_none: 'No pair of public hospitals in different states within {radius} of each other published a median wait for the same surgery with a difference in {period}.'
-border_intro: Waiting lists run state by state, but a referral can cross a border. A general practitioner (GP) can refer a patient to a public hospital in another state, and for people who live near a border the nearest hospital is often across it. This page ranks the places where the published figures differ most.
+border_intro: Waiting lists run state by state, but a referral can cross a border. A general practitioner (GP) can refer a patient to a public hospital in another state, and for people who live near a border the nearest hospital can be across it. This page ranks the places where the published figures differ most.
 border_table_heading: 'The {count} biggest published differences'
-border_table_caption: 'Public hospitals in different states within {radius} of each other that both published a median wait for the same surgery, ranked by the difference. Each row pairs a hospital with its best alternative across the border.'
+border_table_caption: 'Public hospitals in different states within {radius} of each other that both published a median wait for the same surgery, ranked by the difference. Each row pairs a hospital with the hospital across the border with the largest difference.'
 border_place: '{state} · {median}'
 column_longer: Longer wait
 column_across: Across the border
@@ -60,10 +62,10 @@ column_distance: Distance
 column_difference: Difference
 method_heading: How this is calculated
 method:
-  - Both hospitals published a median wait for the same surgery in the period. The calculation estimates nothing, and a figure that is not published takes no part.
+  - Both hospitals published a median wait for the same surgery in the period. Only published figures enter the calculation.
   - The two hospitals are in different states and lie within the stated distance, measured in a straight line between their recorded locations. The distance is approximate and is not a road distance.
-  - The difference is the gap between two published medians. It predicts no person's wait, and a shorter median is no recommendation to travel.
-  - Each hospital appears once for each surgery, against the alternative that shows the largest difference.
+  - The difference describes two published medians only. A person's own wait depends on their case, and this page does not recommend travel.
+  - Each hospital appears once for each surgery, against the hospital across the border with the largest difference.
 changes_title: 'Where surgery waits rose and fell, {previous} to {period}: {site}'
 changes_description: 'This page lists the biggest year-on-year changes in published median waits for planned surgery, {previous} to {period}, by state and by hospital.'
 changes_heading: Where surgery waits rose and fell
@@ -75,7 +77,7 @@ state_rises_caption: The biggest year-on-year rises in a state median wait
 state_falls_heading: State medians that fell most
 state_falls_caption: The biggest year-on-year falls in a state median wait
 hospital_heading: Hospital medians that changed most
-hospital_intro: 'This section includes only hospital and surgery pairs with at least {floor} surgeries in {period}. A hospital that does a few operations of one kind can show a swing of hundreds of days with little meaning.'
+hospital_intro: 'This section includes only hospital and surgery pairs with at least {floor} surgeries in {period}. A median that rests on fewer surgeries is left out because a few cases can move it by a large number of days.'
 hospital_rises_heading: Rose most
 hospital_rises_caption: 'The biggest year-on-year rises in a hospital median wait, for pairs with at least {floor} surgeries in {period}'
 hospital_falls_heading: Fell most

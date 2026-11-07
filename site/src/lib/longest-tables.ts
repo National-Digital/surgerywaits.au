@@ -15,14 +15,20 @@ const t = getLongestTemplate;
 const pairLabel = (hospital: string, surgery: string): string =>
   fill(t().link_pair, { hospital, surgery });
 
-const place = (e: Entry, template: string): RankCell => ({
+const tiedText = (others: number): string =>
+  others === 0
+    ? ''
+    : `. ${fill(others === 1 ? t().tied_one : t().tied_many, { count: formatCount(others) })}`;
+
+const place = (e: Entry, template: string, others = 0): RankCell => ({
   text: e.row.name,
   href: pairPath(e.row.slug, e.ref),
   label: pairLabel(e.row.name, e.ref.name),
-  note: fill(template, {
-    state: stateCode(e.row.state),
-    median: formatFigure('median_wait', e.figure),
-  }),
+  note:
+    fill(template, {
+      state: stateCode(e.row.state),
+      median: formatFigure('median_wait', e.figure),
+    }) + tiedText(others),
   figure: e.figure,
 });
 
@@ -72,8 +78,8 @@ export function extremesTable(all: readonly Extremes[]): RankingModel {
       basis: [e.shortest.figure, e.longest.figure],
       cells: [
         { text: e.ref.name, href: surgeryPath(e.ref), heading: true },
-        place(e.shortest, c.by_surgery_place),
-        place(e.longest, c.by_surgery_place),
+        place(e.shortest, c.by_surgery_place, e.shortestTied),
+        place(e.longest, c.by_surgery_place, e.longestTied),
         { text: formatCount(e.reporting) },
       ],
     })),

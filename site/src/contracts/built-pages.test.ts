@@ -705,7 +705,7 @@ describe('Built longest-waits pages', () => {
 
   it('give every table a stated period and rank only inside the list', () => {
     for (const { path, html } of mine()) {
-      expect(textsOf(html, 'c-ranking__stamp').length, path).toBe(
+      expect(textsOf(html, 'c-table__stamp').length, path).toBe(
         html.match(/<table[ >]/g)?.length ?? 0,
       );
       expect([path, html.includes('c-table__rank')]).toEqual([path, false]);

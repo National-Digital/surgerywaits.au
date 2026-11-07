@@ -115,17 +115,38 @@ export interface Extremes {
   shortest: Entry;
   longest: Entry;
   reporting: number;
+  // Other hospitals that published the same median as the one named at each end.
+  shortestTied: number;
+  longestTied: number;
 }
 
+const byShortest = (a: Entry, b: Entry): number =>
+  a.figure.value - b.figure.value ||
+  byText(a.row.name, b.row.name) ||
+  byText(a.ref.slug, b.ref.slug);
+
+// Where hospitals tie at an end, the sort puts the first name at the shortest end and the last at the longest.
 export function extremes(): Extremes[] {
   return procedures()
     .flatMap(({ ref, surgery }) => {
-      const entries = rankable(ref, surgery).sort((a, b) => -byLongest(a, b));
+      const entries = rankable(ref, surgery).sort(byShortest);
       const shortest = entries[0];
       const longest = entries.at(-1);
-      return shortest === undefined || longest === undefined || entries.length < 2
-        ? []
-        : [{ ref, shortest, longest, reporting: entries.length }];
+      if (shortest === undefined || longest === undefined || entries.length < 2) {
+        return [];
+      }
+      const sharing = (end: Entry): number =>
+        entries.filter((e) => e.figure.value === end.figure.value).length - 1;
+      return [
+        {
+          ref,
+          shortest,
+          longest,
+          reporting: entries.length,
+          shortestTied: sharing(shortest),
+          longestTied: sharing(longest),
+        },
+      ];
     })
     .sort((a, b) => byText(a.ref.name, b.ref.name) || byText(a.ref.slug, b.ref.slug));
 }
@@ -254,7 +275,7 @@ function pairOfPoints(
   };
 }
 
-const byBiggest = (a: Move, b: Move): number =>
+export const byBiggest = (a: Move, b: Move): number =>
   Math.abs(b.change) - Math.abs(a.change) ||
   byText(a.state, b.state) ||
   byText(a.hospital?.name ?? '', b.hospital?.name ?? '') ||

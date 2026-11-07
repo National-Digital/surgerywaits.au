@@ -75,8 +75,8 @@ describe('RankingTable', () => {
       caption: 'Sample',
       ...model([published(5)]),
     });
-    expect(textsOf(html, 'c-ranking__stamp')).toEqual(['2024–25, released 19 August 2026']);
-    expect(textsOf(html, 'c-ranking__row')).toEqual(['Row 0']);
+    expect(textsOf(html, 'c-table__stamp')).toEqual(['2024–25, released 19 August 2026']);
+    expect(textsOf(html, 'th')).toContain('Row 0');
   });
 
   it('fails the build on a withheld figure behind an order', async () => {

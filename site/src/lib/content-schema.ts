@@ -470,6 +470,8 @@ export const longestTemplateSchema = z.strictObject({
   by_surgery_table_heading: slotted(),
   by_surgery_table_caption: slotted(),
   by_surgery_place: slotted('state', 'median'),
+  tied_one: slotted('count'),
+  tied_many: slotted('count'),
   column_shortest: slotted(),
   column_longest: slotted(),
   column_hospitals: slotted(),

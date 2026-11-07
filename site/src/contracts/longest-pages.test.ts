@@ -12,6 +12,7 @@ import LongestIndex from '../components/LongestIndex.astro';
 import { getLongestTemplate, getSite } from '../lib/content';
 import { DIST_ENV, distDirectory, readHospital, readHospitalIndex, readSurgery } from '../lib/dist';
 import type { HospitalIndexRow, Surgery } from '../lib/dist';
+import type { Move } from '../lib/longest-page';
 import { distanceKm } from '../lib/geo';
 import { isBuilt } from '../lib/links';
 import {
@@ -25,11 +26,13 @@ import {
   LONGEST_PATH,
   MOVE_VOLUME_FLOOR,
   borderPairs,
+  byBiggest,
   extremes,
   hospitalMoves,
   longestStamp,
   longestEntries,
   rankable,
+  rises,
   stateMoves,
 } from '../lib/longest-page';
 import { pairRoutes, pairPath } from '../lib/pair-page';
@@ -153,7 +156,7 @@ describe('Every longest-waits page', () => {
 
   it('gives every table a stated period and release, and names no table without one', () => {
     for (const { path, html } of pages) {
-      const stamps = textsOf(html, 'c-ranking__stamp');
+      const stamps = textsOf(html, 'c-table__stamp');
       expect(stamps.length, path).toBe(html.match(/<table[ >]/g)?.length ?? 0);
       for (const stamp of stamps) {
         expect(stamp, path).toMatch(
@@ -293,6 +296,63 @@ describe('The range for each surgery', () => {
     expect(rows.map((r) => r[0])).toEqual(
       [...rows.map((r) => r[0])].sort((a, b) => collator.compare(a ?? '', b ?? '')),
     );
+  });
+
+  it('names one hospital at each end when medians tie, and counts the others', async () => {
+    const wide = extremes().find((e) => e.reporting >= 3);
+    expect(wide).toBeDefined();
+    const slug = wide?.ref.slug ?? '';
+    const copy = copyDist();
+    editSurgery(copy, slug, (surgery) => {
+      for (const entry of rankable(wide?.ref as never, surgery)) {
+        const row = surgery.hospitals.find((h) => h.code === entry.row.code);
+        const figure = row?.measures.median_wait?.figure;
+        if (figure?.state === 'published') {
+          figure.value = 7;
+        }
+      }
+    });
+    const tied = extremes().find((e) => e.ref.slug === slug);
+    const names = rankable(tied?.ref as never, readSurgery('procedure', slug))
+      .map((e) => e.row.name)
+      .sort((a, b) => collator.compare(a, b));
+    expect(tied?.shortest.row.name).toBe(names[0]);
+    expect(tied?.longest.row.name).toBe(names.at(-1));
+    expect(tied?.shortestTied).toBe(names.length - 1);
+    expect(tied?.longestTied).toBe(names.length - 1);
+    const row = rowsAfter(await render(LongestBySurgery, {}), 'by-surgery-caption').find(
+      (r) => r[0] === tied?.ref.name,
+    );
+    const note = fill(t.tied_many, { count: String(names.length - 1) });
+    expect(row?.[1]).toContain(note);
+    expect(row?.[2]).toContain(note);
+  });
+
+  it('counts one other hospital with the singular wording', async () => {
+    const wide = extremes().find((e) => e.reporting >= 3);
+    const slug = wide?.ref.slug ?? '';
+    const copy = copyDist();
+    const high = new Set<string>();
+    editSurgery(copy, slug, (surgery) => {
+      const entries = rankable(wide?.ref as never, surgery).sort((a, b) =>
+        collator.compare(a.row.name, b.row.name),
+      );
+      for (const entry of entries.slice(0, 2)) {
+        const figure = surgery.hospitals.find((h) => h.code === entry.row.code)?.measures
+          .median_wait?.figure;
+        if (figure?.state === 'published') {
+          figure.value = 99999;
+          high.add(entry.row.name);
+        }
+      }
+    });
+    const tied = extremes().find((e) => e.ref.slug === slug);
+    expect(tied?.longestTied).toBe(1);
+    expect(tied?.longest.row.name).toBe([...high].sort((a, b) => collator.compare(a, b)).at(-1));
+    const row = rowsAfter(await render(LongestBySurgery, {}), 'by-surgery-caption').find(
+      (r) => r[0] === tied?.ref.name,
+    );
+    expect(row?.[2]).toContain(fill(t.tied_one, { count: '1' }));
   });
 });
 
@@ -438,12 +498,62 @@ describe('The changes page', () => {
     }
   });
 
+  it('includes a pair at exactly the volume floor and leaves out one below it', () => {
+    const target = hospitalMoves()[0];
+    expect(target).toBeDefined();
+    const slug = target?.hospital?.slug ?? '';
+    const withVolume = (value: number): boolean => {
+      const copy = copyDist();
+      const file = join(copy, `hospitals/${slug}.json`);
+      const hospital = JSON.parse(readFileSync(file, 'utf8')) as ReturnType<typeof readHospital>;
+      const figure = hospital.surgeries.find((x) => x.slug === target?.ref.slug)?.measures.volume
+        ?.figure;
+      if (figure?.state !== 'published') {
+        throw new RangeError('the volume is missing');
+      }
+      figure.value = value;
+      writeFileSync(file, JSON.stringify(hospital));
+      return hospitalMoves().some(
+        (m) => m.hospital?.slug === slug && m.ref.slug === target?.ref.slug,
+      );
+    };
+    expect(withVolume(MOVE_VOLUME_FLOOR)).toBe(true);
+    expect(withVolume(MOVE_VOLUME_FLOOR - 1)).toBe(false);
+  });
+
+  it('cuts a tie at the list length by state, hospital name, then surgery, in any input order', () => {
+    const figure = { state: 'published' as const, value: 1, period: '2023–24', release: 'r' };
+    const move = (hospital: string, state: string, slug: string): Move => ({
+      ref: { slug, name: slug, kind: 'procedure' } as Move['ref'],
+      state,
+      hospital: { slug: hospital, name: hospital },
+      from: figure,
+      to: { ...figure, value: 11 },
+      change: 10,
+      href: '/',
+    });
+    const tied = [
+      move('Delta', 'wa', 'x'),
+      move('Alpha', 'vic', 'x'),
+      move('Bravo', 'vic', 'y'),
+      move('Bravo', 'vic', 'x'),
+      move('Charlie', 'nsw', 'x'),
+    ];
+    const expected = ['Charlie/x', 'Alpha/x', 'Bravo/x'];
+    for (const order of [tied, [...tied].reverse(), [...tied.slice(2), ...tied.slice(0, 2)]]) {
+      const cut = rises([...order].sort(byBiggest), 3).map(
+        (m) => `${m.hospital?.name ?? ''}/${m.ref.slug}`,
+      );
+      expect(cut).toEqual(expected);
+    }
+  });
+
   it('states both periods in every row and one span in every caption', () => {
     const html = page(CHANGES_PATH);
     for (const cell of textsOf(html, 'td').filter((c) => /\(\d{4}–\d{2}\)/.test(c))) {
       expect(cell).toMatch(/^[\d,]+ days? \(\d{4}–\d{2}\)$/);
     }
-    for (const stamp of textsOf(html, 'c-ranking__stamp')) {
+    for (const stamp of textsOf(html, 'c-table__stamp')) {
       expect(stamp).toMatch(/^\d{4}–\d{2} to \d{4}–\d{2}, released \d{1,2} \w+ \d{4}$/);
     }
     expect(elementsOf(html, 'c-table__rank')).toEqual([]);

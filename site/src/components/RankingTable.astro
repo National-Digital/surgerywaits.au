@@ -14,20 +14,18 @@ const { id, caption, columns, rows, span } = Astro.props;
 const stamp = assertRanking({ columns, rows, span });
 ---
 
-<p class="c-ranking__hint" id={`${id}-hint`}>
-  {label('table_scroll_hint')}
-</p>
+<p class="c-table__hint">{label('table_scroll_hint')}</p>
 <div class="o-table-scroll" role="region" aria-labelledby={`${id}-caption`} tabindex="0">
-  <table class="c-ranking">
-    <caption class="c-ranking__caption" id={`${id}-caption`}>
+  <table class="c-table c-table--ranking">
+    <caption class="c-table__caption" id={`${id}-caption`}>
       {caption}
-      <small class="c-ranking__stamp">{stamp}</small>
+      <small class="c-table__stamp">{stamp}</small>
     </caption>
     <thead>
       <tr>
         {columns.map((column) => (
           // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
-          <th class="c-ranking__head" scope="col">
+          <th class="c-table__head" scope="col">
             {column}
           </th>
         ))}
@@ -48,14 +46,12 @@ const stamp = assertRanking({ columns, rows, span });
                     {cell.text}
                   </a>
                 )}
-                {cell.note !== undefined && <small class="c-ranking__note">{cell.note}</small>}
+                {cell.note !== undefined && <small class="c-table__note">{cell.note}</small>}
               </>
             );
             // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
             return cell.heading === true ? (
-              <th class="c-ranking__row" scope="row">
-                {inner}
-              </th>
+              <th scope="row">{inner}</th>
             ) : (
               <td
                 class:list={{
@@ -74,75 +70,28 @@ const stamp = assertRanking({ columns, rows, span });
 
 <style is:global>
   @layer components {
-    .c-ranking {
-      width: 100%;
-      border-collapse: collapse;
-      font-variant-numeric: tabular-nums;
-      font-size: var(--fs-small);
-    }
-
-    .c-ranking__caption {
-      padding: var(--space-3) var(--space-4) 0;
+    .c-table.c-table--ranking th,
+    .c-table.c-table--ranking td {
       text-align: start;
-      color: var(--ink-2);
     }
 
-    .c-ranking__stamp {
-      display: block;
-      margin-block-start: var(--space-1);
-      font-size: var(--fs-small);
-      color: var(--muted);
+    .c-table.c-table--ranking tbody th {
+      position: static;
+      min-width: 0;
     }
 
-    .c-ranking__hint {
-      margin: 0 0 var(--space-2);
-      font-size: var(--fs-small);
-      color: var(--muted);
+    .c-table.c-table--ranking td {
+      font: var(--fs-small) / var(--lh-body) var(--sans);
     }
 
-    .c-ranking__head,
-    .c-ranking th,
-    .c-ranking td {
-      padding: var(--space-3) var(--space-4);
-      border-block-end: 1px solid var(--hairline);
-      text-align: start;
-      vertical-align: top;
+    .c-table.c-table--ranking td.is-not-published {
+      font-style: italic;
     }
 
-    .c-ranking__head {
-      background: var(--card-2);
-      font-size: var(--fs-small);
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      color: var(--muted);
-    }
-
-    .c-ranking__row {
-      font-weight: 700;
-      color: var(--ink);
-    }
-
-    .c-ranking a {
+    .c-table--ranking a {
       display: inline-block;
       min-height: var(--target);
       line-height: var(--target);
-    }
-
-    .c-ranking tbody tr:last-child > * {
-      border-block-end: 0;
-    }
-
-    .c-ranking__note {
-      display: block;
-      margin-block-start: var(--space-1);
-      font-size: var(--fs-small);
-      font-weight: 400;
-      color: var(--ink-2);
-    }
-
-    .c-ranking td.is-not-published {
-      font-style: italic;
-      color: var(--ink-2);
     }
   }
 </style>
