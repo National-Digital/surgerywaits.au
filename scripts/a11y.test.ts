@@ -362,6 +362,21 @@ browsers('painted contrast', () => {
   });
 });
 
+describe('the house settings', () => {
+  it('force the WCAG 1.4.12 text spacing and name the generic link words', () => {
+    // Line height 1.5, letter spacing 0.12em, word spacing 0.16em and paragraph spacing 2em.
+    expect(TEXT_SPACING).toContain('line-height:1.5!important');
+    expect(TEXT_SPACING).toContain('letter-spacing:.12em!important');
+    expect(TEXT_SPACING).toContain('word-spacing:.16em!important');
+    expect(TEXT_SPACING).toContain('p{margin-bottom:2em!important}');
+    expect(HOUSE.generic).toEqual(
+      expect.arrayContaining(['click here', 'here', 'more', 'read more']),
+    );
+    expect(HOUSE.maxCharsPerLine).toBe(80);
+    expect(HOUSE.reflowWidth).toBe(320);
+  });
+});
+
 describe('exceptions', () => {
   const ex = [
     {
