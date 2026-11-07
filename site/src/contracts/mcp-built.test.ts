@@ -54,20 +54,50 @@ describe('the files the MCP tools read', () => {
     const national = await getWait(read, { procedure: slug });
     expect(national.scope).toBe('national');
     await getWait(read, { procedure: slug, state: 'NSW' });
-    await compareHospitals(read, {
-      procedure: slug,
-      locality: 'Armidale',
-      state: 'NSW',
-      radius_km: 250,
-    }).catch(() => undefined);
+    const file = (await read(surgeryFile(first?.kind ?? '', slug))) as {
+      hospitals: { slug: string }[];
+    };
+    const hospital = file.hospitals[0]?.slug;
+    expect(hospital).toBeDefined();
+    await expect(
+      getWait(read, { procedure: slug, hospital: hospital ?? '' }),
+    ).resolves.toBeDefined();
+    await expect(
+      compareHospitals(read, {
+        procedure: slug,
+        locality: 'Armidale',
+        state: 'NSW',
+        radius_km: 250,
+      }),
+    ).resolves.toBeDefined();
     for (const category of CATEGORIES) {
-      await explainUrgency(read, { category: String(category.number) });
+      await expect(
+        explainUrgency(read, { category: String(category.number) }),
+      ).resolves.toBeDefined();
     }
     expect(asked.length).toBeGreaterThan(0);
     for (const url of asked) {
       const { pathname } = new URL(url);
       expect(pathname, url).toMatch(/^\/data-api\//u);
       expect(built(pathname), url).toBe(true);
+    }
+  });
+
+  it('name a data_url in each answer that exists in the build', async () => {
+    const { surgeries } = (await read('/data-api/surgeries.json')) as {
+      surgeries: { kind: string; slug: string }[];
+    };
+    const slug = surgeries.find((s) => s.kind !== 'urgency')?.slug ?? '';
+    const answers = [
+      await getWait(read, { procedure: slug }),
+      ...(await listProcedures(read, {})).surgeries,
+      ...(await Promise.all(
+        CATEGORIES.map((c) => explainUrgency(read, { category: String(c.number) })),
+      )),
+    ];
+    expect(answers.length).toBeGreaterThan(0);
+    for (const { data_url: url } of answers) {
+      expect(built(new URL(url).pathname), url).toBe(true);
     }
   });
 

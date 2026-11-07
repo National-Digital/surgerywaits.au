@@ -78,6 +78,19 @@ describe('the MCP route', () => {
     expect(result._meta['io.modelcontextprotocol/serverInfo']?.name).toBe(serverCard()['name']);
   });
 
+  it('carries the server identity in _meta on every modern result', async () => {
+    const calls = [
+      rpc('ping'),
+      rpc('tools/list'),
+      call('surgerywaits_explain_urgency', { category: '1' }),
+      call('surgerywaits_get_wait', { procedure: 'no-such-surgery-anywhere' }),
+    ];
+    for (const request of calls) {
+      const { result } = await json(await handle(request, env));
+      expect(result._meta['io.modelcontextprotocol/serverInfo']?.name).toBe(serverCard()['name']);
+    }
+  });
+
   it('lists the four tools, each read-only, closed to unknown arguments', async () => {
     const { result } = await json(await handle(rpc('tools/list'), env));
     expect(result.tools.map((t) => t.name).sort()).toEqual([
@@ -155,6 +168,38 @@ describe('the MCP route', () => {
     expect(await response.text()).toBe('');
   });
 
+  it('accepts a notification with 202 although its _meta and Mcp-Method headers are missing or wrong', async () => {
+    const send = (headers: Record<string, string>): Promise<Response> =>
+      handle(
+        new Request(URL_MCP, {
+          method: 'POST',
+          headers: { 'MCP-Protocol-Version': MODERN_VERSION, ...headers },
+          body: JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }),
+        }),
+        env,
+      );
+    expect((await send({})).status).toBe(202);
+    expect((await send({ 'Mcp-Method': 'ping' })).status).toBe(202);
+  });
+
+  it('decodes an Mcp-Name sent in the base64 form before comparing it', async () => {
+    const encoded = `=?base64?${btoa('surgerywaits_explain_urgency')}?=`;
+    const same = await json(
+      await handle(
+        call('surgerywaits_explain_urgency', { category: '1' }, { 'Mcp-Name': encoded }),
+        env,
+      ),
+    );
+    expect(same.result.content).toHaveLength(1);
+    const other = `=?base64?${btoa('surgerywaits_get_wait')}?=`;
+    const response = await handle(
+      call('surgerywaits_explain_urgency', { category: '1' }, { 'Mcp-Name': other }),
+      env,
+    );
+    expect(response.status).toBe(400);
+    expect((await json(response)).error.code).toBe(-32020);
+  });
+
   it('still serves a client that opens with initialize', async () => {
     const legacy = (method: string, headers: Record<string, string> = {}): Request =>
       new Request(URL_MCP, {
@@ -192,6 +237,57 @@ describe('the MCP route', () => {
       env,
     );
     expect(response.status).toBe(413);
+  });
+
+  it('refuses a Content-Length over the limit without reading the body', async () => {
+    let pulls = 0;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller): void {
+        pulls += 1;
+        controller.enqueue(new TextEncoder().encode('{}'));
+      },
+    });
+    const response = await handle(
+      new Request(URL_MCP, {
+        method: 'POST',
+        body,
+        duplex: 'half',
+        headers: {
+          'MCP-Protocol-Version': MODERN_VERSION,
+          'Content-Length': String(MAX_BODY_BYTES + 1),
+        },
+      } as RequestInit),
+      env,
+    );
+    expect(response.status).toBe(413);
+    expect(pulls).toBeLessThanOrEqual(1);
+  });
+
+  it('stops reading a streamed body that passes the limit and cancels it', async () => {
+    let pulls = 0;
+    let cancelled = false;
+    const chunk = new TextEncoder().encode('x'.repeat(4096));
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller): void {
+        pulls += 1;
+        controller.enqueue(chunk);
+      },
+      cancel(): void {
+        cancelled = true;
+      },
+    });
+    const response = await handle(
+      new Request(URL_MCP, {
+        method: 'POST',
+        body,
+        duplex: 'half',
+        headers: { 'MCP-Protocol-Version': MODERN_VERSION },
+      } as RequestInit),
+      env,
+    );
+    expect(response.status).toBe(413);
+    expect(cancelled).toBe(true);
+    expect(pulls).toBeLessThan(MAX_BODY_BYTES / 4096 + 4);
   });
 
   it('reads only the data files of this site through the assets binding', async () => {
@@ -262,6 +358,25 @@ describe('CORS', () => {
       expect(response.headers.get('Access-Control-Allow-Credentials')).toBeNull();
       expect(response.headers.get('Vary')).toContain('Origin');
     }
+  });
+
+  it('lets in a request whose Origin is the origin it was sent to, such as a preview or local run', async () => {
+    for (const origin of ['http://localhost:8787', 'https://preview.example.test']) {
+      const request = new Request(`${origin}/mcp`, {
+        method: 'POST',
+        headers: { ...Object.fromEntries(rpc('ping').headers), Origin: origin },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'ping', params: { _meta: meta } }),
+      });
+      const response = await handle(request, env);
+      expect(response.status, origin).toBe(200);
+      expect(response.headers.get('Access-Control-Allow-Origin')).toBe(origin);
+    }
+    const crossed = new Request('http://localhost:8787/mcp', {
+      method: 'POST',
+      headers: { Origin: 'https://preview.example.test' },
+      body: '{}',
+    });
+    expect((await handle(crossed, env)).status).toBe(403);
   });
 
   it('refuses any other origin with 403 before the body is read', async () => {

@@ -37,7 +37,7 @@ const SERVER = {
 };
 const INSTRUCTIONS = [
   `Read-only published waiting times for planned surgery at Australian public hospitals, from SurgeryWaits (${SITE}).`,
-  'Quote each figure with its period, the release date and the credit the answer carries.',
+  'Where an answer carries figures, quote each with its period, the release date and the credit the answer gives.',
   'Where a figure is not published, say so with its reason. It is not zero.',
   'Hospitals are ordered by one published median only. That is not a judgement of quality and is not clinical advice.',
   'Private hospitals are not included.',
@@ -245,6 +245,29 @@ function readerFor(env: Env, request: Request, seen: Map<string, Promise<unknown
   };
 }
 
+const SERVER_INFO_META = {
+  'io.modelcontextprotocol/serverInfo': {
+    name: SERVER.name,
+    title: SERVER.title,
+    version: SERVER.version,
+  },
+};
+
+// The spec sends a header value that is not plain ASCII as =?base64?...?=.
+function decodeHeaderValue(value: string | null): string | null {
+  const match = value === null ? null : /^=\?base64\?([A-Za-z0-9+/]*={0,2})\?=$/iu.exec(value);
+  if (match === null || value === null) {
+    return value;
+  }
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(
+      Uint8Array.from(atob(match[1] ?? ''), (char) => char.charCodeAt(0)),
+    );
+  } catch {
+    return value;
+  }
+}
+
 function modern<T extends Record<string, unknown>>(result: T, listed = false): T {
   return {
     resultType: 'complete',
@@ -276,9 +299,22 @@ async function dispatch(
     outcome: UsageLine['outcome'] = 'ok',
     tool?: unknown,
   ): Done => ({
-    response: new Response(JSON.stringify({ jsonrpc: '2.0', id, result }), {
-      headers: JSON_HEADERS,
-    }),
+    response: new Response(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        id,
+        result: isModern
+          ? {
+              ...result,
+              _meta: {
+                ...(isObject(result['_meta']) ? result['_meta'] : {}),
+                ...SERVER_INFO_META,
+              },
+            }
+          : result,
+      }),
+      { headers: JSON_HEADERS },
+    ),
     outcome,
     tool,
   });
@@ -308,13 +344,6 @@ async function dispatch(
               {
                 supportedVersions: [MODERN_VERSION, ...LEGACY_VERSIONS],
                 capabilities: { tools: { listChanged: false } },
-                _meta: {
-                  'io.modelcontextprotocol/serverInfo': {
-                    name: SERVER.name,
-                    title: SERVER.title,
-                    version: SERVER.version,
-                  },
-                },
                 instructions: INSTRUCTIONS,
               },
               true,
@@ -434,6 +463,13 @@ async function serve(request: Request, env: Env, origin: string | null): Promise
       call: { method, outcome: 'rpc_error' as const, code: ERR.header },
     };
   }
+  // The spec sets no header rules for a notification, so none are checked.
+  if (!hasId) {
+    return {
+      response: withCors(new Response(null, { status: 202, headers: NOINDEX })),
+      call: { method, outcome: 'ok' as const },
+    };
+  }
   if (isModern) {
     const meta = isObject(params['_meta']) ? params['_meta'] : {};
     const named = method === 'tools/call' ? params['name'] : undefined;
@@ -442,7 +478,7 @@ async function serve(request: Request, env: Env, origin: string | null): Promise
         ? 'The _meta protocol version does not match the header.'
         : request.headers.get('mcp-method') !== method
           ? 'The Mcp-Method header does not match the body.'
-          : method === 'tools/call' && request.headers.get('mcp-name') !== named
+          : method === 'tools/call' && decodeHeaderValue(request.headers.get('mcp-name')) !== named
             ? 'The Mcp-Name header does not match the body.'
             : undefined;
     if (mismatch !== undefined) {
@@ -451,12 +487,6 @@ async function serve(request: Request, env: Env, origin: string | null): Promise
         call: { method, outcome: 'rpc_error' as const, code: ERR.header },
       };
     }
-  }
-  if (!hasId) {
-    return {
-      response: withCors(new Response(null, { status: 202, headers: NOINDEX })),
-      call: { method, outcome: 'ok' as const },
-    };
   }
   const done = await dispatch(method, params, id, isModern, readerFor(env, request, new Map()));
   return {

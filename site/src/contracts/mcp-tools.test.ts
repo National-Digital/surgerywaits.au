@@ -182,7 +182,7 @@ describe('surgerywaits_explain_urgency', () => {
     );
   });
 
-  it('uses the wording the site gives each category', () => {
+  it('uses the wording the site gives each category', async () => {
     const yaml = readFileSync(
       new URL('../../content/templates/urgency.yaml', import.meta.url),
       'utf8',
@@ -191,6 +191,14 @@ describe('surgerywaits_explain_urgency', () => {
     const meaning = [...yaml.matchAll(/^ {4}meaning: (.+)$/gmu)].map((m) => m[1]);
     expect(CATEGORIES.map((c) => c.within)).toEqual(within);
     expect(CATEGORIES.map((c) => c.meaning)).toEqual(meaning);
+    const short = [...yaml.matchAll(/^ {2}- short: (.+)$/gmu)].map((m) => m[1]);
+    expect(CATEGORIES.map((c) => c.word)).toEqual(short);
+    const note = /^specialist_note: (.+)$/mu.exec(yaml)?.[1];
+    expect(note).toBeDefined();
+    for (const category of CATEGORIES) {
+      const answer = await explainUrgency(read, { category: String(category.number) });
+      expect(answer.who_decides.startsWith(note ?? '')).toBe(true);
+    }
   });
 });
 
