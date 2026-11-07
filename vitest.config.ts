@@ -22,6 +22,7 @@ if (process.env['BUILT_PAGES'] !== '1') {
     'site/src/contracts/built-pages.test.ts',
     'site/src/contracts/sitemaps.test.ts',
     'site/src/contracts/data-api.test.ts',
+    'site/src/contracts/surfaces.test.ts',
   );
 }
 if (process.env['HTML_TEST'] !== '1') {
