@@ -37,6 +37,12 @@ const escape = (text: string): string =>
 
 const capital = (text: string): string => `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
 
+// The full reason runs past the canvas edge at this size; the credit line names the publisher.
+const chartReason = (figure: Figure): string =>
+  figure.state === 'not_published' && figure.reason === 'not_published_by_aihw'
+    ? 'Not published by the source'
+    : capital(formatFigure('median_wait', figure));
+
 const valueOf = (figure: Figure): number | null =>
   figure.state === 'published' ? figure.value : null;
 
@@ -52,10 +58,7 @@ function ordered(bars: readonly StateBar[]): StateBar[] {
 
 export function stateChartSvg(chart: StateChart): string {
   for (const { name, figure } of chart.bars) {
-    if (
-      isPublished(figure) &&
-      (figure.period !== chart.period || figure.release !== chart.release)
-    ) {
+    if (figure.period !== chart.period || figure.release !== chart.release) {
       throw new RangeError(`${name} does not share the chart's period and release`);
     }
   }
@@ -76,7 +79,7 @@ export function stateChartSvg(chart: StateChart): string {
     const label = `<text x="${String(LABEL_END)}" y="${String(text)}" text-anchor="end" font-size="13" fill="#14181d">${escape(bar.name)}</text>`;
     const value = valueOf(bar.figure);
     if (value === null) {
-      const reason = capital(formatFigure('median_wait', bar.figure));
+      const reason = chartReason(bar.figure);
       return `${label}<text x="${String(TRACK_START)}" y="${String(text)}" font-size="13" fill="#49525e">${escape(reason)}</text>`;
     }
     const filled = peak === 0 ? 0 : (value / peak) * TRACK_WIDTH;
@@ -105,6 +108,23 @@ export function stateChartSvg(chart: StateChart): string {
   ].join('\n')}\n`;
 }
 
+// The schema lets a state leave out a measure, and the page promises every state a row.
+export function stateBars(
+  states: readonly { state: string; measures: { median_wait?: Figure } }[],
+  period: string,
+  release: string,
+): StateBar[] {
+  return states.map(({ state, measures }) => ({
+    name: stateName(state),
+    figure: measures.median_wait ?? {
+      state: 'not_reported',
+      reason: 'not_reported_by_source',
+      period,
+      release,
+    },
+  }));
+}
+
 export interface ChartFile {
   slug: string;
   svg: string;
@@ -117,10 +137,7 @@ export function stateChartFiles(): ChartFile[] {
     .filter((ref) => ref.kind === 'procedure')
     .flatMap((ref) => {
       const surgery = readSurgery('procedure', ref.slug);
-      const bars = surgery.benchmarks.states.flatMap(({ state, measures }) => {
-        const figure = measures.median_wait;
-        return figure === undefined ? [] : [{ name: stateName(state), figure }];
-      });
+      const bars = stateBars(surgery.benchmarks.states, surgery.period, surgery.release);
       if (bars.length === 0) {
         return [];
       }

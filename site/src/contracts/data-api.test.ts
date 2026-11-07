@@ -23,10 +23,12 @@ describe('the built data files', () => {
     expect(built('data-api/', '.json')).toEqual(paths);
   });
 
-  it('publishes each file as the dist holds it, in canonical form', () => {
+  it('publishes each file with the same content as the dist file, keys sorted', () => {
     for (const path of paths) {
-      const source: unknown = JSON.parse(readFileSync(`${distDirectory()}/${path}`, 'utf8'));
-      expect(read(`data-api/${path}`), path).toBe(canonicalJson(source));
+      const raw: unknown = JSON.parse(readFileSync(`${distDirectory()}/${path}`, 'utf8'));
+      const published = read(`data-api/${path}`);
+      expect(JSON.parse(published) as unknown, path).toEqual(raw);
+      expect(published, path).toBe(canonicalJson(JSON.parse(published)));
     }
   });
 

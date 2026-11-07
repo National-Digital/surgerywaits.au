@@ -51,9 +51,19 @@ export function cacheControl(pathname: string, status: number): string | undefin
   return 'public, max-age=0, must-revalidate';
 }
 
+// A JSON client that asks for a missing data file gets JSON back, not the site's HTML page.
+function dataApiNotFound(method: string): Response {
+  return new Response(method === 'HEAD' ? null : '{"error":"not found"}', {
+    status: 404,
+    headers: { 'Content-Type': 'application/json; charset=utf-8' },
+  });
+}
+
 // A copy with the headers set, because a response from the assets binding is immutable.
-export function withHeaders(response: Response, pathname: string): Response {
-  const copy = new Response(response.body, response);
+export function withHeaders(response: Response, pathname: string, method = 'GET'): Response {
+  const source =
+    isDataApi(pathname) && response.status === 404 ? dataApiNotFound(method) : response;
+  const copy = new Response(source.body, source);
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     copy.headers.set(name, value);
   }

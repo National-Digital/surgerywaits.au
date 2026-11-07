@@ -12,7 +12,7 @@ const env = {
       seen.push(new URL(request.url).pathname);
       const { pathname } = new URL(request.url);
       return Promise.resolve(
-        pathname === '/missing/'
+        pathname === '/missing/' || pathname.endsWith('missing.json') || pathname.includes('%2f')
           ? new Response('gone', { status: 404 })
           : new Response(request.method === 'HEAD' ? null : '<p>page</p>', {
               status: 200,
@@ -243,4 +243,56 @@ describe('the data files', () => {
       expect(response.headers.get('Allow'), path).toBe('GET, HEAD');
     }
   });
+
+  it.each([
+    ['GET', '/data-api/missing.json'],
+    ['HEAD', '/data-api/missing.json'],
+    ['GET', '/data-api/%2f..'],
+    ['GET', '/data-api/a%2fmissing.json'],
+  ])('answers %s %s with a small JSON 404 that any site may read', async (method, path) => {
+    const response = await send(path, method);
+    expect(response.status).toBe(404);
+    expect(response.headers.get('Content-Type')).toBe('application/json; charset=utf-8');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
+    expect(response.headers.get('X-Robots-Tag')).toBe('noindex');
+    expect(await response.text()).toBe(method === 'HEAD' ? '' : '{"error":"not found"}');
+  });
+
+  it('leaves the HTML 404 for a page', async () => {
+    const response = await get('/missing/');
+    expect(response.status).toBe(404);
+    expect(await response.text()).toBe('gone');
+  });
+
+  it('answers HEAD on a data file with its headers and no body', async () => {
+    const response = await send('/data-api/index.json', 'HEAD');
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Content-Type')).toBe('application/json; charset=utf-8');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
+    expect(response.headers.get('Cache-Control')).toBe('public, max-age=3600');
+    expect(await response.text()).toBe('');
+  });
+
+  it('passes an encoded path to the assets as sent', async () => {
+    seen.length = 0;
+    await get('/data-api/%2f..');
+    expect(seen).toEqual(['/data-api/%2f..']);
+  });
+
+  it('gives the path without its slash no data headers and refuses its preflight', async () => {
+    const response = await get('/data-api');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();
+    expect((await send('/data-api', 'OPTIONS')).status).toBe(405);
+  });
+
+  it.each(['/data-api/missing.json', '/data-api/%2f..'])(
+    'answers a preflight on the missing path %s like any other',
+    async (path) => {
+      const response = await send(path, 'OPTIONS');
+      expect(response.status).toBe(204);
+      expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
+      expect(response.headers.get('Access-Control-Allow-Methods')).toBe('GET, HEAD, OPTIONS');
+    },
+  );
 });

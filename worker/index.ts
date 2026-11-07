@@ -70,7 +70,7 @@ export async function handle(
     );
   }
   try {
-    return withHeaders(await env.ASSETS.fetch(request), url.pathname);
+    return withHeaders(await env.ASSETS.fetch(request), url.pathname, request.method);
   } catch {
     return serverError(url.pathname);
   }
