@@ -385,8 +385,14 @@ describe('hosts and the security file', () => {
     handle(new Request(`https://${host}${path}`), env, table);
 
   it('sends noindex on every response from a host that is not the site', async () => {
-    for (const host of ['example.test', 'surgerywaits.pages.dev', 'surgerywaits.au.example.test']) {
-      for (const path of ['/state/nsw/', '/missing/', '/old/', '/robots.txt']) {
+    const hosts = [
+      'example.test',
+      'surgerywaits.pages.dev',
+      'surgerywaits.au.example.test',
+      'staging.surgerywaits.au',
+    ];
+    for (const host of hosts) {
+      for (const path of ['/state/nsw/', '/missing/', '/old/', '/robots.txt', '/mcp']) {
         expect((await on(host, path)).headers.get('X-Robots-Tag'), `${host}${path}`).toBe(
           'noindex',
         );

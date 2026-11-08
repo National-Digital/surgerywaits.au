@@ -13,4 +13,12 @@
     "run_worker_first": true,
     "html_handling": "force-trailing-slash",
   },
+  "env": {
+    // A second Worker with the same code. The Worker marks every host but the site's own noindex.
+    "staging": {
+      "name": "surgerywaits-staging",
+      "workers_dev": false,
+      "preview_urls": false,
+    },
+  },
 }

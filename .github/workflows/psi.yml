@@ -1,0 +1,77 @@
+name: PageSpeed Insights
+
+# Started by hand. Asks Google's PageSpeed Insights API, which runs the current Lighthouse, to
+# measure a public address on mobile and desktop, and fails when a category scores below the
+# minimum. The key is optional: without one, Google's shared quota applies. It sits in the psi
+# environment as PSI_API_KEY. This workflow never runs on a schedule or on a pull request.
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: Public address to measure
+        type: string
+        default: https://surgerywaits.au/
+      minimum:
+        description: Lowest accepted score for each category, out of 100
+        type: string
+        default: '90'
+
+permissions: {}
+
+concurrency:
+  group: psi
+  cancel-in-progress: false
+
+jobs:
+  measure:
+    name: Measure
+    if: ${{ github.repository == 'National-Digital/surgerywaits.au' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: psi
+    permissions: {}
+    steps:
+      - name: Run PageSpeed Insights
+        env:
+          PSI_API_KEY: ${{ secrets.PSI_API_KEY }}
+          URL: ${{ inputs.url }}
+          MINIMUM: ${{ inputs.minimum }}
+        run: |
+          set -eu
+          case "$URL" in https://*) ;; *) echo "::error::The address must start with https://"; exit 1 ;; esac
+          case "$MINIMUM" in ''|*[!0-9]*) echo "::error::The minimum must be a whole number"; exit 1 ;; esac
+          [ -n "$PSI_API_KEY" ] || echo "::notice::No PSI_API_KEY is set, so Google's shared quota applies"
+          failed=0
+          for strategy in mobile desktop; do
+            out="$RUNNER_TEMP/psi-$strategy.json"
+            args=(--get --data-urlencode "url=$URL" --data-urlencode "strategy=$strategy"
+              --data category=performance --data category=accessibility
+              --data category=best-practices --data category=seo)
+            [ -z "$PSI_API_KEY" ] || args+=(-H "x-goog-api-key: $PSI_API_KEY")
+            if ! curl -fsS --retry 2 --max-time 120 "${args[@]}" -o "$out" "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"; then
+              echo "::error::The PageSpeed Insights call failed for $strategy"
+              exit 1
+            fi
+            if ! jq -e '.lighthouseResult.categories' "$out" > /dev/null; then
+              echo "::error::The PageSpeed Insights answer for $strategy has no Lighthouse result"
+              exit 1
+            fi
+            echo "== $strategy =="
+            jq -r '.lighthouseResult.categories | to_entries[] | "\(.value.title): \((.value.score // 0) * 100 | round)"' "$out"
+            below=$(jq -r --argjson min "$MINIMUM" '
+              .lighthouseResult as $r
+              | $r.categories | to_entries[]
+              | select(((.value.score // 0) * 100) < $min)
+              | .key as $k
+              | "\(.value.title) is below \($min)",
+                ($r.categories[$k].auditRefs[]
+                  | select(.weight > 0)
+                  | $r.audits[.id]
+                  | select(.score != null and .score < 1)
+                  | "  - \(.title) (\(.id)): \(.score)")' "$out")
+            if [ -n "$below" ]; then
+              printf '%s\n' "$below"
+              failed=1
+            fi
+          done
+          [ "$failed" -eq 0 ] || { echo "::error::A category is below the minimum"; exit 1; }
