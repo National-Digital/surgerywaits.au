@@ -105,7 +105,8 @@ jobs:
     permissions:
       contents: read
     env:
-      BRANCH: chore/data-refresh
+      # data-pr.yml reads the run id back from the branch name.
+      BRANCH: data/refresh-${{ github.run_id }}
     steps:
       - id: app
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
@@ -150,6 +151,11 @@ jobs:
           else
             gh pr create --head "$BRANCH" --base main --title "data: move pinned publicdata.au versions" --body-file "$RUNNER_TEMP/body.md"
           fi
+          # Only the newest refresh PR stays open: close the app's PRs from older runs.
+          for old in $(gh pr list --base main --state open --limit 100 --json number,headRefName,isCrossRepository,author \
+            --jq ".[] | select(.isCrossRepository == false and .author.login == \"app/${APP_LOGIN%\[bot\]}\" and (.headRefName | test(\"^data/refresh-[0-9]+$\")) and (.headRefName | ltrimstr(\"data/refresh-\") | tonumber) < $GITHUB_RUN_ID) | .number"); do
+            gh pr close "$old" --delete-branch
+          done
 
   report:
     name: Report

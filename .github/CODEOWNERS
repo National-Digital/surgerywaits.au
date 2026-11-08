@@ -1,11 +1,16 @@
 # Every change needs a maintainer's review.
 *                       @National-Digital/engineering
 
-# Licence and brand files also need one of the project's owners.
+# Licence, brand and the automation's trust boundary also need one of the project's owners.
 /LICENSE                @National-Digital/engineering @x5hwuk7nc6jsudcc @Tarrah102
 /LICENSE-DATA.md        @National-Digital/engineering @x5hwuk7nc6jsudcc @Tarrah102
 /THIRD-PARTY-NOTICES.md @National-Digital/engineering @x5hwuk7nc6jsudcc @Tarrah102
 /BRAND.md               @National-Digital/engineering @x5hwuk7nc6jsudcc @Tarrah102
 /SECURITY.md            @National-Digital/engineering @x5hwuk7nc6jsudcc @Tarrah102
 /CITATION.cff           @National-Digital/engineering @x5hwuk7nc6jsudcc @Tarrah102
+/.github/workflows/data-pr.yml  @National-Digital/engineering @x5hwuk7nc6jsudcc @Tarrah102
 /.github/CODEOWNERS     @National-Digital/engineering @x5hwuk7nc6jsudcc @Tarrah102
+
+# The refreshed manifest has no owner: data-pr.yml approves the refresh's own PRs on fixed
+# conditions, and any other change to it still needs a maintainer's approval.
+/data/manifest.json
