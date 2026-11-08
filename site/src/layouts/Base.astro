@@ -7,6 +7,7 @@ import Masthead from '../components/Masthead.astro';
 import JsonLd from '../components/JsonLd.astro';
 import SkipLink from '../components/SkipLink.astro';
 import { getSite } from '../lib/content';
+import { BEACON_SRC } from '../lib/privacy';
 import { breadcrumbList, organization, webPage, website } from '../lib/json-ld';
 import type { Crumb, JsonLdNode } from '../lib/json-ld';
 
@@ -76,5 +77,11 @@ const graph = [
     </main>
     {compareBar && <CompareBar />}
     <Footer compact={compactFooter} printHidden={!printFooter} />
+    <script
+      is:inline
+      defer
+      src={BEACON_SRC}
+      data-cf-beacon={JSON.stringify({ token: site.analytics.beacon_token })}
+    ></script>
   </body>
 </html>

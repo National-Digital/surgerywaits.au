@@ -191,6 +191,8 @@ loads them as Astro content collections. Components read them through `site/src/
   strings pass only as imports, object keys and the key argument of `label` or `getPage`.
   `eslint/fixtures/text-*.astro` prove the rule.
 - `quotes` in `terms.yaml` name a page slug, such as `methodology`, which is also the built page's path.
+- A change to the text of a policy page (privacy, terms, accessibility or corrections) sets its `updated` date
+  to the day of the change.
 
 ## Making a change
 
@@ -293,7 +295,7 @@ whose names are stable enough to require as status checks.
   and the preview build, and holds the `/dev/primitives/` page and the compare page in three states
   (empty, with suggestions listed, with results shown) to the same checks. It also drives the built
   compare tool in Chromium with `scripts/tool.test.ts`. See
-  [`ACCESSIBILITY.md`](docs/ACCESSIBILITY.md).
+  [`accessibility.yaml`](site/content/pages/accessibility.yaml).
 - `Repository tests` runs `pipeline/tests/test_repo.py`, `pipeline/tests/test_docs.py` and
   `pipeline/tests/test_testing_rules.py`. The first reads every workflow and checks
   that jobs with side effects are guarded by the repository name, that no pull request workflow
@@ -352,9 +354,9 @@ database name them. Check a change to `renovate.json` with
 ## Reporting problems
 
 Open an issue with one of the templates: a bug report, a data problem or a feature request. A
-figure that differs from the source is a data problem, and [`docs/CORRECTIONS.md`](docs/CORRECTIONS.md)
-says how it is handled. Accessibility barriers are reported as
-[`docs/ACCESSIBILITY.md`](docs/ACCESSIBILITY.md#report-a-barrier) describes. Security reports go
+figure that differs from the source is a data problem, and [`corrections.yaml`](site/content/pages/corrections.yaml)
+says how it is handled, and the site serves it at `/corrections/`. Accessibility barriers are reported as
+`/accessibility/` describes. Security reports go
 through [SECURITY.md](SECURITY.md) and never into a public issue.
 
 ## Licences

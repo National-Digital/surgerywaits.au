@@ -4,24 +4,52 @@ import { describe, expect, it } from 'vitest';
 
 import {
   ABOUT_PATH,
+  ACCESSIBILITY_PATH,
+  CORRECTIONS_PATH,
   DATA_PATH,
   LIVE_LIMITS,
   METHODOLOGY_PATH,
+  PRIVACY_PATH,
+  TERMS_PATH,
   aboutFacts,
+  correctionRows,
   dataFacts,
   fillSections,
   fillText,
   methodologyFacts,
+  policyFacts,
+  updatedLine,
 } from '../lib/article-pages';
 import type { SiteLimits } from '../lib/article-pages';
 import aboutPage from '../pages/about.astro';
+import accessibilityPage from '../pages/accessibility.astro';
+import correctionsPage from '../pages/corrections.astro';
+import privacyPage from '../pages/privacy.astro';
+import PlainTable from '../components/PlainTable.astro';
+import termsPage from '../pages/terms.astro';
 import dataPage from '../pages/data.astro';
 import methodologyPage from '../pages/methodology.astro';
-import { getAbout, getDataPage, getMethodology, getSite } from '../lib/content';
+import {
+  getAbout,
+  getAccessibility,
+  getCorrections,
+  getDataPage,
+  getMethodology,
+  getPrivacy,
+  getSite,
+  getTerms,
+} from '../lib/content';
 import type { ArticleSection } from '../lib/content-schema';
-import { termsSchema } from '../lib/content-schema';
+import { correctionsSchema, termsSchema } from '../lib/content-schema';
 import { readCredits } from '../lib/credits';
-import { decode, pageStrings, readContent, replacedTerms } from '../lib/content-files';
+import {
+  LEGAL_ENTITY,
+  decode,
+  pageStrings,
+  readContent,
+  replacedTerms,
+} from '../lib/content-files';
+import { BEACON_SRC } from '../lib/privacy';
 import { formatDate, formatNotPublished } from '../lib/format';
 import { isBuilt } from '../lib/links';
 import {
@@ -39,9 +67,11 @@ import {
   MIN_PLACE_PAGES,
   NEAR_RADIUS_KM,
 } from '../lib/surgery-page';
+import { HOUSE } from '../../../scripts/a11y-checks.ts';
+import { SCHEMES, VIEWPORTS } from '../../../scripts/a11y-audit.ts';
 import { readRules } from '../lib/dist';
 import type { Rules } from '../lib/dist';
-import { render, text, textsOf, withoutJsonLd } from '../lib/test-render';
+import { render, text, textsOf, withoutSiteScripts } from '../lib/test-render';
 
 const methodology = getMethodology();
 const rules = readRules();
@@ -58,10 +88,18 @@ const sectionText = (id: string): string => {
 const methodologyHtml = await render(methodologyPage, {});
 const dataHtml = await render(dataPage, {});
 const aboutHtml = await render(aboutPage, {});
+const privacyHtml = await render(privacyPage, {});
+const termsHtml = await render(termsPage, {});
+const accessibilityHtml = await render(accessibilityPage, {});
+const correctionsHtml = await render(correctionsPage, {});
 const pages = [
   { path: METHODOLOGY_PATH, html: methodologyHtml, ...methodology },
   { path: DATA_PATH, html: dataHtml, ...getDataPage() },
   { path: ABOUT_PATH, html: aboutHtml, ...getAbout() },
+  { path: PRIVACY_PATH, html: privacyHtml, ...getPrivacy() },
+  { path: TERMS_PATH, html: termsHtml, ...getTerms() },
+  { path: ACCESSIBILITY_PATH, html: accessibilityHtml, ...getAccessibility() },
+  { path: CORRECTIONS_PATH, html: correctionsHtml, ...getCorrections() },
 ];
 
 function hrefs(html: string): string[] {
@@ -103,9 +141,9 @@ describe('Content pages', () => {
     }
   });
 
-  it('ship no script and give every section an id its heading points at', () => {
+  it('ship no script of their own and give every section an id its heading points at', () => {
     for (const { html } of pages) {
-      expect(withoutJsonLd(html)).not.toContain('<script');
+      expect(withoutSiteScripts(html)).not.toContain('<script');
       for (const [, id = ''] of html.matchAll(/<section id="([^"]+)" aria-labelledby="([^"]+)"/g)) {
         expect(html).toContain(`id="${id}-heading"`);
       }
@@ -170,6 +208,10 @@ const copyPages = [
   { name: 'methodology', page: methodology, facts },
   { name: 'data', page: getDataPage(), facts: dataFacts() },
   { name: 'about', page: getAbout(), facts: aboutFacts() },
+  { name: 'privacy', page: getPrivacy(), facts: policyFacts() },
+  { name: 'terms', page: getTerms(), facts: policyFacts() },
+  { name: 'accessibility', page: getAccessibility(), facts: policyFacts() },
+  { name: 'corrections', page: getCorrections(), facts: policyFacts() },
 ];
 
 describe('Page copy slots', () => {
@@ -428,5 +470,164 @@ describe('Data page', () => {
     expect(body).toContain('Newsreader');
     expect(body).toContain('SIL Open Font License, Version 1.1');
     expect(body).toContain('copyright 2020 The Newsreader Project Authors');
+  });
+});
+
+describe('Policy pages', () => {
+  const policies = [
+    { name: 'privacy', page: getPrivacy(), html: privacyHtml },
+    { name: 'terms', page: getTerms(), html: termsHtml },
+    { name: 'accessibility', page: getAccessibility(), html: accessibilityHtml },
+    { name: 'corrections', page: getCorrections(), html: correctionsHtml },
+  ];
+
+  it('show the date the text last changed, written out', () => {
+    for (const { name, page, html } of policies) {
+      expect(updatedLine(page), name).toMatch(/^Last updated \d{1,2} [A-Z][a-z]+ \d{4}\.$/);
+      expect(text(html), name).toContain(updatedLine(page));
+    }
+  });
+
+  it('carry a last-updated date that is not in the future', () => {
+    const today = new Date().toISOString().slice(0, 10);
+    for (const { name, page } of policies) {
+      expect(page.updated <= today, `${name} is dated ${page.updated}`).toBe(true);
+    }
+  });
+
+  it('name the operator from the site file, and its registered name on the terms and privacy pages only', () => {
+    const { legal_entity: legal, name } = getSite().operator;
+    for (const { name: page, page: content } of policies) {
+      const copy = rawTexts(content).join(' ');
+      expect(copy, page).not.toContain(name);
+      expect(copy, page).not.toContain(legal);
+    }
+    for (const html of [termsHtml, privacyHtml]) {
+      expect(text(html)).toContain(`${legal} operates`);
+    }
+    for (const html of [accessibilityHtml, correctionsHtml]) {
+      expect(text(html)).not.toContain(legal);
+    }
+    expect(legal).toBe(LEGAL_ENTITY);
+  });
+
+  it("keep the terms lean, with the governing law and the about page's own statement of independence", () => {
+    const copy = text(termsHtml);
+    expect(copy).toContain('The laws of Queensland govern these terms.');
+    const independence = getAbout().sections.find(({ id }) => id === 'independence')?.paragraphs[0];
+    expect(independence).toBeDefined();
+    expect(copy).toContain(independence);
+    expect(copy).toContain('call 000');
+    expect(copy).toContain('Australian Consumer Law');
+    expect(copy).not.toMatch(/liab|consequential|indirect loss|GCS/iu);
+    expect(text(privacyHtml)).not.toMatch(/Privacy Act|Australian Privacy Principle|OAIC|\bAPP\b/u);
+  });
+
+  it('point the data and licence statements at the pages that hold them', () => {
+    expect(hrefs(termsHtml)).toEqual(expect.arrayContaining(['/data/', '/corrections/']));
+    expect(hrefs(correctionsHtml)).toContain('/data/');
+  });
+
+  it('tell a reader how to report a problem through GitHub and the footer contact', () => {
+    expect(hrefs(correctionsHtml)).toContain(
+      'https://github.com/National-Digital/surgerywaits.au/issues/new?template=data-problem.yml',
+    );
+    expect(hrefs(accessibilityHtml)).toContain(
+      'https://github.com/National-Digital/surgerywaits.au/issues/new?template=bug_report.yml',
+    );
+    for (const html of [privacyHtml, termsHtml, accessibilityHtml, correctionsHtml]) {
+      expect(text(html)).toContain('contact link in the footer of every page');
+    }
+  });
+
+  it('state the access checks at the numbers the gate applies', () => {
+    const copy = rawTexts(getAccessibility()).join(' ');
+    expect(copy).toContain(`${String(HOUSE.targetAAA)} pixels square`);
+    expect(copy).toContain(`${String(HOUSE.maxCharsPerLine)} characters a line`);
+    expect(copy).toContain(`${String(HOUSE.reflowWidth)} pixels`);
+    expect(copy).toContain(`${String(HOUSE.wideWidth)} pixels wide`);
+    expect(copy).toContain(`${String(HOUSE.proseFloorRem)} times the root text size`);
+    expect(copy).toContain(`${String(HOUSE.anyFloorRem)} times the root text size`);
+    expect(copy).toContain(`${String(HOUSE.rootAtNarrow)} pixels`);
+    expect(VIEWPORTS.map((v) => v.width)).toEqual([1280, 390]);
+    expect(SCHEMES).toEqual(['light', 'dark']);
+  });
+
+  it('describe the page counter that every page loads, with its retention', () => {
+    for (const { html } of policies) {
+      expect(html).toContain(BEACON_SRC);
+    }
+    const copy = text(privacyHtml);
+    expect(copy).toContain('Cloudflare Web Analytics');
+    expect(copy).toContain('sets no cookie');
+    expect(copy).toContain('7 days');
+    expect(copy).not.toContain('does not count page views');
+    expect(copy).not.toMatch(/no analytics|no JavaScript/u);
+    expect(text(accessibilityHtml)).not.toContain('contain no JavaScript');
+  });
+});
+
+describe('Corrections log', () => {
+  const log = getCorrections().log;
+  const entry = (date: string): (typeof log.entries)[number] => ({
+    date,
+    pages: 'Page',
+    wrong: 'Wrong',
+    fix: 'Fix',
+  });
+
+  it('says so when the log has no entry', () => {
+    expect(log.entries).toEqual([]);
+    expect(text(correctionsHtml)).toContain(log.empty);
+    expect(correctionsHtml).not.toContain('c-plain-table');
+  });
+
+  it('renders a populated log as a captioned table in a labelled, focusable scroll region', async () => {
+    const html = await render(PlainTable, {
+      id: 'log',
+      caption: log.caption,
+      stamp: 'Last updated 1 December 2026.',
+      rowHeading: log.row_heading,
+      headings: log.headings,
+      rows: correctionRows({ ...log, entries: [entry('2026-12-01')] }),
+    });
+    expect(html).toMatch(/<div[^>]*class="o-table-scroll"[^>]*role="region"/);
+    expect(html).toContain('aria-labelledby="log-caption"');
+    expect(html).toContain('tabindex="0"');
+    expect(html).toMatch(/<caption[^>]*id="log-caption"/);
+    expect(text(html)).toContain(log.caption);
+    expect(html.match(/<th[^>]*scope="col"/g)).toHaveLength(1 + log.headings.length);
+    expect(html.match(/<th[^>]*scope="row"/g)).toHaveLength(1);
+    expect(textsOf(html, 'c-plain-table__stamp')).toHaveLength(1);
+    expect(text(html)).toContain('1 December 2026');
+  });
+
+  it('turns an entry into a row with a written date', () => {
+    expect(correctionRows({ ...log, entries: [entry('2026-12-01')] })).toEqual([
+      {
+        name: '1 December 2026',
+        cells: [
+          { text: 'Page', withheld: false },
+          { text: 'Wrong', withheld: false },
+          { text: 'Fix', withheld: false },
+        ],
+      },
+    ]);
+  });
+
+  it('holds entries from newest to oldest', () => {
+    const base = readContent().find(({ path }) => path === 'pages/corrections.yaml')?.data as {
+      log: object;
+    };
+    const withEntries = (dates: string[]): unknown => ({
+      ...base,
+      log: { ...base.log, entries: dates.map(entry) },
+    });
+    expect(correctionsSchema.safeParse(withEntries(['2026-12-01', '2026-11-01'])).success).toBe(
+      true,
+    );
+    expect(correctionsSchema.safeParse(withEntries(['2026-11-01', '2026-12-01'])).success).toBe(
+      false,
+    );
   });
 });

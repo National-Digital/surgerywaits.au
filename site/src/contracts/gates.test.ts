@@ -13,6 +13,8 @@ import {
   compareTemplateSchema,
   homeTemplateSchema,
   aboutSchema,
+  correctionsSchema,
+  policySchema,
   dataPageSchema,
   gpSchema,
   guideSchema,
@@ -40,6 +42,9 @@ import {
   decode,
   distSlug,
   entityPattern,
+  LEGAL_ENTITY,
+  LEGAL_NAME,
+  BEACON_TOKEN,
   pageStrings,
   readContent,
   replacedTerms,
@@ -77,12 +82,14 @@ import {
   fetchProblems,
   historyUses,
   pageProblems,
+  beaconProblems,
+  BEACON_SRC,
   policySources,
   policyProblems,
   sendingUses,
   storageUses,
 } from '../lib/privacy';
-import { render, text, textsOf, withoutJsonLd } from '../lib/test-render';
+import { render, text, textsOf, withoutSiteScripts } from '../lib/test-render';
 import { SECURITY_HEADERS, withHeaders } from '../../../worker/headers';
 
 const contractDir = new URL('../../../contract/', import.meta.url);
@@ -410,7 +417,7 @@ describe('Static pages', () => {
   it("every hospital's figures are reachable without script", async () => {
     for (const slug of listDist('hospitals')) {
       const html = await render(hospitalPage, { slug });
-      expect(withoutJsonLd(html)).not.toContain('<script');
+      expect(withoutSiteScripts(html)).not.toContain('<script');
       const words = text(html);
       for (const surgery of readHospital(slug).surgeries) {
         if (surgery.kind === 'urgency') {
@@ -428,7 +435,7 @@ describe('Static pages', () => {
   it("every surgery's hospital figures are reachable without script", async () => {
     for (const ref of surgeryRefs()) {
       const html = await render(SurgeryHub, { kind: ref.kind, urlSlug: ref.urlSlug });
-      expect(withoutJsonLd(html)).not.toContain('<script');
+      expect(withoutSiteScripts(html)).not.toContain('<script');
       const words = text(html);
       for (const row of readSurgery(ref.kind, ref.slug).hospitals.filter((h) => !h.closed)) {
         expect(words, `${ref.urlSlug} ${row.slug}`).toContain(row.name);
@@ -549,11 +556,22 @@ describe('Privacy', () => {
     ).toEqual([]);
     expect(sendingUses('navigator.sendBeacon("/x", name)')).not.toEqual([]);
     expect(pageProblems('<script>track()</script>')).toEqual(['script: inline']);
-    expect(
-      pageProblems(
-        '<script src="https://static.cloudflareinsights.com/beacon.min.js" defer></script>',
-      ),
-    ).toEqual(['script: https://static.cloudflareinsights.com/beacon.min.js', 'beacon']);
+    const beacon = `<script defer src="${BEACON_SRC}" data-cf-beacon='{"token": "${BEACON_TOKEN}"}'></script>`;
+    expect(pageProblems(beacon)).toEqual([]);
+    expect(beaconProblems(beacon, BEACON_TOKEN)).toEqual([]);
+    expect(beaconProblems('<p>hi</p>', BEACON_TOKEN)).toEqual(['beacon: missing']);
+    expect(beaconProblems(beacon + beacon, BEACON_TOKEN)).toEqual(['beacon: wrong or repeated']);
+    expect(beaconProblems(beacon, 'f'.repeat(32))).toEqual(['beacon: wrong or repeated']);
+    for (const bad of [
+      `<script src="${BEACON_SRC}" data-cf-beacon='{"token": "${BEACON_TOKEN}"}'></script>`,
+      `<script defer src="${BEACON_SRC}" data-cf-beacon='{"token": "${BEACON_TOKEN}", "spa": true}'></script>`,
+      `<script defer src="${BEACON_SRC}" data-cf-beacon='{"token": "${BEACON_TOKEN}"}'>track()</script>`,
+      `<script defer src="${BEACON_SRC}x" data-cf-beacon='{"token": "${BEACON_TOKEN}"}'></script>`,
+      `<script defer src="${BEACON_SRC}"></script>`,
+      `<script defer src="${BEACON_SRC}" data-cf-beacon="nope"></script>`,
+    ]) {
+      expect(pageProblems(bad), bad).not.toEqual([]);
+    }
     expect(pageProblems('<script type="module" src="/_astro/a.js"></script><p>hi</p>')).toEqual([]);
     expect(pageProblems('<script src="//x.example/a.js"></script>')).toEqual([
       'script: //x.example/a.js',
@@ -825,6 +843,10 @@ describe('Copy', () => {
       'pages/agents.yaml': agentsSchema,
       'pages/gp.yaml': gpSchema,
       'pages/guides.yaml': guidesIndexSchema,
+      'pages/privacy.yaml': policySchema,
+      'pages/terms.yaml': policySchema,
+      'pages/accessibility.yaml': policySchema,
+      'pages/corrections.yaml': correctionsSchema,
     };
     const files = readContent();
     expect(files.length).toBeGreaterThan(0);
@@ -864,10 +886,13 @@ describe('Copy', () => {
   it('the site entity names the publisher without an ACN, an ABN or a company suffix', () => {
     const files = readContent();
     expect(files.length).toBeGreaterThan(0);
+    // Only the full registered entity in the site file may carry an ACN or an ABN; the bare legal name may carry the company suffix.
+    const bare = (t: string, path: string): string =>
+      path === 'site.yaml' ? t.replaceAll(LEGAL_ENTITY, '').replaceAll(LEGAL_NAME, '') : t;
     expect(
       files
-        .filter(({ raw, data }) =>
-          [raw, ...strings(data).map(decode)].some((t) => entityPattern.test(t)),
+        .filter(({ path, raw, data }) =>
+          [raw, ...strings(data).map(decode)].some((t) => entityPattern.test(bare(t, path))),
         )
         .map(({ path }) => path),
     ).toEqual([]);
@@ -882,6 +907,11 @@ describe('Copy', () => {
     const site = siteSchema.parse(files.find(({ path }) => path === 'site.yaml')?.data);
     expect(site.operator.line).toBe('Built and operated by {operator}, Burleigh Heads, Queensland');
     expect(site.operator.url).toBe('https://nationaldigital.com.au/');
+    expect(site.operator.name).toBe('National Digital');
+    expect(site.operator.legal_name).toBe(LEGAL_NAME);
+    expect(site.operator.legal_entity).toBe(LEGAL_ENTITY);
+    expect(site.operator.legal_entity).toContain(LEGAL_NAME);
+    expect(site.analytics.beacon_token).toBe(BEACON_TOKEN);
   });
 });
 

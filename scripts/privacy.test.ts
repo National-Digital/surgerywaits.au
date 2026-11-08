@@ -123,6 +123,12 @@ const clean: Seen = {
 
 const none = (): Promise<void> => Promise.resolve();
 
+// The page counter's two hosts are answered here, so a run reaches no outside host.
+const COUNTER = /^https:\/\/(?:static\.)?cloudflareinsights\.com\//u;
+async function answerCounter(context: BrowserContext): Promise<void> {
+  await context.route(COUNTER, (route) => route.fulfill({ status: 204, body: '' }));
+}
+
 async function run(
   address: string,
   flow: (page: Page) => Promise<void> = none,
@@ -130,6 +136,7 @@ async function run(
 ): Promise<Seen> {
   const context = await up(browser).newContext();
   try {
+    await answerCounter(context);
     await setUp(context);
     return await watch(context, address, flow);
   } finally {

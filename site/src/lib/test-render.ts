@@ -1,4 +1,5 @@
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
+import { BEACON_SRC } from './privacy';
 import { parseFragment, serialize } from 'parse5';
 import type { DefaultTreeAdapterTypes } from 'parse5';
 import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
@@ -97,8 +98,8 @@ export function elementsOf(html: Source, className: string): Found[] {
   return found;
 }
 
-// JSON-LD with no src is data, so a check that bans scripts reads the page without it.
-export function withoutJsonLd(html: string): string {
+// JSON-LD with no src is data, and the Web Analytics beacon has its own checks, so a check that bans the page's own scripts reads the page without both.
+export function withoutSiteScripts(html: string): string {
   const root = parseFragment(html);
   const strip = (node: Node): void => {
     if ('childNodes' in node) {
@@ -108,6 +109,10 @@ export function withoutJsonLd(html: string): string {
             child.nodeName === 'script' &&
             child.attrs.some((a) => a.name === 'type' && a.value === 'application/ld+json') &&
             !child.attrs.some((a) => a.name === 'src')
+          ) &&
+          !(
+            child.nodeName === 'script' &&
+            child.attrs.some((a) => a.name === 'src' && a.value === BEACON_SRC)
           ),
       );
       node.childNodes.forEach(strip);

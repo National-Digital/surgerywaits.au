@@ -2,7 +2,12 @@ name: Surgery Waits
 url: https://surgerywaits.au/
 operator:
   name: National Digital
+  legal_name: General Consulting Services Pty Ltd
+  legal_entity: General Consulting Services Pty Ltd (ACN 658 447 280) as trustee for the Australian Business Trust (ABN 13 744 838 758) trading as National Digital
   line: Built and operated by {operator}, Burleigh Heads, Queensland
   url: https://nationaldigital.com.au/
   contact_url: https://nationaldigital.com.au/contact/
   contact_label: Contact National Digital
+# The page-view counter is Cloudflare Web Analytics; the token is public.
+analytics:
+  beacon_token: cc733e51363949e9a697365b40ada13b

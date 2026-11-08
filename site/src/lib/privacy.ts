@@ -4,6 +4,7 @@ import type { DefaultTreeAdapterTypes } from 'parse5';
 // The scans behind the privacy gates; each takes source text so a fixture can fail it.
 const BEACON_SCRIPT_HOST = 'https://static.cloudflareinsights.com';
 const BEACON_REPORT_HOST = 'https://cloudflareinsights.com';
+export const BEACON_SRC = `${BEACON_SCRIPT_HOST}/beacon.min.js`;
 
 const STORAGE =
   /document\s*\.\s*cookie|document\s*\[\s*['"`]\s*cookie|cookieStore|localStorage|sessionStorage|indexedDB|\bcaches\s*[.[]|serviceWorker|(?<!delete\(\s*['"])set-cookie/giu;
@@ -93,7 +94,37 @@ function scripts(node: DefaultTreeAdapterTypes.ParentNode): DefaultTreeAdapterTy
   ]);
 }
 
-// What a built page loads from elsewhere, or runs inline, or names as the beacon.
+// The one script the site may load from elsewhere: the Web Analytics beacon, with its token and nothing else.
+function beaconToken(script: DefaultTreeAdapterTypes.Element): string | undefined {
+  const names = script.attrs.map((a) => a.name).sort();
+  const attr = (name: string): string => script.attrs.find((a) => a.name === name)?.value ?? '';
+  const empty = script.childNodes.every((c) => !('value' in c) || c.value.trim() === '');
+  if (names.join() !== 'data-cf-beacon,defer,src' || attr('src') !== BEACON_SRC || !empty) {
+    return undefined;
+  }
+  try {
+    const data = JSON.parse(attr('data-cf-beacon')) as Record<string, unknown>;
+    const token = data['token'];
+    return Object.keys(data).join() === 'token' && typeof token === 'string' ? token : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+const beaconsOf = (html: string): (string | undefined)[] =>
+  scripts(parse(html, { scriptingEnabled: false }))
+    .filter((s) => s.attrs.some((a) => a.name === 'src' && a.value === BEACON_SRC))
+    .map(beaconToken);
+
+// A page must hold the beacon once, with the site's token.
+export const beaconProblems = (html: string, token: string): string[] => {
+  const found = beaconsOf(html);
+  return found.length === 1 && found[0] === token
+    ? []
+    : [`beacon: ${found.length === 0 ? 'missing' : 'wrong or repeated'}`];
+};
+
+// What a built page loads from elsewhere, or runs inline, other than its one beacon.
 export function pageProblems(html: string): string[] {
   const problems: string[] = [];
   // With scripting off, noscript content parses as elements too.
@@ -108,15 +139,15 @@ export function pageProblems(html: string): string[] {
     if (type === 'application/ld+json' && src === undefined) {
       continue;
     }
+    if (src === BEACON_SRC && beaconToken(script) !== undefined) {
+      continue;
+    }
     if (
       type === 'application/ld+json' ||
       (src === undefined ? text.trim() !== '' : !/^\/(?!\/)/.test(src))
     ) {
       problems.push(`script: ${src ?? 'inline'}`);
     }
-  }
-  if (/cloudflareinsights|beacon\.min\.js|data-cf-beacon/iu.test(html)) {
-    problems.push('beacon');
   }
   return problems;
 }

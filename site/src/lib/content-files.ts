@@ -46,6 +46,12 @@ function termPattern(term: string): RegExp {
 }
 
 // Whitespace entities decode to non-breaking and other spaces, which \s matches.
+// The bare legal name, the full registered entity (the only string that may carry an ACN or ABN) and the public Web Analytics token; each is pinned here.
+export const LEGAL_NAME = 'General Consulting Services Pty Ltd';
+export const LEGAL_ENTITY =
+  'General Consulting Services Pty Ltd (ACN 658 447 280) as trustee for the Australian Business Trust (ABN 13 744 838 758) trading as National Digital';
+export const BEACON_TOKEN = 'cc733e51363949e9a697365b40ada13b';
+
 export const entityPattern = /\b(?:ACN|ABN)\b|\bPty\.?\s*Ltd\b/i;
 
 export function decode(text: string): string {

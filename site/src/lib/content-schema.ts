@@ -11,6 +11,9 @@ export const siteSchema = z.strictObject({
   url: httpsUrl,
   operator: z.strictObject({
     name: text,
+    // The bare legal name goes in the JSON-LD graph; the full registered entity is shown only on the terms and privacy pages.
+    legal_name: text,
+    legal_entity: text,
     line: text.refine((line) => line.split(OPERATOR_SLOT).length === 2, {
       message: `the line must hold ${OPERATOR_SLOT} exactly once`,
     }),
@@ -18,6 +21,7 @@ export const siteSchema = z.strictObject({
     contact_url: httpsUrl,
     contact_label: text,
   }),
+  analytics: z.strictObject({ beacon_token: z.string().regex(/^[0-9a-f]{32}$/u) }),
 });
 
 // A key here is the only way to name a label, so a stray or missing key fails the build.
@@ -729,12 +733,15 @@ export const homeTemplateSchema = z.strictObject({
   exclusion: slotted(),
 });
 
+// A section may link to another page of the site or to a page on another host.
+const sectionLink = z.strictObject({ label: text, href: z.union([sitePath, httpsUrl]) });
+
 const section = z.strictObject({
   id: z.string().regex(/^[a-z]+(?:-[a-z]+)*$/, 'lower-case words joined by hyphens'),
   heading: text,
   paragraphs: z.array(text).min(1),
   items: z.array(text).min(1).optional(),
-  links: z.array(link).min(1).optional(),
+  links: z.array(sectionLink).min(1).optional(),
 });
 
 export type ArticleSection = z.output<typeof section>;
@@ -883,5 +890,34 @@ export const compareTemplateSchema = z.strictObject({
     print: slotted(),
     print_source: slotted(),
     print_note: slotted(),
+  }),
+});
+
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'a date written year-month-day');
+
+// A policy page shows the date its text last changed.
+export const policySchema = z.strictObject({
+  ...article,
+  updated: isoDate,
+  updated_line: slotted('date'),
+});
+
+const correction = z.strictObject({ date: isoDate, pages: text, wrong: text, fix: text });
+
+export const correctionsSchema = z.strictObject({
+  ...article,
+  updated: isoDate,
+  updated_line: slotted('date'),
+  log: z.strictObject({
+    heading: text,
+    caption: text,
+    empty: text,
+    row_heading: text,
+    headings: z.tuple([text, text, text]),
+    entries: z
+      .array(correction)
+      .refine((all) => all.every((c, i) => i === 0 || (all[i - 1]?.date ?? '') >= c.date), {
+        message: 'the corrections run from newest to oldest',
+      }),
   }),
 });

@@ -7,7 +7,7 @@ body:
       value: |
         The site shows the figures that publicdata.au republishes from the source. An error at the
         publisher is theirs to fix, and the next publicdata.au version carries the fix. This form
-        is for a figure here that differs from the source. [docs/CORRECTIONS.md](https://github.com/National-Digital/surgerywaits.au/blob/main/docs/CORRECTIONS.md)
+        is for a figure here that differs from the source. [The corrections page](https://surgerywaits.au/corrections/)
         explains how reports are handled.
   - type: input
     id: url

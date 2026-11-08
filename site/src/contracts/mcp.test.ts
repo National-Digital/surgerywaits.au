@@ -10,6 +10,8 @@ import {
   PROTOCOL_VERSIONS,
   serverCard,
 } from '../../../worker/mcp';
+import { SECURITY_HEADERS } from '../../../worker/headers';
+import { getPrivacy } from '../lib/content';
 import { SURFACES, surfaceBodyProblem, surfaceOf } from '../lib/surfaces';
 
 const asked: string[] = [];
@@ -544,6 +546,43 @@ describe('the logging allow-list', () => {
     for (const word of typed) {
       expect(lines.join('\n')).not.toContain(word);
     }
+  });
+
+  it('writes the fields the privacy page describes, and no address or content', async () => {
+    const lines = await logged(call('surgerywaits_compare_hospitals', { procedure: 'x' }));
+    const fields = Object.keys(JSON.parse(lines[0] ?? '') as Record<string, unknown>);
+    expect(fields).toEqual([
+      'event',
+      'http',
+      'status',
+      'protocol',
+      'method',
+      'tool',
+      'outcome',
+      'code',
+    ]);
+    expect(
+      fields.filter((f) => /ip|address|agent|origin|session|body|arg|query|content/iu.test(f)),
+    ).toEqual([]);
+    const copy = getPrivacy()
+      .sections.flatMap((x) => x.paragraphs)
+      .join(' ');
+    expect(copy).toContain('one usage line for each request to the MCP endpoint at /mcp');
+    expect(copy).toContain('which method or tool the request named and how the request ended');
+    expect(copy).toContain('It holds no IP address and no content of the request.');
+    expect(copy).not.toContain('writes no log');
+  });
+
+  it('turns off the device features the privacy page names', () => {
+    const policy = SECURITY_HEADERS['Permissions-Policy'] ?? '';
+    expect(policy).toContain('camera=()');
+    expect(policy).toContain('microphone=()');
+    const copy = getPrivacy()
+      .sections.flatMap((x) => x.paragraphs)
+      .join(' ');
+    expect(copy).toContain(
+      'turns off access to device features, such as the camera and the microphone',
+    );
   });
 
   it('writes a tool or method a caller invented as other', async () => {
