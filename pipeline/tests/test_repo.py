@@ -802,6 +802,13 @@ def test_the_worker_is_deployed_with_the_version_the_deploy_job_chose() -> None:
     assert script.count("SURGERYWAITS_") == len(definition.split("--var")) - 1
 
 
+def test_the_release_step_names_the_repository_for_gh() -> None:
+    wf = _load((ROOT / ".github" / "workflows" / "deploy.yml").read_text("utf-8"))
+    steps = cast("list[Any]", _map(_map(wf.get("jobs"))["release"])["steps"])
+    env = _map(next(_map(s) for s in steps if "gh release" in str(_map(s).get("run")))["env"])
+    assert env["GH_REPO"] == "${{ github.repository }}"
+
+
 def test_the_release_job_never_runs_for_a_manual_deploy() -> None:
     wf = _load((ROOT / ".github" / "workflows" / "deploy.yml").read_text("utf-8"))
     condition = str(_map(_map(wf.get("jobs"))["release"]).get("if"))
