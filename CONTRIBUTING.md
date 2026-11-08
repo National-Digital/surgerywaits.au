@@ -301,13 +301,40 @@ whose names are stable enough to require as status checks.
 - `Repository tests` runs `pipeline/tests/test_repo.py`, `pipeline/tests/test_docs.py` and
   `pipeline/tests/test_testing_rules.py`. The first reads every workflow and checks
   that jobs with side effects are guarded by the repository name, that no pull request workflow
-  runs Lighthouse or PageSpeed Insights, that `pull_request_target` is unused, that every action
+  runs Lighthouse or PageSpeed Insights, that only the preview cleanup workflow uses `pull_request_target`, that the Cloudflare secrets reach only the deploy, preview deploy and preview cleanup steps, that every action
   is pinned to a commit SHA with a version comment, that each workflow declares top-level
   `permissions:`, that each job runs on a named image, and that every scheduled workflow reports
   its failures through the reusable workflow. The second fails when a document links to a missing
   file or heading, names a missing path or npm script, lists a check that no workflow defines, or
   cites a test, pending test or CI job in `docs/ARCHITECTURE.md` that does not exist. The third
   fails on snapshot files, snapshot matchers and coverage gates, and proves the network guard.
+
+### Pull request previews
+
+Every pull request gets a preview on Cloudflare Pages, at `https://pr-<number>.surgerywaits-au.pages.dev`.
+Three workflows make it.
+
+- `preview-build.yml` runs on every pull request, forks included. It has no secrets and no
+  environment. It pulls the pinned data, builds the site, runs the built-page checks (a subset of
+  the gates in `Data checks`) and uploads the files as an artifact.
+- `preview-deploy.yml` runs when that build succeeds. It runs from the default branch and never
+  checks out or runs code from the pull request. It downloads the artifact, deletes `_worker.js`,
+  `_routes.json`, `_redirects`, `functions`, `_headers` and every Markdown version of a page, writes a `_headers` file with
+  `X-Robots-Tag: noindex`, and runs `wrangler pages deploy`. The `preview` environment holds the
+  Cloudflare secrets, and only the deploy step and the step that deletes the preview of a closed pull request see them. The address is a commit status named
+  `Preview` and appears in the job summary. The workflow posts no comment.
+- `preview-cleanup.yml` runs when a pull request closes. It checks out nothing and deletes every
+  deployment on the branch `pr-<number>`.
+
+A preview serves the static site only. It has no Worker, so it has none of the Worker's headers,
+Markdown negotiation, MCP route or redirects, and it leaves out the Markdown versions of the pages,
+which only the Worker serves. The job fails when more than 20,000 files remain, the Cloudflare Pages
+limit. The job installs wrangler in a step with no credentials, and it deletes the preview again if
+the pull request closed while the deploy ran. Previews are built only for pull requests whose base is
+`main`. Anyone's pull request, a fork's included, gets a
+public preview that carries `noindex` until the pull request closes. Production deploys only from
+`main` through `deploy.yml`. `pipeline/tests/test_repo.py` pins which steps hold the secrets and
+that the deploy and cleanup workflows run no repository code.
 
 ### Scheduled runs
 

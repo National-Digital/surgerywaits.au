@@ -354,8 +354,9 @@ def test_pull_request_target_fixture_is_caught() -> None:
     assert not uses_pull_request_target(CLEAN)
 
 
-def test_no_workflow_uses_pull_request_target() -> None:
-    assert [f.name for f in WORKFLOWS if uses_pull_request_target(f.read_text("utf-8"))] == []
+def test_only_the_preview_cleanup_workflow_uses_pull_request_target() -> None:
+    found = [f.name for f in WORKFLOWS if uses_pull_request_target(f.read_text("utf-8"))]
+    assert found == ["preview-cleanup.yml"]
 
 
 @pytest.mark.parametrize(
@@ -642,10 +643,108 @@ def _secret_steps(wf: dict[Any, Any]) -> list[str]:
     return found
 
 
-def test_the_cloudflare_secrets_reach_only_the_wrangler_deploy_step() -> None:
+def test_the_cloudflare_secrets_reach_only_the_deploy_preview_and_cleanup_steps() -> None:
     found = {
         f.name: _secret_steps(_load(f.read_text("utf-8")))
         for f in WORKFLOWS
         if CLOUDFLARE_SECRET.search(f.read_text("utf-8"))
     }
-    assert found == {"deploy.yml": ["deploy: wrangler deploy"]}
+    assert found == {
+        "deploy.yml": ["deploy: wrangler deploy"],
+        "preview-cleanup.yml": ["cleanup: Delete every deployment on the pull request's branch"],
+        "preview-deploy.yml": [
+            "deploy: wrangler pages deploy",
+            "deploy: Delete the preview of a closed pull request",
+        ],
+    }
+
+
+def _workflow(name: str) -> dict[Any, Any]:
+    return _load((ROOT / ".github" / "workflows" / name).read_text(encoding="utf-8"))
+
+
+def _steps(wf: dict[Any, Any], job: str) -> list[dict[Any, Any]]:
+    return [_map(s) for s in cast("list[Any]", _map(_map(wf.get("jobs")).get(job))["steps"]) if s]
+
+
+def test_the_preview_build_has_no_secret_environment_or_write_permission() -> None:
+    wf = _workflow("preview-build.yml")
+    assert _triggers(wf) == {"pull_request"}
+    assert _map(_map(wf.get("on", wf.get(True))).get("pull_request")).get("branches") == ["main"]
+    assert _map(wf.get("permissions")) == {}
+    job = _map(_map(wf.get("jobs")).get("build"))
+    assert "environment" not in job
+    assert _map(job.get("permissions")) == {"contents": "read"}
+    assert "secrets." not in json.dumps(wf)
+    assert "if" not in job
+
+
+def test_the_preview_deploy_and_cleanup_never_check_out_or_run_repository_code() -> None:
+    for name, trigger in (
+        ("preview-deploy.yml", "workflow_run"),
+        ("preview-cleanup.yml", "pull_request_target"),
+    ):
+        text = (ROOT / ".github" / "workflows" / name).read_text(encoding="utf-8")
+        wf = _load(text)
+        assert _triggers(wf) == {trigger}
+        steps = [
+            s for job in _map(wf.get("jobs")).values() for s in _steps({"jobs": {"j": job}}, "j")
+        ]
+        assert not [s for s in steps if "checkout" in str(s.get("uses", ""))], name
+        assert not [s for s in steps if "node-version-file" in str(s.get("with", ""))], name
+        assert not re.search(r"npm (ci|run|test)|\buv\b|\./scripts|working-directory", text), name
+        for job in _map(wf.get("jobs")).values():
+            assert (
+                _map(_map(job).get("environment")).get("name", _map(job).get("environment"))
+                == "preview"
+            )
+            assert _guard_ok(_map(job).get("if"))
+
+
+def test_the_preview_deploy_removes_files_pages_would_run_and_checks_the_number() -> None:
+    wf = _workflow("preview-deploy.yml")
+    job = _map(_map(wf.get("jobs")).get("deploy"))
+    assert _map(job.get("environment")).get("name") == "preview"
+    assert _guard_ok(job.get("if"))
+    assert "conclusion == 'success'" in str(job["if"])
+    assert _map(job.get("permissions")) == {
+        "actions": "read",
+        "pull-requests": "read",
+        "statuses": "write",
+    }
+    steps = _steps(wf, "deploy")
+    runs = [str(s.get("run", "")) for s in steps]
+    clean = next(i for i, r in enumerate(runs) if "_worker.js" in r)
+    deploy = next(i for i, r in enumerate(runs) if "pages deploy" in r)
+    download = next(i for i, s in enumerate(steps) if "download-artifact@" in str(s.get("uses")))
+    assert download < clean < deploy
+    for dangerous in ("_worker.js", "_routes.json", "_redirects", "functions", "_headers"):
+        assert dangerous in runs[clean]
+    assert "-name '*.md' -type f -delete" in runs[clean]
+    assert "-le 20000" in runs[clean]
+    assert "X-Robots-Tag: noindex" in runs[clean]
+    assert "*[!0-9]*" in runs[0]
+    assert _map(steps[download].get("with")).get("run-id") == "${{ github.event.workflow_run.id }}"
+    lock = json.loads((ROOT / "package-lock.json").read_text(encoding="utf-8"))
+    version = lock["packages"]["node_modules/wrangler"]["version"]
+    install = next(i for i, r in enumerate(runs) if "npm install" in r)
+    assert clean < install < deploy
+    assert "--ignore-scripts" in runs[install]
+    assert f"wrangler@{version}" in runs[install]
+    assert "CLOUDFLARE" not in json.dumps(steps[install])
+    assert 'wrangler/node_modules/.bin/wrangler" pages deploy' in runs[deploy]
+    assert "npx" not in "".join(runs)
+    assert '--branch "pr-$NUMBER"' in runs[deploy]
+    assert "${{" not in runs[deploy]
+    assert not (ROOT / "wrangler.jsonc").exists()
+
+
+def test_the_preview_cleanup_checks_the_number_and_has_no_other_permission() -> None:
+    wf = _workflow("preview-cleanup.yml")
+    job = _map(_map(wf.get("jobs")).get("cleanup"))
+    assert job.get("environment") == "preview"
+    assert _map(job.get("permissions")) == {}
+    assert _guard_ok(job.get("if"))
+    run = str(_steps(wf, "cleanup")[0].get("run"))
+    assert "*[!0-9]*" in run
+    assert "${{" not in run
