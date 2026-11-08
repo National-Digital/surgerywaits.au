@@ -100,12 +100,20 @@ jobs:
     if: ${{ github.repository == 'National-Digital/surgerywaits.au' && needs.bump.outputs.changed == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    # The App token pushes and opens the pull request, so its checks start.
+    environment: refresh
     permissions:
-      contents: write # pushes the refresh branch
-      pull-requests: write # opens or edits its pull request
+      contents: read
     env:
       BRANCH: chore/data-refresh
     steps:
+      - id: app
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.REFRESH_APP_CLIENT_ID }}
+          private-key: ${{ secrets.REFRESH_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -115,21 +123,22 @@ jobs:
           path: ${{ runner.temp }}/handoff
       - name: Commit, push and open or update the pull request
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app.outputs.token }}
           GH_REPO: ${{ github.repository }}
           HANDOFF: ${{ runner.temp }}/handoff
+          APP_LOGIN: ${{ vars.REFRESH_APP_LOGIN }}
         run: |
           set -eu
           cp "$HANDOFF/manifest.json" data/manifest.json
           {
             echo "This moves each pinned publicdata.au dataset below to the newest version the versions endpoint lists."
             echo "Each pin holds the sha256 of the file served, and a second download checked it before the build."
-            echo "A maintainer closes and reopens this pull request to start its checks, because a pull request opened with the workflow token does not start them."
             echo
             cat "$HANDOFF/summary.md"
           } > "$RUNNER_TEMP/body.md"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          id=$(gh api "users/$APP_LOGIN" --jq .id)
+          git config user.name "$APP_LOGIN"
+          git config user.email "$id+$APP_LOGIN@users.noreply.github.com"
           git switch -c "$BRANCH"
           git add data/manifest.json
           git commit -s -m "data: move pinned publicdata.au versions" -m "$(cat "$RUNNER_TEMP/body.md")"
