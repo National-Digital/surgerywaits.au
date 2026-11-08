@@ -113,6 +113,14 @@ const securityProblem = (body: string): string | undefined => {
     : undefined;
 };
 
+// Each twin gives the page's canonical address first and then its content under the page's own H1.
+const twinProblem = (body: string): string | undefined => {
+  if (!/^Canonical URL: <https:\/\/\S+>\n\n/u.test(body)) {
+    return 'no canonical address on the first line';
+  }
+  return /^# \S/mu.test(body) ? undefined : 'no H1';
+};
+
 const openApiProblem = (body: string): string | undefined => {
   const document = JSON.parse(body) as { openapi?: unknown };
   return typeof document.openapi === 'string' && document.openapi.startsWith('3.1.')
@@ -247,6 +255,14 @@ export const SURFACES: readonly Surface[] = [
     check: llmsProblem,
     group: 'site',
     listed: () => [{ id: 'llms-full', label: 'llms-full.txt', path: '/llms-full.txt' }],
+  },
+  {
+    id: 'markdown-twins',
+    pattern: /^\/.+\.md$/u,
+    mediaType: 'text/markdown',
+    purpose:
+      'A Markdown version of each page, written from the page and returned by the Worker to a client that asks for text/markdown.',
+    check: twinProblem,
   },
   {
     id: 'security',

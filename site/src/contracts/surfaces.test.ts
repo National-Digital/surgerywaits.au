@@ -42,6 +42,7 @@ const PLATFORM_TYPES: Readonly<Record<string, string>> = {
   svg: 'image/svg+xml',
   xml: 'application/xml',
   txt: 'text/plain',
+  md: 'text/markdown',
 };
 const env = {
   ASSETS: {
@@ -88,7 +89,7 @@ describe('the built surfaces', () => {
   });
 
   it('builds exactly the files a surface with a full list names', () => {
-    for (const surface of SURFACES.filter((s) => s.id !== 'sitemaps')) {
+    for (const surface of SURFACES.filter((s) => s.id !== 'sitemaps' && s.expected !== undefined)) {
       const expected = surface.expected?.().sort();
       expect(
         built.filter((path) => surfaceOf(path)?.id === surface.id),
@@ -127,7 +128,7 @@ describe('the built surfaces', () => {
 
 const ORIGIN = 'https://surgerywaits.au';
 // The Worker serves these two addresses, so the build writes no file for them.
-const WORKER_ADDRESSES = ['/mcp', '/mcp/', '/mcp/server-card'];
+const WORKER_ADDRESSES = ['/mcp', '/mcp/', '/mcp/server-card', '/index.html.md'];
 // A page address is a folder with an index file; any other address is a file.
 const exists = (path: string): boolean =>
   existsSync(new URL(`.${path.endsWith('/') ? `${path}index.html` : path}`, dist));
@@ -395,6 +396,48 @@ describe('the Worker behaviour the agents page describes', () => {
     );
     expect(textOf(read('/agents/index.html'))).toContain(
       `Access-Control-Allow-Origin: ${agentFacts()['cors_origin'] ?? '?'}`,
+    );
+  });
+
+  it('gives the Markdown version the headers and the status that the copy states', async () => {
+    const facts = agentFacts();
+    const text = textOf(read('/agents/index.html'));
+    const asked = await handle(
+      new Request(`${ORIGIN}/hospitals/`, { headers: { Accept: 'text/markdown' } }),
+      env,
+    );
+    expect(asked.headers.get('Content-Type')).toBe(facts['twin_type']);
+    expect(text).toContain(`Content-Type: ${facts['twin_type'] ?? '?'}, Vary: Accept`);
+    expect(asked.headers.get('Vary')).toBe('Accept');
+    expect(asked.headers.get('Content-Location')).toBe(facts['twin_example']);
+    expect(asked.headers.get('Link')).toBe(`<${ORIGIN}/hospitals/>; rel="canonical"`);
+    expect(new URL(ORIGIN).host).toBe(facts['twin_canonical_host']);
+    expect(text).toContain(
+      `the full address of its page on ${facts['twin_canonical_host'] ?? '?'}`,
+    );
+    const moved = await call('/hospitals/index.md', 'GET');
+    expect(String(moved.status)).toBe(facts['twin_redirect']);
+    expect(text).toContain(`receives status ${facts['twin_redirect'] ?? '?'}`);
+    expect(text).toContain(`the version ${facts['twin_home'] ?? '?'}`);
+    expect(text).toContain('a page address other than / followed by index.md');
+    const homeMoved = await call('/index.html.md', 'GET');
+    expect(String(homeMoved.status)).toBe(facts['twin_redirect']);
+    expect(text).toContain('A request for /index.html.md receives the same status');
+    const home = await call('/index.md', 'GET');
+    expect(home.status).toBe(200);
+    expect(text).toContain('a request for /index.md returns the home version');
+    const missing = await call('/hospitals/none.md', 'GET');
+    expect(missing.status).toBe(404);
+    expect(missing.headers.get('Content-Type')).toBe(facts['twin_type']);
+    const dataMissing = await call('/data-api/none.md', 'GET');
+    expect(dataMissing.status).toBe(404);
+    expect(dataMissing.headers.get('Content-Type')).toContain('application/json');
+    expect(text).toContain(
+      'A version that does not exist at an address outside /data-api/ returns status 404 with a Markdown body',
+    );
+    const page = await call('/hospitals/', 'GET');
+    expect(page.headers.get('Link')).toBe(
+      `<${facts['twin_example'] ?? '?'}>; rel="alternate"; type="text/markdown"`,
     );
   });
 

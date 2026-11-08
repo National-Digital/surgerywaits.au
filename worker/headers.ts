@@ -1,3 +1,5 @@
+import { canonicalOfTwin, isTwinPath, twinPathOf, TWIN_TYPE } from './twins';
+
 // Fonts and bundled assets carry a content hash in their name, so they never change at an address.
 const IMMUTABLE = /^\/(_astro|fonts)\//u;
 
@@ -91,10 +93,31 @@ function dataApiNotFound(method: string): Response {
   });
 }
 
+// A client that asks for a twin of a page that has none gets Markdown back, not the site's HTML page.
+function twinNotFound(method: string): Response {
+  return new Response(method === 'HEAD' ? null : '# Not found\n', {
+    status: 404,
+    headers: { 'Content-Type': TWIN_TYPE },
+  });
+}
+
+// A page answers differently by Accept, and says where its twin is.
+function addAlternate(headers: Headers, pathname: string): void {
+  const twin = twinPathOf(pathname);
+  if (twin !== undefined) {
+    headers.append('Link', `<${twin}>; rel="alternate"; type="text/markdown"`);
+    headers.append('Vary', 'Accept');
+  }
+}
+
 // A copy with the headers set, because a response from the assets binding is immutable.
 export function withHeaders(response: Response, pathname: string, method = 'GET'): Response {
-  const source =
-    isDataApi(pathname) && response.status === 404 ? dataApiNotFound(method) : response;
+  let source = response;
+  if (response.status === 404 && isDataApi(pathname)) {
+    source = dataApiNotFound(method);
+  } else if (response.status === 404 && isTwinPath(pathname)) {
+    source = twinNotFound(method);
+  }
   const copy = new Response(source.body, source);
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     copy.headers.set(name, value);
@@ -113,6 +136,15 @@ export function withHeaders(response: Response, pathname: string, method = 'GET'
       ALLOW_ANY_ORIGIN['Access-Control-Allow-Origin'],
     );
     copy.headers.set('Content-Type', `${CATALOG_MEDIA_TYPE}; charset=utf-8`);
+  }
+  if (isTwinPath(pathname)) {
+    if (response.status === 200) {
+      copy.headers.set('Content-Type', TWIN_TYPE);
+      // The twin names its page as canonical, so search engines index the page.
+      copy.headers.set('Link', `<${canonicalOfTwin(pathname)}>; rel="canonical"`);
+    }
+  } else if (response.status === 200 || response.status === 304) {
+    addAlternate(copy.headers, pathname);
   }
   if (isContractSchema(pathname)) {
     copy.headers.set(

@@ -25,6 +25,7 @@ if (process.env['BUILT_PAGES'] !== '1') {
     'site/src/contracts/surfaces.test.ts',
     'site/src/contracts/json-ld.test.ts',
     'site/src/contracts/mcp-built.test.ts',
+    'site/src/contracts/twins.test.ts',
   );
 }
 if (process.env['HTML_TEST'] !== '1') {
