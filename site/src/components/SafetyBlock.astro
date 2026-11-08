@@ -10,7 +10,7 @@ interface Props {
 const { full = false, id } = Astro.props;
 ---
 
-<aside class="c-safety" aria-labelledby={id}>
+<section class="c-safety" aria-labelledby={id}>
   <h2 class="c-safety__heading" id={id}>
     {label('footer_safety_heading')}
   </h2>
@@ -18,7 +18,7 @@ const { full = false, id } = Astro.props;
   <p>
     <strong>{label('footer_emergency')}</strong>
   </p>
-</aside>
+</section>
 
 <style>
   @layer components {

@@ -14,6 +14,7 @@ dev = [
   "ruff==0.17.4",
   "pyright==1.1.414",
   "types-jsonschema==4.26.0.20261006",
+  "trafilatura==2.3.1",
 ]
 
 [build-system]

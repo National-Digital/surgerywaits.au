@@ -1,0 +1,17 @@
+{
+  "minWords": 3,
+  "samplePerTemplate": 20,
+  "chrome": ["nav", "form", "[hidden]", "[aria-hidden=\"true\"]"],
+  "templates": [
+    {
+      "name": "home",
+      "floor": 95,
+      "path": "/",
+      "pageFloor": 90
+    }
+  ],
+  "requiredFields": {
+    "home": ["h1"]
+  },
+  "fieldExceptions": []
+}
