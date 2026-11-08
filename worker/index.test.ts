@@ -402,15 +402,46 @@ describe('hosts and the security file', () => {
     }
   });
 
-  it('leaves pages on the two site hosts indexable', async () => {
-    for (const host of [
-      'surgerywaits.au',
-      'www.surgerywaits.au',
-      'SurgeryWaits.AU',
-      'surgerywaits.au.',
-    ]) {
+  it('leaves pages on the site host indexable', async () => {
+    for (const host of ['surgerywaits.au', 'SurgeryWaits.AU', 'surgerywaits.au.']) {
       expect((await on(host)).headers.get('X-Robots-Tag'), host).toBeNull();
       expect((await on(host, '/robots.txt')).headers.get('X-Robots-Tag'), host).toBeNull();
+    }
+  });
+
+  it('sends every request on the www host to the same address on the apex with a 301', async () => {
+    for (const host of ['www.surgerywaits.au', 'WWW.SurgeryWaits.au', 'www.surgerywaits.au.']) {
+      for (const [path, method] of [
+        ['/state/nsw/?x=1', 'GET'],
+        ['/', 'HEAD'],
+        ['/mcp', 'POST'],
+        ['/missing/', 'GET'],
+        ['/data-api/index.json', 'GET'],
+        ['/.well-known/ai-catalog.json', 'GET'],
+        ['//evil.example/', 'GET'],
+      ] as const) {
+        const response = await handle(
+          new Request(`https://${host}${path}`, { method }),
+          env,
+          table,
+        );
+        expect(response.status, `${host}${path}`).toBe(301);
+        expect(response.headers.get('Location'), `${host}${path}`).toBe(
+          `https://surgerywaits.au${path}`,
+        );
+        expect(response.headers.get('X-Robots-Tag'), `${host}${path}`).toBeNull();
+        expect(response.headers.get('Strict-Transport-Security'), host).not.toBeNull();
+        expect(response.headers.get('Cache-Control'), path).toBe('public, max-age=86400');
+        expect(response.headers.get('Access-Control-Allow-Origin'), path).toBeNull();
+        expect(new URL(response.headers.get('Location') ?? '').host, path).toBe('surgerywaits.au');
+      }
+    }
+    for (const address of [
+      'http://www.surgerywaits.au/gp/',
+      'https://www.surgerywaits.au:8443/gp/',
+    ]) {
+      const response = await handle(new Request(address), env, table);
+      expect(response.headers.get('Location'), address).toBe('https://surgerywaits.au/gp/');
     }
   });
 

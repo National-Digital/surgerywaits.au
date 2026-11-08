@@ -1,4 +1,4 @@
-import { ALLOWED_DATA_API, isDataApi, withHeaders } from './headers';
+import { ALLOWED_DATA_API, isDataApi, SECURITY_HEADERS, withHeaders } from './headers';
 import { handleCard, handleMcp, MCP_CARD_PATH, MCP_PATH } from './mcp';
 import { redirectFor, redirects } from './redirects';
 import type { RedirectTable } from './redirects';
@@ -75,7 +75,22 @@ function withLocation(url: URL, pathname: string): string {
   return location.href;
 }
 
-const PRODUCTION_HOSTS: ReadonlySet<string> = new Set(['surgerywaits.au', 'www.surgerywaits.au']);
+const SITE_HOST = 'surgerywaits.au';
+const WWW_HOST = `www.${SITE_HOST}`;
+const PRODUCTION_HOSTS: ReadonlySet<string> = new Set([SITE_HOST, WWW_HOST]);
+const WWW_CACHE_CONTROL = 'public, max-age=86400';
+
+// The www host answers every request with a permanent redirect to the same address on the apex.
+function toApex(url: URL): Response {
+  const location = new URL(url.href);
+  location.hostname = SITE_HOST;
+  location.port = '';
+  location.protocol = 'https:';
+  return new Response(null, {
+    status: 301,
+    headers: { ...SECURITY_HEADERS, Location: location.href, 'Cache-Control': WWW_CACHE_CONTROL },
+  });
+}
 
 async function route(
   request: Request,
@@ -145,8 +160,10 @@ export async function handle(
   env: Env,
   table: RedirectTable = redirects,
 ): Promise<Response> {
-  const response = await route(request, env, table);
-  if (!PRODUCTION_HOSTS.has(new URL(request.url).hostname.replace(/\.$/u, ''))) {
+  const url = new URL(request.url);
+  const host = url.hostname.replace(/\.$/u, '');
+  const response = host === WWW_HOST ? toApex(url) : await route(request, env, table);
+  if (!PRODUCTION_HOSTS.has(host)) {
     response.headers.set('X-Robots-Tag', 'noindex');
   }
   return response;
