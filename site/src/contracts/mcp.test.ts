@@ -5,9 +5,12 @@ import { assetsOver } from './mcp-fixture';
 import {
   BROWSER_ORIGINS,
   clearDataCache,
+  DEV_RELEASE,
   MAX_BODY_BYTES,
   MODERN_VERSION,
   PROTOCOL_VERSIONS,
+  releaseHeader,
+  releaseOf,
   serverCard,
 } from '../../../worker/mcp';
 import { SECURITY_HEADERS } from '../../../worker/headers';
@@ -56,7 +59,7 @@ interface Reply {
     resultType?: string;
     protocolVersion: string;
     supportedVersions: string[];
-    _meta: Record<string, { name: string }>;
+    _meta: Record<string, { name: string; version?: string }>;
     tools: {
       name: string;
       annotations: Record<string, unknown>;
@@ -624,6 +627,61 @@ describe('the logging allow-list', () => {
       );
       expect(line).not.toMatch(/Zebrafish|evil\.example/u);
     }
+  });
+});
+
+describe('the server version', () => {
+  const released = (version: string | undefined): never =>
+    ({ ...(env as object), SURGERYWAITS_RELEASE: version }) as never;
+  const identity = async (version: string | undefined): Promise<string[]> => {
+    const via = released(version);
+    const card = await json(
+      await handle(new Request('https://surgerywaits.au/mcp/server-card'), via),
+    );
+    const legacyInit = new Request(URL_MCP, {
+      method: 'POST',
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} }),
+    });
+    const init = await json(await handle(legacyInit, via));
+    const modern = await json(await handle(rpc('server/discover'), via));
+    const info = (init as unknown as { result: { serverInfo: { version: string } } }).result;
+    return [
+      (card as unknown as { version: string }).version,
+      info.serverInfo.version,
+      modern.result._meta['io.modelcontextprotocol/serverInfo']?.version ?? '',
+    ];
+  };
+
+  it('reports the release the deploy gives on the card, in initialize and in _meta', async () => {
+    expect(await identity('1.42.3')).toEqual(['1.42.3', '1.42.3', '1.42.3']);
+    expect(serverCard(released('3.0.0'))['version']).toBe('3.0.0');
+  });
+
+  it('reports 0.0.0-dev when no release is set or the value is not a plain version', async () => {
+    for (const value of [undefined, '', 'v1.2.3', '1.2', '1.2.3-pr4', '01.2.3']) {
+      expect(await identity(value), String(value)).toEqual(['0.0.0-dev', '0.0.0-dev', '0.0.0-dev']);
+    }
+    expect(releaseOf()).toBe(DEV_RELEASE);
+  });
+});
+
+describe('the release header', () => {
+  const sha = 'a'.repeat(40);
+  const page = async (vars: Record<string, string>): Promise<Response> =>
+    handle(new Request('https://surgerywaits.au/mcp/server-card'), { ...(env as object), ...vars });
+
+  it('names the release and the full commit on a response', async () => {
+    const response = await page({ SURGERYWAITS_RELEASE: '1.2.3', SURGERYWAITS_COMMIT: sha });
+    expect(response.headers.get('X-SurgeryWaits-Release')).toBe(`v1.2.3 (${sha})`);
+  });
+
+  it('is left off a local run and off a value that is not a release and a full commit', () => {
+    expect(releaseHeader()).toBeNull();
+    expect(releaseHeader({ SURGERYWAITS_RELEASE: '1.2.3' })).toBeNull();
+    expect(
+      releaseHeader({ SURGERYWAITS_RELEASE: '1.2.3', SURGERYWAITS_COMMIT: 'abc123' }),
+    ).toBeNull();
+    expect(releaseHeader({ SURGERYWAITS_COMMIT: sha })).toBeNull();
   });
 });
 

@@ -748,3 +748,63 @@ def test_the_preview_cleanup_checks_the_number_and_has_no_other_permission() -> 
     run = str(_steps(wf, "cleanup")[0].get("run"))
     assert "*[!0-9]*" in run
     assert "${{" not in run
+
+
+def test_only_the_release_job_writes_and_it_follows_a_production_deploy() -> None:
+    wf = _load((ROOT / ".github" / "workflows" / "deploy.yml").read_text("utf-8"))
+    jobs = _map(wf.get("jobs"))
+    writers = {
+        name: _writes(_map(job).get("permissions"))
+        for name, job in jobs.items()
+        if _writes(_map(job).get("permissions"))
+    }
+    assert writers == {"release": {"contents"}}
+    release = _map(jobs["release"])
+    assert release.get("needs") == "deploy"
+    assert _guard_ok(release.get("if"))
+    assert "github.event_name == 'workflow_run'" in str(release.get("if"))
+    assert "environment" not in release
+    # The write token never meets a step that checks out or runs the repository's code.
+    steps = cast("list[Any]", release.get("steps"))
+    assert not any("uses" in _map(s) or "npm" in str(_map(s).get("run")) for s in steps)
+    assert "node " not in json.dumps(steps)
+
+
+def test_the_worker_is_deployed_with_the_version_the_deploy_job_chose() -> None:
+    wf = _load((ROOT / ".github" / "workflows" / "deploy.yml").read_text("utf-8"))
+    deploy = _map(_map(wf.get("jobs"))["deploy"])
+    steps = {str(_map(s).get("name")): _map(s) for s in cast("list[Any]", deploy["steps"])}
+    chosen = steps["Choose the release version"]
+    run = str(chosen["run"])
+    # A run from CI takes the next version, and a manual run only the tag already on the commit.
+    assert "node scripts/next-version.ts)" in run
+    assert "node scripts/next-version.ts --tagged)" in run
+    assert not CLOUDFLARE_SECRET.search(json.dumps(chosen))
+    wrangler = steps["wrangler deploy"]
+    assert _map(wrangler["env"])["VERSION"] == "${{ steps.release.outputs.version }}"
+    assert _map(wrangler["env"])["SHA"] == "${{ github.sha }}"
+    script = str(wrangler["run"])
+    # The flags are set together, only when a version exists, and both targets use them.
+    assert 'if [ -n "$VERSION" ]; then' in script
+    definition = next(
+        line for line in script.splitlines() if line.strip().startswith("release=(--")
+    )
+    for flag in (
+        '--var "SURGERYWAITS_RELEASE:$VERSION"',
+        '--var "SURGERYWAITS_COMMIT:$SHA"',
+        '--tag "v$VERSION"',
+        '--message "$SHA"',
+    ):
+        assert flag in definition, flag
+    deploys = [line for line in script.splitlines() if "npx wrangler deploy" in line]
+    assert len(deploys) == len(("production", "staging"))
+    assert all('"${release[@]}"' in line for line in deploys)
+    assert script.count("SURGERYWAITS_") == len(definition.split("--var")) - 1
+
+
+def test_the_release_job_never_runs_for_a_manual_deploy() -> None:
+    wf = _load((ROOT / ".github" / "workflows" / "deploy.yml").read_text("utf-8"))
+    condition = str(_map(_map(wf.get("jobs"))["release"]).get("if"))
+    assert "github.event_name == 'workflow_run'" in condition
+    assert "workflow_dispatch" not in condition
+    assert "||" not in condition

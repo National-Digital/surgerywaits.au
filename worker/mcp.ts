@@ -28,10 +28,31 @@ export const BROWSER_ORIGINS: readonly string[] = [
 ];
 export const MAX_BODY_BYTES = 16_384;
 
+// The deploy sets SURGERYWAITS_RELEASE to the release number; anything else reads as a local run.
+export const DEV_RELEASE = '0.0.0-dev';
+const RELEASE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/u;
+interface Released {
+  SURGERYWAITS_RELEASE?: string;
+  SURGERYWAITS_COMMIT?: string;
+}
+// The Worker's Env type does not declare the two variables, which only a deploy sets.
+export function releaseOf(env?: object): string {
+  const value = (env as Released | undefined)?.SURGERYWAITS_RELEASE;
+  return value !== undefined && RELEASE.test(value) ? value : DEV_RELEASE;
+}
+
+// The header names the release and the full commit it was built from, and is left off a local run.
+export function releaseHeader(env?: object): string | null {
+  const commit = (env as Released | undefined)?.SURGERYWAITS_COMMIT;
+  const release = releaseOf(env);
+  return release === DEV_RELEASE || commit === undefined || !/^[0-9a-f]{40}$/u.test(commit)
+    ? null
+    : `v${release} (${commit})`;
+}
+
 const SERVER = {
   name: 'au.surgerywaits/mcp',
   title: 'SurgeryWaits',
-  version: '2.0.0',
   description:
     'Published planned surgery waiting times at Australian public hospitals, by hospital and state.',
 };
@@ -260,13 +281,11 @@ function readerFor(env: Env, request: Request): Reader {
   };
 }
 
-const SERVER_INFO_META = {
-  'io.modelcontextprotocol/serverInfo': {
-    name: SERVER.name,
-    title: SERVER.title,
-    version: SERVER.version,
-  },
-};
+const serverInfo = (env?: object): { name: string; title: string; version: string } => ({
+  name: SERVER.name,
+  title: SERVER.title,
+  version: releaseOf(env),
+});
 
 // The spec sends a header value that is not plain ASCII as =?base64?...?=.
 function decodeHeaderValue(value: string | null): string | null {
@@ -308,6 +327,7 @@ async function dispatch(
   id: Id,
   isModern: boolean,
   read: Reader,
+  info: ReturnType<typeof serverInfo>,
 ): Promise<Done> {
   const ok = (
     result: Record<string, unknown>,
@@ -323,7 +343,7 @@ async function dispatch(
               ...result,
               _meta: {
                 ...(isObject(result['_meta']) ? result['_meta'] : {}),
-                ...SERVER_INFO_META,
+                'io.modelcontextprotocol/serverInfo': info,
               },
             }
           : result,
@@ -348,7 +368,7 @@ async function dispatch(
         protocolVersion:
           typeof asked === 'string' && LEGACY_VERSIONS.includes(asked) ? asked : LEGACY_VERSIONS[0],
         capabilities: { tools: { listChanged: false } },
-        serverInfo: { name: SERVER.name, title: SERVER.title, version: SERVER.version },
+        serverInfo: info,
         instructions: INSTRUCTIONS,
       });
     }
@@ -531,7 +551,14 @@ async function serve(request: Request, env: Env, origin: string | null): Promise
       };
     }
   }
-  const done = await dispatch(method, params, id, isModern, readerFor(env, request));
+  const done = await dispatch(
+    method,
+    params,
+    id,
+    isModern,
+    readerFor(env, request),
+    serverInfo(env),
+  );
   return {
     response: withCors(done.response),
     call: {
@@ -599,10 +626,11 @@ export async function handleMcp(request: Request, env: Env): Promise<Response> {
   }
 }
 
-export function serverCard(): Record<string, unknown> {
+export function serverCard(env?: object): Record<string, unknown> {
   return {
     $schema: 'https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json',
     ...SERVER,
+    version: releaseOf(env),
     websiteUrl: `${SITE}/`,
     remotes: [
       {
@@ -621,7 +649,7 @@ const CARD_CORS = {
   'Access-Control-Expose-Headers': 'ETag',
 };
 
-export async function handleCard(request: Request): Promise<Response> {
+export async function handleCard(request: Request, env?: object): Promise<Response> {
   if (request.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
@@ -638,7 +666,7 @@ export async function handleCard(request: Request): Promise<Response> {
       },
     });
   }
-  const body = JSON.stringify(serverCard(), null, 2);
+  const body = JSON.stringify(serverCard(env), null, 2);
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(body));
   const tag = `"${[...new Uint8Array(digest).slice(0, 12)].map((b) => b.toString(16).padStart(2, '0')).join('')}"`;
   const headers = { ...CARD_CORS, ...NOINDEX, ETag: tag, Vary: 'Accept' };
