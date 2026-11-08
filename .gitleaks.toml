@@ -3,3 +3,9 @@ title = "surgerywaits.au gitleaks config"
 
 [extend]
 useDefault = true
+
+# The Web Analytics site token is public: every page carries it in its HTML.
+[allowlist]
+description = "Cloudflare Web Analytics site token"
+regexTarget = "match"
+regexes = ['''cc733e51363949e9a697365b40ada13b''']
