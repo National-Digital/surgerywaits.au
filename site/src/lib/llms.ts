@@ -10,9 +10,11 @@ import {
   label,
 } from './content';
 import type { ArticleSection } from './content-schema';
-import { ALLOW_ANY_ORIGIN, cacheControl } from '../../../worker/headers';
+import { ALLOW_ANY_ORIGIN, CATALOG_PATHS, cacheControl } from '../../../worker/headers';
 import { BROWSER_ORIGINS, MCP_CARD_PATH, MCP_PATH, PROTOCOL_VERSIONS } from '../../../worker/mcp';
 import { SPECS } from '../../../worker/mcp-tools';
+import { catalogEntries } from './agent-catalog';
+import { MCP_ACCESS } from './mcp-facts';
 import { dataFacts, fillSections, fillText, methodologyFacts } from './article-pages';
 import { readCredits } from './credits';
 import { formatCount, formatDate, formatLicence, formatList } from './format';
@@ -87,6 +89,9 @@ export const agentFacts = (): Record<string, string> => ({
   mcp_card: MCP_CARD_PATH,
   mcp_versions: formatList([...PROTOCOL_VERSIONS]),
   mcp_tools: formatList(Object.keys(SPECS)),
+  mcp_access: MCP_ACCESS,
+  catalog_paths: formatList([...CATALOG_PATHS]),
+  catalog_names: formatList(catalogEntries().map(({ displayName }) => displayName)),
   mcp_origins: formatList([...BROWSER_ORIGINS]),
 });
 
@@ -110,12 +115,7 @@ function llmsSections(): Section[] {
   const nav = getNavigation();
   const gp = nav.about.filter((link) => link.href === GP_PATH);
   const pages = named(builtLinks([...nav.site, nav.compare, ...gp]));
-  const about = named(
-    builtLinks([
-      ...nav.about.filter((link) => link.href !== GP_PATH),
-      { label: t.crumb, href: AGENTS_PATH },
-    ]),
-  );
+  const about = named(builtLinks(nav.about.filter((link) => link.href !== GP_PATH)));
   const guideEntries: Line[] = guides().map((g) => ({
     label: g.heading,
     path: g.path,

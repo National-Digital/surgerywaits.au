@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import CompareBar from '../components/CompareBar.astro';
 import Footer from '../components/Footer.astro';
+import { getNavigation } from '../lib/content';
 import { navigationSchema } from '../lib/content-schema';
 import { existing, routesOf } from '../lib/links';
 import { render, text, textsOf } from '../lib/test-render';
@@ -42,6 +43,13 @@ describe('Footer', () => {
     expect(page).toContain('Private hospitals are not included.');
     expect(page).toContain('Built and operated by National Digital , Burleigh Heads, Queensland');
     expect(html).not.toContain('aria-label="Site"');
+  });
+
+  it('links the agents page, which the site navigation does not', async () => {
+    const html = await render(Footer, {});
+    expect(html).toMatch(/<a [^>]*href="\/agents\/"[^>]*>\s*For people building agents\s*<\/a>/);
+    expect(getNavigation().site.map((l) => l.href)).not.toContain('/agents/');
+    expect(getNavigation().about.map((l) => l.href)).toContain('/agents/');
   });
 
   it('links back to the top of the page', async () => {

@@ -202,7 +202,7 @@ describe('Every page', () => {
   });
 
   it('resolves every link to a page that is built', () => {
-    const built = new Set<string>([...builtAddresses(), '/compare/']);
+    const built = new Set<string>([...builtAddresses(), '/compare/', '/agents/']);
     for (const ref of hospitalSlugs()) {
       built.add(`/hospital/${ref}/`);
     }

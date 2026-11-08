@@ -785,6 +785,13 @@ export const agentsSchema = z.strictObject({
     // One line for each file the router lists, keyed by the id the surfaces registry gives it.
     notes: z.record(z.string().regex(/^[a-z0-9.-]+$/), text),
   }),
+  // One entry of the agent catalog for each surface that names one, keyed by the surface's id.
+  catalog: z.strictObject({
+    entries: z.record(
+      z.string().regex(/^[a-z0-9-]+$/),
+      z.strictObject({ name: text, description: text, queries: z.array(text).min(1) }),
+    ),
+  }),
 });
 
 export const gpSchema = z.strictObject({ ...article, stamp: slotted('period', 'release') });

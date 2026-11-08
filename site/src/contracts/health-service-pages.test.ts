@@ -140,6 +140,7 @@ describe('Every health service page', () => {
     const built = new Set<string>([
       '/',
       '/compare/',
+      '/agents/',
       '/hospitals/',
       '/urgency/',
       '/urgency/category-1/',

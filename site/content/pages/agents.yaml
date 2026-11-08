@@ -16,6 +16,7 @@ sections:
       - The folder /contract/ holds JSON Schema files. Each file under /data-api/ except /data-api/openapi.json follows its schema in /contract/, and /data-api/openapi.json follows the OpenAPI 3.1 schema.
       - The folder /charts/ holds an SVG chart of the median wait in each state for each procedure that has a state figure.
       - The file /sitemap.xml is a sitemap index that links the sitemap files.
+      - 'The files {catalog_paths} hold one catalog of the entries {catalog_names}, each with an address, a type, a description and example questions. Both files have the same content.'
     links:
       - label: Data and attribution
         href: /data/
@@ -41,7 +42,7 @@ sections:
     heading: The MCP server
     paragraphs:
       - 'The Worker serves a Model Context Protocol server at {mcp_path}. Its server card is at {mcp_card}. The server answers these protocol revisions: {mcp_versions}.'
-      - 'The server has these read-only tools: {mcp_tools}. They read the data files that this site publishes.'
+      - 'The server has these {mcp_access} tools: {mcp_tools}. They read the data files that this site publishes.'
       - 'The route {mcp_path} takes POST requests for JSON-RPC and OPTIONS requests for a browser that asks before a cross-origin call. A request from a browser is accepted when its Origin is one of {mcp_origins}, or the origin of the address it calls. Any other Origin receives status 403 with every method. The route treats a request with no Origin header as one that does not come from a browser, and accepts it. A request with an accepted Origin or no Origin that uses any other method receives status 405.'
   - id: cite
     heading: How to cite
@@ -52,6 +53,8 @@ sections:
 examples_heading: Example addresses
 examples_intro: Each address below is a file or page on this site.
 examples:
+  - path: /.well-known/ai-catalog.json
+    note: The catalog of the files and the server that an agent can read.
   - path: /llms.txt
     note: The list of key pages and files.
   - path: /llms-full.txt
@@ -92,4 +95,26 @@ llms:
     sitemaps: The sitemap index, which links the sitemap files.
     mcp-server-card: The card for the MCP server at /mcp, served by the Worker.
     robots: The crawl rules and the content signals.
+    agent-catalog: The catalog of the files and the server that an agent can read. The file at /.well-known/ard.json has the same content.
     llms-full: The text of the about, methodology and data pages and the credits.
+catalog:
+  entries:
+    llms:
+      name: '{site} llms.txt'
+      description: A short plain-text guide to the site for language models. It states the scope and limits of the site and lists the addresses of its pages and data files.
+      queries:
+        - Which pages and files on Surgery Waits should an agent read first?
+        - What does Surgery Waits cover, and what does it leave out?
+    openapi:
+      name: '{site} data API'
+      description: The files of published public hospital waiting times for planned surgery in Australia, described in OpenAPI 3.1.
+      queries:
+        - What is the median wait for a planned surgery at public hospitals in a state?
+        - What does urgency category 2 mean for planned surgery in Australia?
+        - How many people waited more than a year for planned surgery at a public hospital?
+    mcp-server-card:
+      name: '{site} MCP server'
+      description: 'Tools over the published planned surgery waiting times at Australian public hospitals. The tools are {mcp_access}.'
+      queries:
+        - Which public hospitals near an Australian suburb have the shortest median wait for a surgery?
+        - What does urgency category 2 mean for planned surgery in Australia?

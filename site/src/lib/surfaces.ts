@@ -1,5 +1,6 @@
 import { readdirSync } from 'node:fs';
 
+import { CATALOG_MEDIA_TYPE, CATALOG_PATH, CATALOG_PATHS } from '../../../worker/headers';
 import { MCP_CARD_PATH } from '../../../worker/mcp';
 import { dataApiPaths } from './data-api';
 import { contractSchemas } from './dist';
@@ -32,6 +33,8 @@ export interface Surface {
   // The files /llms.txt lists for this surface, and the section they go under.
   group?: ListGroup;
   listed?: () => Listed[];
+  // Set when the agent catalog lists the surface: its id in the catalog, its type and its address.
+  catalog?: { urn: string; type: string; path: string };
 }
 
 // The data files that name the others; each is listed only when the build writes it.
@@ -117,6 +120,32 @@ const openApiProblem = (body: string): string | undefined => {
     : 'not an OpenAPI 3.1 document';
 };
 
+// The catalog follows the AI Catalog shape: a version, a host and entries that each name an address.
+const catalogProblem = (body: string): string | undefined => {
+  const document = JSON.parse(body) as { specVersion?: unknown; host?: unknown; entries?: unknown };
+  if (typeof document.specVersion !== 'string') {
+    return 'no specVersion';
+  }
+  if (typeof document.host !== 'object' || document.host === null) {
+    return 'no host';
+  }
+  if (!Array.isArray(document.entries) || document.entries.length === 0) {
+    return 'no entries';
+  }
+  for (const entry of document.entries as Record<string, unknown>[]) {
+    for (const field of ['identifier', 'url', 'type']) {
+      if (typeof entry[field] !== 'string') {
+        return `an entry has no ${field}`;
+      }
+    }
+    const queries = entry['representativeQueries'];
+    if (!Array.isArray(queries) || queries.length === 0) {
+      return 'an entry has no representativeQueries';
+    }
+  }
+  return undefined;
+};
+
 // Every machine-readable file the site serves.
 // A new surface is added here with its own entry.
 export const SURFACES: readonly Surface[] = [
@@ -137,6 +166,11 @@ export const SURFACES: readonly Surface[] = [
     pattern: /^\/data-api\/openapi\.json$/u,
     mediaType: 'application/json',
     purpose: 'The OpenAPI 3.1 description of the data files, generated from the schemas.',
+    catalog: {
+      urn: 'openapi:data-api',
+      type: 'application/vnd.oai.openapi+json',
+      path: OPENAPI_PATH,
+    },
     expected: () => [OPENAPI_PATH],
     check: openApiProblem,
     group: 'data',
@@ -202,6 +236,7 @@ export const SURFACES: readonly Surface[] = [
       'The router that links to the pages and files an agent reads first, grouped by heading.',
     expected: () => ['/llms.txt'],
     check: llmsProblem,
+    catalog: { urn: 'llms:index', type: 'text/plain', path: '/llms.txt' },
   },
   {
     id: 'llms-full',
@@ -222,11 +257,27 @@ export const SURFACES: readonly Surface[] = [
     check: securityProblem,
   },
   {
+    id: 'agent-catalog',
+    pattern: /^\/\.well-known\/(ard|ai-catalog)\.json$/u,
+    mediaType: CATALOG_MEDIA_TYPE,
+    purpose:
+      'The catalog of the files and the server an agent can read, at two addresses with one body.',
+    expected: () => [...CATALOG_PATHS],
+    check: catalogProblem,
+    group: 'site',
+    listed: () => [{ id: 'agent-catalog', label: 'Agent catalog', path: CATALOG_PATH }],
+  },
+  {
     id: 'mcp-server-card',
     pattern: /^\/mcp\/server-card$/u,
     mediaType: 'application/json',
     purpose: 'The MCP server card, served by the Worker, so no build file carries it.',
     expected: () => [],
+    catalog: {
+      urn: 'mcp:server',
+      type: 'application/mcp-server-card+json',
+      path: MCP_CARD_PATH,
+    },
     group: 'site',
     listed: () => [{ id: 'mcp-server-card', label: 'MCP server card', path: MCP_CARD_PATH }],
   },
@@ -319,7 +370,7 @@ export function bodyProblem(mediaType: string, body: string): string | undefined
   if (root !== undefined) {
     return xmlProblem(body, root);
   }
-  if (mediaType === 'application/json') {
+  if (mediaType === 'application/json' || mediaType.endsWith('+json')) {
     try {
       JSON.parse(body);
     } catch {

@@ -43,7 +43,7 @@ const INSTRUCTIONS = [
   'Private hospitals are not included.',
 ].join(' ');
 
-const TOOLS = [
+export const TOOLS = [
   {
     name: 'surgerywaits_get_wait',
     title: 'Get the wait for a surgery',
