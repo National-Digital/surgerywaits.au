@@ -67,12 +67,12 @@ jobs:
         with:
           node-version-file: .node-version
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      # The site's unit tests read the small fixture dist, as in CI.
-      - run: uv run --locked python tests/fixture_dist.py "$RUNNER_TEMP/fixture-dist"
+      # The site's unit tests read the small fixture dist at its fixed path, as in CI.
+      - run: uv run --locked python tests/fixture_dist.py "$GITHUB_WORKSPACE/pipeline/dist-fixture"
         working-directory: pipeline
       - run: npm test
         env:
-          SURGERYWAITS_DIST: ${{ runner.temp }}/fixture-dist
+          SURGERYWAITS_DIST: ${{ github.workspace }}/pipeline/dist-fixture
       # The pull verifies every sha256 against data/manifest.json and fails on a mismatch.
       - run: uv run python -m surgerywaits.pull
         working-directory: pipeline
