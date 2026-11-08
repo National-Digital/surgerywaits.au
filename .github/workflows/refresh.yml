@@ -1,0 +1,156 @@
+name: Data refresh
+
+# Daily. Asks publicdata.au's versions endpoint for each pinned dataset, and when a newer version
+# exists pins it with the sha256 of the file served, then pulls every file again to verify the pins,
+# rebuilds and opens or updates one pull request with the new data/manifest.json. The job that
+# builds holds no write token. The job that pushes runs no repository code.
+on:
+  schedule:
+    - cron: '17 19 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: data-refresh
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    name: Look for newer versions
+    if: ${{ github.repository == 'National-Digital/surgerywaits.au' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.moved.outputs.changed }}
+    env:
+      ASTRO_TELEMETRY_DISABLED: '1'
+      SURGERYWAITS_DIST: ${{ github.workspace }}/pipeline/dist
+      SURGERYWAITS_REQUIRE_DATA: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version-file: pipeline/uv.toml
+          enable-cache: false
+      - run: uv sync --locked
+        working-directory: pipeline
+      - run: uv run --locked python -m surgerywaits.refresh --summary "$RUNNER_TEMP/summary.md"
+        working-directory: pipeline
+      - id: moved
+        run: |
+          if git diff --quiet -- data/manifest.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      # A fresh runner has no download cache, so this downloads every pinned file again and fails
+      # unless its sha256 equals the pin the refresh wrote.
+      - if: steps.moved.outputs.changed == 'true'
+        run: uv run python -m surgerywaits.pull
+        working-directory: pipeline
+      - if: steps.moved.outputs.changed == 'true'
+        run: uv run --locked pytest -rs
+        working-directory: pipeline
+      - if: steps.moved.outputs.changed == 'true'
+        run: uv run python -m surgerywaits.build
+        working-directory: pipeline
+      - if: steps.moved.outputs.changed == 'true'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+      - if: steps.moved.outputs.changed == 'true'
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - if: steps.moved.outputs.changed == 'true'
+        run: npm run build
+      - if: steps.moved.outputs.changed == 'true'
+        run: npx vitest run site/src/contracts/built-pages.test.ts site/src/contracts/sitemaps.test.ts site/src/contracts/redirects.test.ts site/src/contracts/data-api.test.ts site/src/contracts/surfaces.test.ts site/src/contracts/json-ld.test.ts site/src/contracts/mcp-built.test.ts
+        env:
+          BUILT_PAGES: '1'
+      - if: steps.moved.outputs.changed == 'true'
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - if: steps.moved.outputs.changed == 'true'
+        run: npm run html -- site/dist
+      - if: steps.moved.outputs.changed == 'true'
+        run: npm run links -- site/dist
+      - if: steps.moved.outputs.changed == 'true'
+        run: npm run weight -- site/dist
+      - if: steps.moved.outputs.changed == 'true'
+        run: |
+          mkdir -p "$RUNNER_TEMP/handoff"
+          cp data/manifest.json "$RUNNER_TEMP/summary.md" "$RUNNER_TEMP/handoff/"
+      - if: steps.moved.outputs.changed == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: refresh
+          path: ${{ runner.temp }}/handoff
+          if-no-files-found: error
+          retention-days: 1
+
+  propose:
+    name: Open or update the pull request
+    needs: bump
+    if: ${{ github.repository == 'National-Digital/surgerywaits.au' && needs.bump.outputs.changed == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write # pushes the refresh branch
+      pull-requests: write # opens or edits its pull request
+    env:
+      BRANCH: chore/data-refresh
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: refresh
+          path: ${{ runner.temp }}/handoff
+      - name: Commit, push and open or update the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          HANDOFF: ${{ runner.temp }}/handoff
+        run: |
+          set -eu
+          cp "$HANDOFF/manifest.json" data/manifest.json
+          {
+            echo "This moves each pinned publicdata.au dataset below to the newest version the versions endpoint lists."
+            echo "Each pin holds the sha256 of the file served, and a second download checked it before the build."
+            echo "A maintainer closes and reopens this pull request to start its checks, because a pull request opened with the workflow token does not start them."
+            echo
+            cat "$HANDOFF/summary.md"
+          } > "$RUNNER_TEMP/body.md"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git add data/manifest.json
+          git commit -s -m "data: move pinned publicdata.au versions" -m "$(cat "$RUNNER_TEMP/body.md")"
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" push --force origin "HEAD:refs/heads/$BRANCH"
+          n=$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number // empty')
+          if [ -n "$n" ]; then
+            gh pr edit "$n" --body-file "$RUNNER_TEMP/body.md"
+          else
+            gh pr create --head "$BRANCH" --base main --title "data: move pinned publicdata.au versions" --body-file "$RUNNER_TEMP/body.md"
+          fi
+
+  report:
+    name: Report
+    needs: [bump, propose]
+    if: ${{ github.repository == 'National-Digital/surgerywaits.au' && always() && github.event_name == 'schedule' }}
+    permissions:
+      contents: read
+      issues: write # the called workflow opens and closes the issue
+    uses: ./.github/workflows/report-scheduled-run.yml # zizmor: ignore[self-repository] actionlint rejects the $/ form
+    with:
+      title: 'Scheduled data refresh is failing'
+      label: scheduled-refresh
+      result: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}

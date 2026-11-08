@@ -19,7 +19,7 @@
     "test": "vitest run",
     "build": "npm run --silent build -w site",
     "build:preview": "npm run --silent build:preview -w site",
-    "worker:dry-run": "wrangler deploy --dry-run --config worker/wrangler.jsonc --outdir",
+    "worker:dry-run": "wrangler deploy --dry-run --env=\"\" --config worker/wrangler.jsonc --outdir",
     "worker:types": "wrangler types --include-runtime=false --config worker/wrangler.jsonc worker/worker-configuration.d.ts",
     "worker:types:check": "wrangler types --check --include-runtime=false --config worker/wrangler.jsonc worker/worker-configuration.d.ts",
     "a11y": "node scripts/a11y.ts",

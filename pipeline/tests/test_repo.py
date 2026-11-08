@@ -609,3 +609,43 @@ def test_jsonc_comments_are_stripped_but_urls_in_strings_are_kept() -> None:
 def test_the_worker_does_not_publish_a_workers_dev_hostname() -> None:
     config = (ROOT / "worker" / "wrangler.jsonc").read_text(encoding="utf-8")
     assert exposed_hostnames(config) == []
+
+
+def test_every_worker_environment_also_hides_its_workers_dev_and_preview_hostnames() -> None:
+    config = _jsonc((ROOT / "worker" / "wrangler.jsonc").read_text(encoding="utf-8"))
+    environments = _map(config.get("env"))
+    assert "staging" in environments
+    assert {name: exposed_hostnames(json.dumps(body)) for name, body in environments.items()} == {
+        name: [] for name in environments
+    }
+
+
+def test_the_worker_config_holds_no_route_zone_or_account_identifier() -> None:
+    config = (ROOT / "worker" / "wrangler.jsonc").read_text(encoding="utf-8")
+    assert not re.search(r"\b(routes?|zone_id|zone_name|account_id)\b", config)
+
+
+CLOUDFLARE_SECRET = re.compile(r"secrets\.CLOUDFLARE_\w+")
+
+
+def _secret_steps(wf: dict[Any, Any]) -> list[str]:
+    found: list[str] = []
+    for name, job in _map(wf.get("jobs")).items():
+        if CLOUDFLARE_SECRET.search(json.dumps(_map(job).get("env", {}))):
+            found.append(f"{name} (job env)")
+        steps = cast("list[Any]", _map(job).get("steps", []))
+        found.extend(
+            f"{name}: {_map(s).get('name', '')}"
+            for s in steps
+            if CLOUDFLARE_SECRET.search(json.dumps(s))
+        )
+    return found
+
+
+def test_the_cloudflare_secrets_reach_only_the_wrangler_deploy_step() -> None:
+    found = {
+        f.name: _secret_steps(_load(f.read_text("utf-8")))
+        for f in WORKFLOWS
+        if CLOUDFLARE_SECRET.search(f.read_text("utf-8"))
+    }
+    assert found == {"deploy.yml": ["deploy: wrangler deploy"]}
