@@ -43,6 +43,7 @@ const BUILT = new Set([
   '/state/',
   '/urgency/',
   '/compare/',
+  '/agents/',
 ]);
 
 describe('Home page', () => {

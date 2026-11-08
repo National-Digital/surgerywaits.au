@@ -27,6 +27,8 @@ about:
     href: /accessibility/
   - label: Corrections
     href: /corrections/
+  - label: For people building agents
+    href: /agents/
 # The compare page is not built yet, so the bar stays out of every page until it is.
 compare:
   label: Compare near you

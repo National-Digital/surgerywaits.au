@@ -3,8 +3,13 @@ import { describe, expect, it } from 'vitest';
 
 import { redirectFor } from '../../../worker/redirects';
 import { handle } from '../../../worker/index';
-import { ALLOW_ANY_ORIGIN } from '../../../worker/headers';
-import { MODERN_VERSION, serverCard } from '../../../worker/mcp';
+import {
+  ALLOW_ANY_ORIGIN,
+  CATALOG_MEDIA_TYPE,
+  CATALOG_PATHS,
+  withHeaders,
+} from '../../../worker/headers';
+import { MODERN_VERSION, serverCard, TOOLS } from '../../../worker/mcp';
 import { SPECS } from '../../../worker/mcp-tools';
 import { termsSchema } from '../lib/content-schema';
 import { readContent, replacedTerms } from '../lib/content-files';
@@ -438,5 +443,146 @@ describe('the sentences about the data files', () => {
       );
       expect(text, page).toContain('the state not_reported when the source leaves it empty');
     }
+  });
+});
+
+describe('the agent catalog', () => {
+  interface Entry {
+    identifier: string;
+    displayName: string;
+    description: string;
+    type: string;
+    url: string;
+    representativeQueries: string[];
+  }
+  const parse = (path: string): { host: Record<string, string>; entries: Entry[] } =>
+    JSON.parse(read(path)) as { host: Record<string, string>; entries: Entry[] };
+  const { entries, host } = parse(CATALOG_PATHS[0] ?? '?');
+  const cataloged = SURFACES.filter((s) => s.catalog !== undefined);
+
+  it('is built at both addresses with one body', () => {
+    expect(CATALOG_PATHS).toHaveLength(2);
+    for (const path of CATALOG_PATHS) {
+      expect(built, path).toContain(path);
+    }
+    expect(read(CATALOG_PATHS[0] ?? '?')).toBe(read(CATALOG_PATHS[1] ?? '?'));
+  });
+
+  it('serves both addresses through the Worker with one media type, one body and open CORS', async () => {
+    const answers = await Promise.all(
+      CATALOG_PATHS.map((path) => handle(new Request(`${ORIGIN}${path}`), env)),
+    );
+    for (const answer of answers) {
+      expect(answer.status).toBe(200);
+      expect(answer.headers.get('Content-Type')).toBe(`${CATALOG_MEDIA_TYPE}; charset=utf-8`);
+      expect(answer.headers.get('Access-Control-Allow-Origin')).toBe('*');
+      expect(answer.headers.get('Cache-Control')).toBe('public, max-age=3600');
+    }
+    const [first, second] = await Promise.all(answers.map((answer) => answer.text()));
+    expect(first).toBe(second);
+  });
+
+  it('answers HEAD with 200 and the catalog media type, and OPTIONS with 405 and the same headers', async () => {
+    for (const path of CATALOG_PATHS) {
+      const head = await handle(new Request(`${ORIGIN}${path}`, { method: 'HEAD' }), env);
+      expect(head.status, path).toBe(200);
+      expect(head.headers.get('Content-Type'), path).toBe(`${CATALOG_MEDIA_TYPE}; charset=utf-8`);
+      const options = await handle(new Request(`${ORIGIN}${path}`, { method: 'OPTIONS' }), env);
+      expect(options.status, path).toBe(405);
+      expect(options.headers.get('Allow'), path).toBe('GET, HEAD');
+      expect(options.headers.get('Content-Type'), path).toBe(
+        `${CATALOG_MEDIA_TYPE}; charset=utf-8`,
+      );
+      expect(options.headers.get('Cache-Control'), path).toBe('public, max-age=3600');
+    }
+  });
+
+  it('leaves the catalog headers off a 404 on a catalog path', () => {
+    for (const path of CATALOG_PATHS) {
+      const missing = withHeaders(
+        new Response('<p>missing</p>', {
+          status: 404,
+          headers: { 'Content-Type': 'text/html; charset=utf-8' },
+        }),
+        path,
+      );
+      expect(missing.headers.get('Content-Type'), path).toBe('text/html; charset=utf-8');
+      expect(missing.headers.get('Access-Control-Allow-Origin'), path).toBeNull();
+    }
+  });
+
+  it('has one entry for each surface that names one, each with a unique id', () => {
+    expect(cataloged.length).toBeGreaterThan(0);
+    expect(entries).toHaveLength(cataloged.length);
+    const ids = entries.map((e) => e.identifier);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const id of ids) {
+      expect(id).toMatch(/^urn:air:surgerywaits\.au:[a-z-]+:[a-z-]+$/u);
+    }
+    expect(new Set(entries.map((e) => e.displayName)).size).toBe(entries.length);
+  });
+
+  it('resolves every entry to a built file or a Worker route that answers 200', async () => {
+    for (const entry of entries) {
+      const url = new URL(entry.url);
+      expect(url.origin, entry.url).toBe(ORIGIN);
+      if (WORKER_ADDRESSES.includes(url.pathname)) {
+        const answer = await handle(new Request(entry.url), env);
+        expect(answer.status, entry.url).toBe(200);
+      } else {
+        expect(exists(url.pathname), entry.url).toBe(true);
+      }
+    }
+  });
+
+  it('names an address that its surface serves, with the type the surface gives', () => {
+    for (const surface of cataloged) {
+      const found = entries.find((e) => new URL(e.url).pathname === surface.catalog?.path);
+      expect(found?.type, surface.id).toBe(surface.catalog?.type);
+      expect(surfaceOf(surface.catalog?.path ?? '?')?.id, surface.id).toBeDefined();
+    }
+  });
+
+  it('gives each entry words and at least one question', () => {
+    for (const entry of entries) {
+      expect(entry.displayName.length, entry.identifier).toBeGreaterThan(0);
+      expect(entry.description, entry.identifier).toMatch(/\.$/u);
+      expect(entry.representativeQueries.length, entry.identifier).toBeGreaterThan(0);
+      expect(entry.description + entry.displayName, entry.identifier).not.toMatch(/[{}]/u);
+    }
+  });
+
+  it('names the site, its did and its agents page as the host, and the page exists', () => {
+    expect(host['identifier']).toBe('did:web:surgerywaits.au');
+    expect(host['displayName']).toBe('Surgery Waits');
+    expect(new URL(host['documentationUrl'] ?? '?').origin).toBe(ORIGIN);
+    expect(exists(new URL(host['documentationUrl'] ?? '?').pathname)).toBe(true);
+  });
+
+  it('says the MCP tools are read-only only when each tool declares it', () => {
+    const mcp = entries.find((e) => e.identifier.endsWith(':mcp:server'));
+    expect(mcp?.description).toContain('read-only');
+    expect(TOOLS.every((tool) => tool.annotations.readOnlyHint)).toBe(true);
+  });
+
+  it('is listed by llms.txt and named on the agents page with both addresses', () => {
+    expect(read('/llms.txt')).toContain(`](${ORIGIN}${CATALOG_PATHS[1] ?? '?'})`);
+    const text = textOf(read('/agents/index.html'));
+    for (const path of CATALOG_PATHS) {
+      expect(text, path).toContain(path);
+    }
+    for (const entry of entries) {
+      expect(text, entry.displayName).toContain(entry.displayName);
+    }
+  });
+});
+
+describe('the read-only claim on the agents page', () => {
+  it('appears as the page says it, from tools that all declare the hint', () => {
+    expect(TOOLS.length).toBe(Object.keys(SPECS).length);
+    expect(agentFacts()['mcp_access']).toBe('read-only');
+    expect(textOf(read('/agents/index.html'))).toContain(
+      `The server has these read-only tools: ${agentFacts()['mcp_tools'] ?? '?'}.`,
+    );
   });
 });

@@ -37,6 +37,12 @@ export const JSON_CONTENT_TYPE = 'application/json; charset=utf-8';
 export const DATA_CACHE_CONTROL = 'public, max-age=3600';
 export const MISSING_CACHE_CONTROL = 'no-store';
 
+// The agent catalog is served at both of these addresses, with one body and one media type.
+export const CATALOG_PATH = '/.well-known/ai-catalog.json';
+export const CATALOG_PATHS: readonly string[] = ['/.well-known/ard.json', CATALOG_PATH];
+export const CATALOG_MEDIA_TYPE = 'application/ai-catalog+json';
+const isCatalog = (pathname: string): boolean => CATALOG_PATHS.includes(pathname);
+
 // Any site may read the data files and the schemas from a page, so each answer carries this.
 export const ALLOW_ANY_ORIGIN = { 'Access-Control-Allow-Origin': '*' } as const;
 
@@ -45,6 +51,9 @@ export const DATA_API_HEADERS: Readonly<Record<string, string>> = {
   ...ALLOW_ANY_ORIGIN,
   'X-Robots-Tag': 'noindex',
 };
+
+// The catalog answers GET and HEAD, and OPTIONS with 405, with the same headers.
+const CATALOG_STATUSES = [200, 304, 405];
 
 export function cacheControl(pathname: string, status: number): string | undefined {
   if (pathname === '/mcp') {
@@ -55,6 +64,9 @@ export function cacheControl(pathname: string, status: number): string | undefin
   }
   if (status === 404) {
     return MISSING_CACHE_CONTROL;
+  }
+  if (isCatalog(pathname) && CATALOG_STATUSES.includes(status)) {
+    return DATA_CACHE_CONTROL;
   }
   if (status !== 200 && status !== 304) {
     return undefined;
@@ -94,6 +106,13 @@ export function withHeaders(response: Response, pathname: string, method = 'GET'
     if (response.status === 200 && pathname.endsWith('.json')) {
       copy.headers.set('Content-Type', JSON_CONTENT_TYPE);
     }
+  }
+  if (isCatalog(pathname) && CATALOG_STATUSES.includes(response.status)) {
+    copy.headers.set(
+      'Access-Control-Allow-Origin',
+      ALLOW_ANY_ORIGIN['Access-Control-Allow-Origin'],
+    );
+    copy.headers.set('Content-Type', `${CATALOG_MEDIA_TYPE}; charset=utf-8`);
   }
   if (isContractSchema(pathname)) {
     copy.headers.set(
