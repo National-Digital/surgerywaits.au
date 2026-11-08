@@ -1,5 +1,5 @@
 import { ALLOWED_DATA_API, isDataApi, SECURITY_HEADERS, withHeaders } from './headers';
-import { handleCard, handleMcp, MCP_CARD_PATH, MCP_PATH } from './mcp';
+import { handleCard, handleMcp, MCP_CARD_PATH, MCP_PATH, releaseHeader } from './mcp';
 import { redirectFor, redirects } from './redirects';
 import type { RedirectTable } from './redirects';
 import {
@@ -104,7 +104,9 @@ async function route(
     url.pathname === MCP_CARD_PATH
   ) {
     const answer =
-      url.pathname !== MCP_CARD_PATH ? await handleMcp(request, env) : await handleCard(request);
+      url.pathname !== MCP_CARD_PATH
+        ? await handleMcp(request, env)
+        : await handleCard(request, env);
     // The slash form takes the headers of the route itself.
     return withHeaders(
       answer,
@@ -165,6 +167,10 @@ export async function handle(
   const response = host === WWW_HOST ? toApex(url) : await route(request, env, table);
   if (!PRODUCTION_HOSTS.has(host)) {
     response.headers.set('X-Robots-Tag', 'noindex');
+  }
+  const release = releaseHeader(env);
+  if (release !== null) {
+    response.headers.set('X-SurgeryWaits-Release', release);
   }
   return response;
 }

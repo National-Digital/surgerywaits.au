@@ -380,6 +380,20 @@ Node and uv each get their own. Security fixes come as soon as the GitHub adviso
 database name them. Check a change to `renovate.json` with
 `npx --yes --package renovate@44.221.4 -- renovate-config-validator --strict`.
 
+## Releases
+
+Every production deploy that follows a successful CI run on `main` is a release. The release number comes from the commit message, whose first line is the title of the pull request after a squash merge. `scripts/next-version.ts` adds to the highest `v<major>.<minor>.<patch>` tag:
+
+| Pull request title                                                                                                   | Change to the number      |
+| -------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| `type!: ...`, `type(scope)!: ...`, or a line starting `BREAKING CHANGE:` or `BREAKING-CHANGE:` in the commit message | Major, `1.4.2` to `2.0.0` |
+| `feat: ...` or `feat(scope): ...`                                                                                    | Minor, `1.4.2` to `1.5.0` |
+| Any other type, or a title that is not a Conventional Commit                                                         | Patch, `1.4.2` to `1.4.3` |
+
+The deploy job chooses the number before it runs `wrangler deploy` and gives it to the Worker as `SURGERYWAITS_RELEASE`, so the MCP server reports the number that is tagged. The deploy also gives it the commit, and the Worker version in Cloudflare carries the release as its tag and the commit as its message. Every response carries `X-SurgeryWaits-Release` with the release and the full commit. A local run reports `0.0.0-dev`. After the deploy, the release job tags the deployed commit and creates a GitHub release whose notes begin with the commit and the pull request and then give its title and body. A manual deploy creates no tag, and it passes a version to the Worker only when a `v` tag already points at the commit it deploys. A run of the deploy that finds a `v` tag on its commit keeps that number. A failed release job leaves the Worker on a number with no tag, so re-run the release job before anything else merges. The job tries three times before it fails.
+
+`node scripts/next-version.ts --print-current` prints the latest tag's number, and `node scripts/next-version.ts "feat: a title"` prints the number that title would give. The numbering starts at `v1.0.0`, the commit that production served when the site switched to the Worker. A maintainer creates that baseline once, with `git tag v1.0.0 38c17e1 && git push public v1.0.0` and `gh release create v1.0.0 --target 38c17e1 --title v1.0.0 --notes "The first release of the site built from this repository."`. Merges that landed before the workflow existed are not tagged one by one, and the next release covers them. With no tag at all, the base is `1.0.0`.
+
 ## Reporting problems
 
 Open an issue with one of the templates: a bug report, a data problem or a feature request. A

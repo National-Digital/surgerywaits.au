@@ -71,6 +71,33 @@ describe('worker responses', () => {
   });
 });
 
+describe('the release header', () => {
+  const sha = 'b'.repeat(40);
+  const released = { ...env, SURGERYWAITS_RELEASE: '1.4.0', SURGERYWAITS_COMMIT: sha } as Env;
+  const at = (host: string, path: string, method = 'GET'): Promise<Response> =>
+    handle(new Request(`https://${host}${path}`, { method }), released, table);
+
+  it('is on a page, a static asset, a 404, a redirect, the www redirect and a 405', async () => {
+    const answers: [string, number, Response][] = [
+      ['page', 200, await at('surgerywaits.au', '/state/nsw/')],
+      ['asset', 200, await at('surgerywaits.au', '/_astro/a.css')],
+      ['404', 404, await at('surgerywaits.au', '/missing/')],
+      ['redirect', 301, await at('surgerywaits.au', '/old/')],
+      ['www', 301, await at('www.surgerywaits.au', '/state/nsw/')],
+      ['405', 405, await at('surgerywaits.au', '/state/nsw/', 'POST')],
+    ];
+    for (const [name, status, response] of answers) {
+      expect([name, response.status], name).toEqual([name, status]);
+      expect(response.headers.get('X-SurgeryWaits-Release'), name).toBe(`v1.4.0 (${sha})`);
+    }
+  });
+
+  it('is absent from every answer of a run with no release', async () => {
+    const response = await get('/state/nsw/');
+    expect(response.headers.has('X-SurgeryWaits-Release')).toBe(false);
+  });
+});
+
 describe('cookies', () => {
   const cookies = { 'Set-Cookie': 'id=1; Path=/', 'Content-Type': 'text/html' };
   // An assets binding that tries to set a cookie on every answer, by status and method.

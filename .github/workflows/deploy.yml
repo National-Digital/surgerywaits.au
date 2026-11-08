@@ -7,6 +7,9 @@ name: Deploy
 # production environment and reach one step of the deploy job. The Worker's routes are not in the
 # repository: they are set in the Cloudflare dashboard.
 # The condition on each job accepts only a successful CI run of a push to main, or a manual run.
+# The release number comes from the last v-tag and the commit message (scripts/next-version.ts).
+# The deploy job gives it to the Worker, and a deploy that the CI run started tags it and cuts a
+# GitHub release. A manual run deploys with a version only when a v-tag is on the commit, and creates no tag.
 on: # zizmor: ignore[dangerous-triggers] runs only the trusted main commit that CI passed, from no fork or pull request
   workflow_run:
     workflows: [CI]
@@ -120,6 +123,8 @@ jobs:
       contents: read
     env:
       WRANGLER_SEND_METRICS: 'false'
+    outputs:
+      version: ${{ steps.release.outputs.version }}
     steps:
       # The build takes a while, so the deploy checks again that no newer commit reached main.
       - name: Check the commit is still the tip of main
@@ -133,10 +138,31 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0 # the v-tags, for scripts/next-version.ts
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .node-version
       - run: npm ci --ignore-scripts --no-audit --no-fund
+      # A commit that already has a v-tag keeps that version. Otherwise a deploy that the CI run
+      # started takes the next one, and a manual run has none, so the Worker reads 0.0.0-dev.
+      - name: Choose the release version
+        id: release
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -eu
+          if [ "$EVENT" = "workflow_run" ]; then
+            version=$(node scripts/next-version.ts)
+          else
+            version=$(node scripts/next-version.ts --tagged)
+          fi
+          if [ -n "$version" ]; then
+            printf '%s\n' "$version" | grep -Eq '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$' || { echo "::error::No release version was chosen"; exit 1; }
+            echo "Release $version" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No release tag is on this commit, so the Worker is deployed without a version." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: site-dist
@@ -147,11 +173,64 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.target || 'production' }}
+          VERSION: ${{ steps.release.outputs.version }}
+          SHA: ${{ github.sha }}
         run: |
           set -eu
           [ "$GITHUB_REF" = refs/heads/main ] || { echo "::error::Deploys run from main only"; exit 1; }
+          release=()
+          if [ -n "$VERSION" ]; then
+            release=(--var "SURGERYWAITS_RELEASE:$VERSION" --var "SURGERYWAITS_COMMIT:$SHA" --tag "v$VERSION" --message "$SHA")
+          fi
           case "$TARGET" in
-            production) npx wrangler deploy --env="" --config worker/wrangler.jsonc ;;
-            staging) npx wrangler deploy --config worker/wrangler.jsonc --env staging ;;
+            production) npx wrangler deploy --env="" --config worker/wrangler.jsonc "${release[@]}" ;;
+            staging) npx wrangler deploy --config worker/wrangler.jsonc --env staging "${release[@]}" ;;
             *) echo "::error::Unknown deploy target"; exit 1 ;;
           esac
+
+  # Creates the tag on the deployed commit and the release in one call, with the merged pull
+  # request's title and body as the notes. It runs after a production deploy that the CI run
+  # started, never after a manual run. The version is the one the Worker was deployed with. It needs
+  # no checkout and runs no repository code. A failed run is re-run before anything else merges.
+  release:
+    name: Release
+    needs: deploy
+    if: ${{ github.repository == 'National-Digital/surgerywaits.au' && github.event_name == 'workflow_run' && needs.deploy.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write # creates the tag and the release
+    steps:
+      - name: Tag and release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.sha }}
+          VERSION: ${{ needs.deploy.outputs.version }}
+        run: |
+          set -eu
+          tag="v$VERSION"
+          # A tag that points at the commit is the release's name, which a half-finished run may have left.
+          have=$(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/v" --paginate --jq ".[] | select(.object.sha == \"$SHA\") | .ref" | head -n 1 | sed 's|^refs/tags/||')
+          [ -z "$have" ] || tag="$have"
+          if gh release view "$tag" > /dev/null 2>&1; then
+            echo "$tag is already released." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          link="[$SHA](https://github.com/$GITHUB_REPOSITORY/commit/$SHA)"
+          pr=$(gh api "repos/$GITHUB_REPOSITORY/commits/$SHA/pulls" --jq '[.[] | select(.merged_at != null)] | .[0] // empty')
+          if [ -n "$pr" ]; then
+            body=$(printf '%s' "$pr" | jq -r '"Pull request: \(.html_url)\n\n\(.title)\n\n\((.body // "")[0:60000])"')
+          else
+            body=$(gh api "repos/$GITHUB_REPOSITORY/commits/$SHA" --jq '.commit.message[0:60000]')
+          fi
+          # A zero-width joiner after each @ keeps text from the pull request from notifying anyone.
+          printf 'Commit: %s\n\n%s\n' "$link" "$body" | sed $'s/@/@\xe2\x80\x8d/g' > "$RUNNER_TEMP/notes.md"
+          for attempt in 1 2 3; do
+            if gh release create "$tag" --target "$SHA" --title "$tag" --notes-file "$RUNNER_TEMP/notes.md"; then
+              exit 0
+            fi
+            gh release view "$tag" > /dev/null 2>&1 && exit 0
+            sleep $((attempt * 10))
+          done
+          echo "::error::The release $tag was not created. Re-run this job before anything else merges."
+          exit 1
