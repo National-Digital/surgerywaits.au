@@ -15,6 +15,13 @@ import { BROWSER_ORIGINS, MCP_CARD_PATH, MCP_PATH, PROTOCOL_VERSIONS } from '../
 import { SPECS } from '../../../worker/mcp-tools';
 import { catalogEntries } from './agent-catalog';
 import { MCP_ACCESS } from './mcp-facts';
+import {
+  canonicalOfTwin,
+  TWIN_EXTENSION,
+  TWIN_REDIRECT_STATUS,
+  TWIN_TYPE,
+  twinPathOf,
+} from '../../../worker/twins';
 import { dataFacts, fillSections, fillText, methodologyFacts } from './article-pages';
 import { readCredits } from './credits';
 import { formatCount, formatDate, formatLicence, formatList } from './format';
@@ -27,6 +34,9 @@ import { SURFACES } from './surfaces';
 import type { ListGroup, Listed } from './surfaces';
 
 export const AGENTS_PATH = '/agents/';
+
+// The page whose twin the agents page gives as its example.
+const HUBS_PATH = '/hospitals/';
 
 // The page for general practitioners is a key page, so it sits with them and not under About.
 const GP_PATH = '/gp/';
@@ -93,6 +103,12 @@ export const agentFacts = (): Record<string, string> => ({
   catalog_paths: formatList([...CATALOG_PATHS]),
   catalog_names: formatList(catalogEntries().map(({ displayName }) => displayName)),
   mcp_origins: formatList([...BROWSER_ORIGINS]),
+  twin_extension: TWIN_EXTENSION,
+  twin_type: TWIN_TYPE,
+  twin_example: twinPathOf(HUBS_PATH) ?? '',
+  twin_home: twinPathOf('/') ?? '',
+  twin_canonical_host: new URL(canonicalOfTwin(twinPathOf(HUBS_PATH) ?? '')).host,
+  twin_redirect: String(TWIN_REDIRECT_STATUS),
 });
 
 // A page's own description is its note, so the router adds no wording of its own.

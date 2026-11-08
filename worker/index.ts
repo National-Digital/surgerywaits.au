@@ -2,6 +2,13 @@ import { ALLOWED_DATA_API, isDataApi, withHeaders } from './headers';
 import { handleCard, handleMcp, MCP_CARD_PATH, MCP_PATH } from './mcp';
 import { redirectFor, redirects } from './redirects';
 import type { RedirectTable } from './redirects';
+import {
+  prefersMarkdown,
+  TWIN_REDIRECT_STATUS,
+  twinAddressFor,
+  twinPathOf,
+  withPathname,
+} from './twins';
 
 const ALLOWED = 'GET, HEAD';
 
@@ -45,6 +52,29 @@ function serverError(pathname: string): Response {
   );
 }
 
+// A request that prefers Markdown for a page gets the page's twin, and any other answer is the page itself.
+async function negotiated(request: Request, env: Env, url: URL): Promise<Response | undefined> {
+  const twin = twinPathOf(url.pathname);
+  if (twin === undefined || !prefersMarkdown(request.headers.get('Accept'))) {
+    return undefined;
+  }
+  const answer = await env.ASSETS.fetch(new Request(withPathname(url, twin), request));
+  if (answer.status !== 200 && answer.status !== 304) {
+    return undefined;
+  }
+  const response = withHeaders(answer, twin, request.method);
+  response.headers.set('Vary', 'Accept');
+  response.headers.set('Content-Location', twin);
+  return response;
+}
+
+// The redirect keeps the query of the request.
+function withLocation(url: URL, pathname: string): string {
+  const location = withPathname(url, pathname);
+  location.search = url.search;
+  return location.href;
+}
+
 const PRODUCTION_HOSTS: ReadonlySet<string> = new Set(['surgerywaits.au', 'www.surgerywaits.au']);
 
 async function route(
@@ -85,7 +115,24 @@ async function route(
       url.pathname,
     );
   }
+  const folderForm = twinAddressFor(url.pathname);
+  if (folderForm !== undefined) {
+    return withHeaders(
+      new Response(null, {
+        status: TWIN_REDIRECT_STATUS,
+        headers: {
+          Location: withLocation(url, folderForm),
+          'Cache-Control': 'public, max-age=3600',
+        },
+      }),
+      url.pathname,
+    );
+  }
   try {
+    const twin = await negotiated(request, env, url);
+    if (twin !== undefined) {
+      return twin;
+    }
     return withHeaders(await env.ASSETS.fetch(request), url.pathname, request.method);
   } catch {
     return serverError(url.pathname);
@@ -105,7 +152,6 @@ export async function handle(
   return response;
 }
 
-// Content negotiation joins here (ADR D7).
 export default {
   fetch: (request, env): Promise<Response> => handle(request, env),
 } satisfies ExportedHandler<Env>;

@@ -38,6 +38,12 @@ sections:
       - 'The site answers GET and HEAD requests on every path except {mcp_path} and {mcp_path}/. It also answers OPTIONS requests under /data-api/ for a browser that asks before a cross-origin read. The route {mcp_path} answers POST and OPTIONS requests, and its server card at {mcp_card} answers OPTIONS requests. On every other path, any other method receives status 405.'
       - 'Files under /data-api/ carry the header Cache-Control: {data_cache}, so a client may keep a file for an hour. They also carry Access-Control-Allow-Origin: {cors_origin}, so a web page on any site may read them. A missing data file returns status 404 with a JSON body.'
       - 'Pages carry the header Cache-Control: {page_cache}, and /robots.txt carries Cache-Control: {robots_cache}.'
+  - id: markdown
+    heading: Markdown versions of pages
+    paragraphs:
+      - 'Each page has a Markdown version. Its address is the page address with the closing slash replaced by {twin_extension}. The page /hospitals/ has the version {twin_example}, and the home page / has the version {twin_home}. A version starts with the line "Canonical URL:" and the address of the page, and then gives the content of the main part of the page.'
+      - 'The Worker returns the Markdown version at the page address itself when a GET or HEAD request sends an Accept header that prefers text/markdown to text/html. That answer carries Content-Type: {twin_type}, Vary: Accept and a Content-Location header that names the version. A request that prefers HTML receives the page, and the page carries Vary: Accept and a Link header that names its Markdown version with rel="alternate" and type="text/markdown".'
+      - 'A request for a page address other than / followed by index.md or by index.html.md receives status {twin_redirect} and a Location header that names the Markdown version. A request for /index.html.md receives the same status, and a request for /index.md returns the home version. A Markdown version carries a Link header with rel="canonical" that gives the full address of its page on {twin_canonical_host}. A version that does not exist at an address outside /data-api/ returns status 404 with a Markdown body.'
   - id: mcp
     heading: The MCP server
     paragraphs:

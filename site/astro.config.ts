@@ -1,6 +1,7 @@
 import { defineConfig } from 'astro/config';
 
 import { sitemaps } from './src/integrations/sitemap';
+import { markdownTwins } from './src/integrations/twins';
 
 // The preview build adds a development route and writes to its own folder, so the published
 // build never holds it.
@@ -30,5 +31,5 @@ export default defineConfig({
           },
         },
       ]
-    : [sitemaps(site, process.env['SURGERYWAITS_DIST'])],
+    : [sitemaps(site, process.env['SURGERYWAITS_DIST']), markdownTwins(site)],
 });
