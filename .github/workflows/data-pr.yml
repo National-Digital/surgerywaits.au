@@ -1,0 +1,80 @@
+name: Data PR
+
+# The ruleset needs one approval on every pull request. This approves only a refresh PR: opened by
+# the refresh app, on a branch a refresh run on main cut, holding one commit by the app that changes
+# data/manifest.json alone, to the bytes that run built. The approval names the head commit it
+# checked. The ruleset dismisses it on any later push, and a rerun that finds the PR no longer
+# qualifies dismisses it too. Every other PR needs a person's approval.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: data-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  approve:
+    name: Approve the refresh's own data PR
+    if: ${{ github.repository == 'National-Digital/surgerywaits.au' && startsWith(github.head_ref, 'data/refresh-') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write # approves the pull request, or dismisses an earlier approval
+      actions: read # reads the run that cut the branch
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      PR: ${{ github.event.pull_request.number }}
+      BRANCH: ${{ github.head_ref }}
+      OPENER: ${{ github.event.pull_request.user.login }}
+      OPENER_TYPE: ${{ github.event.pull_request.user.type }}
+      HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+      APP_LOGIN: ${{ vars.REFRESH_APP_LOGIN }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Approve when every condition holds
+        run: |
+          set -u
+          hold() {
+            echo "Not approved; $1"
+            ids=$(gh api "repos/$REPO/pulls/$PR/reviews" --paginate --jq '.[] | select(.user.login=="github-actions[bot]" and .state=="APPROVED") | .id') ||
+              { echo "::error::could not list the reviews"; exit 1; }
+            for id in $ids; do
+              gh api -X PUT "repos/$REPO/pulls/$PR/reviews/$id/dismissals" -f message="No longer a refresh PR: $1" -f event=DISMISS >/dev/null ||
+                { echo "::error::could not dismiss approval $id"; exit 1; }
+            done
+            exit 0
+          }
+          [ "$HEAD_REPO" = "$REPO" ] || hold "the branch is on a fork"
+          if ! { [ "$OPENER_TYPE" = "Bot" ] && [ -n "$APP_LOGIN" ] && [ "$OPENER" = "$APP_LOGIN" ]; }; then
+            hold "opened by $OPENER ($OPENER_TYPE), not the refresh app"
+          fi
+          run_id=${BRANCH#data/refresh-}
+          case "$run_id" in
+            ''|*[!0-9]*) hold "the branch name holds no run id" ;;
+          esac
+          run=$(gh api "repos/$REPO/actions/runs/$run_id" --jq '"\(.path) \(.head_branch) \(.event)"' 2>/dev/null || true)
+          case "$run" in
+            ".github/workflows/refresh.yml main schedule"|".github/workflows/refresh.yml main workflow_dispatch") ;;
+            *) hold "the branch was not cut by a refresh run on main ($run)" ;;
+          esac
+          # Every check below reads the head commit the event named, never the branch as it is now.
+          compare=$(gh api "repos/$REPO/compare/main...$HEAD_SHA" --jq '"\(.ahead_by) \(.commits[0].commit.author.email) \(.commits[0].commit.committer.email)"')
+          app_id=$(gh api "users/$APP_LOGIN" --jq .id)
+          email="$app_id+$APP_LOGIN@users.noreply.github.com"
+          [ "$compare" = "1 $email $email" ] || hold "not one refresh commit on main: $compare"
+          files=$(gh api "repos/$REPO/compare/main...$HEAD_SHA" --jq '.files[] | "\(.filename) \(.status) \(.previous_filename // "")"')
+          [ "$files" = "data/manifest.json modified " ] || hold "a refresh PR modifies data/manifest.json only, not: $files"
+          # Anyone with write access can push to the branch, so the manifest must be the one the run built.
+          built="$RUNNER_TEMP/built"
+          gh run download "$run_id" --repo "$REPO" --name refresh --dir "$built" 2>/dev/null || hold "the run's manifest is no longer available"
+          gh api "repos/$REPO/contents/data/manifest.json?ref=$HEAD_SHA" -H "Accept: application/vnd.github.raw" > "$RUNNER_TEMP/head-manifest.json"
+          cmp -s "$built/manifest.json" "$RUNNER_TEMP/head-manifest.json" || hold "data/manifest.json differs from the one run $run_id built"
+          [ "$(gh api "repos/$REPO/pulls/$PR" --jq .head.sha)" = "$HEAD_SHA" ] || hold "the head moved while the checks ran"
+          gh api -X POST "repos/$REPO/pulls/$PR/reviews" -f commit_id="$HEAD_SHA" -f event=APPROVE \
+            -f body="A data refresh PR from a refresh run on main. A maintainer merges it once the required checks are green." >/dev/null

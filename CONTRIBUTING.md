@@ -245,7 +245,8 @@ refuses a remote connection, send or lookup.
   `feat`, `fix`, `docs`, `chore`, `perf`, `refactor`, `test`, `build`, `ci`, `style`, `revert` and
   `data`. The scope is optional.
 - Pull requests are squash-merged, so the title becomes the commit subject on `main`.
-- A pull request merges when every required check is green.
+- A pull request merges when every required check is green and someone other than its author has
+  approved it. `.github/CODEOWNERS` names whose approval each path also needs.
 
 ## Checks on each pull request
 
@@ -344,6 +345,19 @@ The next success closes it. It uses the run's own token with `issues: write`, in
 only in the public repository, and creates its label if the label is missing. `codeql.yml` calls
 it from a `report` job on the weekly run with the label `scheduled-codeql`. Every workflow with a
 `schedule` trigger must call it, and `pipeline/tests/test_repo.py` fails when one does not.
+
+### Data refresh pull requests
+
+`.github/workflows/refresh.yml` runs daily. When publicdata.au lists a newer version of a pinned
+dataset, the refresh app opens a pull request that changes `data/manifest.json` only, and closes
+any refresh pull request the app opened from an older run. Its branch name ends in the run's id.
+`.github/workflows/data-pr.yml` approves that pull request when every one of these holds. The
+branch is in this repository. The refresh app opened the pull request. The run named in the
+branch is a scheduled or manual `refresh.yml` run on `main`. The pull request has one commit, its
+author and committer carry the app's address, and it modifies `data/manifest.json` and no other
+file. The manifest matches, byte for byte, the one the run built. The approval names the commit it
+checked. A run that finds the pull request does not qualify dismisses the workflow's earlier
+approval. `data/manifest.json` has no code owner, so any other change to it needs one approval from someone other than its author.
 
 ## Versions
 
