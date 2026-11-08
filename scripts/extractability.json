@@ -1,0 +1,696 @@
+{
+  "minWords": 3,
+  "samplePerTemplate": 20,
+  "chrome": ["nav", "form", "[hidden]", "[aria-hidden=\"true\"]"],
+  "templates": [
+    {
+      "name": "home",
+      "floor": 99,
+      "path": "/",
+      "pageFloor": 99
+    },
+    {
+      "name": "about",
+      "floor": 98,
+      "path": "/about/",
+      "pageFloor": 98
+    },
+    {
+      "name": "methodology",
+      "floor": 99,
+      "path": "/methodology/",
+      "pageFloor": 99
+    },
+    {
+      "name": "agents",
+      "floor": 99,
+      "path": "/agents/",
+      "pageFloor": 99
+    },
+    {
+      "name": "privacy",
+      "floor": 98,
+      "path": "/privacy/",
+      "pageFloor": 98
+    },
+    {
+      "name": "terms",
+      "floor": 99,
+      "path": "/terms/",
+      "pageFloor": 99
+    },
+    {
+      "name": "corrections",
+      "floor": 98,
+      "path": "/corrections/",
+      "pageFloor": 98
+    },
+    {
+      "name": "accessibility",
+      "floor": 99,
+      "path": "/accessibility/",
+      "pageFloor": 99
+    },
+    {
+      "name": "data",
+      "floor": 100,
+      "path": "/data/",
+      "pageFloor": 100
+    },
+    {
+      "name": "gp",
+      "floor": 98,
+      "path": "/gp/",
+      "pageFloor": 98
+    },
+    {
+      "name": "404",
+      "floor": 93,
+      "path": "/404.html",
+      "pageFloor": 93
+    },
+    {
+      "name": "compare",
+      "floor": 86,
+      "path": "/compare/",
+      "archiveFloor": 90,
+      "reason": "The previous site held this template to 90. A long table on the page lowers what one extractor returns, and closing the gap means removing rows from the table.",
+      "pageFloor": 86
+    },
+    {
+      "name": "hospitals index",
+      "floor": 93,
+      "path": "/hospitals/",
+      "pageFloor": 93
+    },
+    {
+      "name": "hospital hub",
+      "floor": 79,
+      "path": "/hospital/*/",
+      "archiveFloor": 90,
+      "reason": "The previous site held this template to 90. A long table on the page lowers what one extractor returns, and closing the gap means removing rows from the table.",
+      "pageFloor": 63
+    },
+    {
+      "name": "pair",
+      "floor": 96,
+      "path": "/hospital/*/*/",
+      "pageFloor": 95
+    },
+    {
+      "name": "surgery index",
+      "floor": 99,
+      "path": "/surgery/",
+      "pageFloor": 99
+    },
+    {
+      "name": "surgery hub",
+      "floor": 76,
+      "path": "/surgery/*/",
+      "archiveFloor": 90,
+      "reason": "The previous site held this template to 90. A long table on the page lowers what one extractor returns, and closing the gap means removing rows from the table.",
+      "pageFloor": 54
+    },
+    {
+      "name": "surgery state",
+      "floor": 87,
+      "path": "/surgery/*/*/",
+      "archiveFloor": 90,
+      "reason": "The previous site held this template to 90. A long table on the page lowers what one extractor returns, and closing the gap means removing rows from the table.",
+      "pageFloor": 53
+    },
+    {
+      "name": "surgery near",
+      "floor": 98,
+      "path": "/surgery/*/near/*/",
+      "optional": true,
+      "pageFloor": 96
+    },
+    {
+      "name": "specialty index",
+      "floor": 99,
+      "path": "/specialty/",
+      "pageFloor": 99
+    },
+    {
+      "name": "specialty hub",
+      "floor": 73,
+      "path": "/specialty/*/",
+      "archiveFloor": 90,
+      "reason": "The previous site held this template to 90. A long table on the page lowers what one extractor returns, and closing the gap means removing rows from the table.",
+      "pageFloor": 50
+    },
+    {
+      "name": "specialty state",
+      "floor": 97,
+      "path": "/specialty/*/*/",
+      "pageFloor": 94
+    },
+    {
+      "name": "state index",
+      "floor": 99,
+      "path": "/state/",
+      "pageFloor": 99
+    },
+    {
+      "name": "state hub",
+      "floor": 82,
+      "path": "/state/*/",
+      "archiveFloor": 90,
+      "reason": "The previous site held this template to 90. A long table on the page lowers what one extractor returns, and closing the gap means removing rows from the table.",
+      "pageFloor": 59
+    },
+    {
+      "name": "urgency hub",
+      "floor": 86,
+      "path": "/urgency/",
+      "archiveFloor": 90,
+      "reason": "The previous site held this template to 90. A long table on the page lowers what one extractor returns, and closing the gap means removing rows from the table.",
+      "pageFloor": 86
+    },
+    {
+      "name": "urgency category",
+      "floor": 73,
+      "path": "/urgency/*/",
+      "archiveFloor": 90,
+      "reason": "The previous site held this template to 90. A long table on the page lowers what one extractor returns, and closing the gap means removing rows from the table.",
+      "pageFloor": 69
+    },
+    {
+      "name": "urgency state",
+      "floor": 89,
+      "path": "/urgency/*/*/",
+      "pageFloor": 45,
+      "archiveFloor": 90,
+      "reason": "The previous site held this template to 90. A long table on the page lowers what one extractor returns, and closing the gap means removing rows from the table."
+    },
+    {
+      "name": "guides index",
+      "floor": 90,
+      "path": "/guides/",
+      "pageFloor": 90
+    },
+    {
+      "name": "guide",
+      "floor": 97,
+      "path": "/guides/*/",
+      "pageFloor": 97
+    },
+    {
+      "name": "longest waits",
+      "floor": 73,
+      "path": "/longest-waits/",
+      "archiveFloor": 90,
+      "reason": "The previous site held this template to 90. A long table on the page lowers what one extractor returns, and closing the gap means removing rows from the table.",
+      "pageFloor": 73
+    },
+    {
+      "name": "border",
+      "floor": 97,
+      "path": "/longest-waits/border/",
+      "pageFloor": 97
+    },
+    {
+      "name": "by surgery",
+      "floor": 60,
+      "path": "/longest-waits/by-surgery/",
+      "archiveFloor": 90,
+      "reason": "The previous site held this template to 90. A long table on the page lowers what one extractor returns, and closing the gap means removing rows from the table.",
+      "pageFloor": 60
+    },
+    {
+      "name": "changes",
+      "floor": 96,
+      "path": "/longest-waits/changes/",
+      "pageFloor": 96
+    },
+    {
+      "name": "health-service index",
+      "floor": 99,
+      "path": "/health-service/",
+      "pageFloor": 99
+    },
+    {
+      "name": "health service",
+      "floor": 84,
+      "path": "/health-service/*/",
+      "archiveFloor": 90,
+      "reason": "The previous site held this template to 90. A long table on the page lowers what one extractor returns, and closing the gap means removing rows from the table.",
+      "pageFloor": 74
+    }
+  ],
+  "requiredFields": {
+    "home": ["h1", "lede", "release date", "table row"],
+    "about": ["h1", "lede"],
+    "methodology": ["h1", "lede"],
+    "agents": ["h1", "lede"],
+    "data": ["h1", "lede"],
+    "gp": ["h1", "lede"],
+    "404": ["h1", "lede"],
+    "compare": ["h1", "lede"],
+    "hospitals index": ["h1", "lede"],
+    "hospital hub": ["h1", "lede", "release date", "table row"],
+    "pair": ["chart caption", "h1", "lede", "release date", "table row"],
+    "surgery index": ["h1", "lede"],
+    "surgery hub": ["chart caption", "h1", "lede", "release date", "table row"],
+    "surgery state": ["chart caption", "h1", "lede", "release date", "table row"],
+    "specialty index": ["h1", "lede"],
+    "specialty hub": ["chart caption", "h1", "lede", "release date", "table row"],
+    "specialty state": ["chart caption", "h1", "lede", "release date", "table row"],
+    "state index": ["h1", "lede"],
+    "state hub": ["h1", "lede", "release date", "table row"],
+    "urgency hub": ["h1", "lede"],
+    "urgency category": ["h1", "lede", "release date", "table row"],
+    "urgency state": ["h1", "lede", "release date", "table row"],
+    "guides index": ["h1", "lede"],
+    "guide": ["h1", "lede"],
+    "longest waits": ["h1", "lede", "release date", "table row"],
+    "border": ["h1", "lede"],
+    "by surgery": ["h1", "lede", "release date", "table row"],
+    "changes": ["h1", "lede", "release date", "table row"],
+    "health-service index": ["h1", "lede"],
+    "health service": ["h1", "lede", "release date", "table row"],
+    "surgery near": ["chart caption", "h1", "lede", "release date", "table row"],
+    "privacy": ["h1", "lede"],
+    "terms": ["h1", "lede"],
+    "corrections": ["h1", "lede"],
+    "accessibility": ["h1", "lede"]
+  },
+  "fieldExceptions": [
+    {
+      "template": "border",
+      "field": "h1",
+      "extractor": "readability",
+      "reason": "The <title> adds the year to the H1; Readability returns the title in place of the H1.",
+      "maxPages": 1
+    },
+    {
+      "template": "by surgery",
+      "field": "h1",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 1
+    },
+    {
+      "template": "by surgery",
+      "field": "h1",
+      "extractor": "trafilatura",
+      "reason": "trafilatura leaves out part of a page that is mostly one long table.",
+      "maxPages": 1
+    },
+    {
+      "template": "by surgery",
+      "field": "lede",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 1
+    },
+    {
+      "template": "by surgery",
+      "field": "lede",
+      "extractor": "trafilatura",
+      "reason": "trafilatura leaves out part of a page that is mostly one long table.",
+      "maxPages": 1
+    },
+    {
+      "template": "by surgery",
+      "field": "release date",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 1
+    },
+    {
+      "template": "by surgery",
+      "field": "release date",
+      "extractor": "trafilatura",
+      "reason": "trafilatura leaves out part of a page that is mostly one long table.",
+      "maxPages": 1
+    },
+    {
+      "template": "changes",
+      "field": "h1",
+      "extractor": "readability",
+      "reason": "The <title> adds the two years compared to the H1; Readability returns the title in place of the H1.",
+      "maxPages": 1
+    },
+    {
+      "template": "compare",
+      "field": "h1",
+      "extractor": "readability",
+      "reason": "The page is a search tool with a hidden form and a script-filled results area, and Readability returns the text below the tool instead of the heading and introduction.",
+      "maxPages": 1
+    },
+    {
+      "template": "compare",
+      "field": "lede",
+      "extractor": "readability",
+      "reason": "The page is a search tool with a hidden form and a script-filled results area, and Readability returns the text below the tool instead of the heading and introduction.",
+      "maxPages": 1
+    },
+    {
+      "template": "health service",
+      "field": "h1",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 21
+    },
+    {
+      "template": "health service",
+      "field": "release date",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 21
+    },
+    {
+      "template": "health service",
+      "field": "table row",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 21
+    },
+    {
+      "template": "hospital hub",
+      "field": "chart caption",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 12
+    },
+    {
+      "template": "hospital hub",
+      "field": "h1",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 12
+    },
+    {
+      "template": "hospital hub",
+      "field": "lede",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 12
+    },
+    {
+      "template": "hospital hub",
+      "field": "release date",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 12
+    },
+    {
+      "template": "hospital hub",
+      "field": "table row",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 12
+    },
+    {
+      "template": "longest waits",
+      "field": "release date",
+      "extractor": "trafilatura",
+      "reason": "trafilatura leaves out part of a page that is mostly one long table.",
+      "maxPages": 1
+    },
+    {
+      "template": "longest waits",
+      "field": "table row",
+      "extractor": "trafilatura",
+      "reason": "trafilatura leaves out part of a page that is mostly one long table.",
+      "maxPages": 1
+    },
+    {
+      "template": "pair",
+      "field": "table row",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 21
+    },
+    {
+      "template": "specialty hub",
+      "field": "chart caption",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 11
+    },
+    {
+      "template": "specialty hub",
+      "field": "h1",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 11
+    },
+    {
+      "template": "specialty hub",
+      "field": "lede",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 11
+    },
+    {
+      "template": "specialty hub",
+      "field": "release date",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 11
+    },
+    {
+      "template": "specialty hub",
+      "field": "table row",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 11
+    },
+    {
+      "template": "state hub",
+      "field": "h1",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 3
+    },
+    {
+      "template": "state hub",
+      "field": "lede",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 3
+    },
+    {
+      "template": "state hub",
+      "field": "release date",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 3
+    },
+    {
+      "template": "state hub",
+      "field": "release date",
+      "extractor": "trafilatura",
+      "reason": "trafilatura leaves out part of a page that is mostly one long table.",
+      "maxPages": 1
+    },
+    {
+      "template": "state hub",
+      "field": "table row",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 3
+    },
+    {
+      "template": "state index",
+      "field": "h1",
+      "extractor": "readability",
+      "reason": "The <title> \"Planned surgery waiting times by state and territory\" carries everything the H1 says; Readability returns it in place of the H1.",
+      "maxPages": 1
+    },
+    {
+      "template": "surgery hub",
+      "field": "chart caption",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 15
+    },
+    {
+      "template": "surgery hub",
+      "field": "h1",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 15
+    },
+    {
+      "template": "surgery hub",
+      "field": "lede",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 15
+    },
+    {
+      "template": "surgery hub",
+      "field": "release date",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 15
+    },
+    {
+      "template": "surgery hub",
+      "field": "table row",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 15
+    },
+    {
+      "template": "surgery state",
+      "field": "chart caption",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 4
+    },
+    {
+      "template": "surgery state",
+      "field": "h1",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 4
+    },
+    {
+      "template": "surgery state",
+      "field": "lede",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 4
+    },
+    {
+      "template": "surgery state",
+      "field": "release date",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 4
+    },
+    {
+      "template": "surgery state",
+      "field": "table row",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 4
+    },
+    {
+      "template": "urgency category",
+      "field": "h1",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 3
+    },
+    {
+      "template": "urgency category",
+      "field": "lede",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 3
+    },
+    {
+      "template": "urgency category",
+      "field": "release date",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 3
+    },
+    {
+      "template": "urgency state",
+      "field": "h1",
+      "extractor": "readability",
+      "reason": "The <title> names the same category and state in other words; Readability returns it in place of the H1.",
+      "maxPages": 21
+    },
+    {
+      "template": "urgency state",
+      "field": "lede",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 3
+    },
+    {
+      "template": "urgency state",
+      "field": "release date",
+      "extractor": "readability",
+      "reason": "Readability returns the largest table on the page and leaves out the headings, text and other rows around it. The page keeps every table row, so this stays until the tables or Readability's choice of block change.",
+      "maxPages": 3
+    },
+    {
+      "template": "by surgery",
+      "field": "table row",
+      "extractor": "trafilatura",
+      "fixtureOnly": true,
+      "reason": "trafilatura leaves out the table rows on the fixture build only. The real build keeps them, so strict mode ignores this exception.",
+      "maxPages": 1
+    },
+    {
+      "template": "404",
+      "field": "h1",
+      "extractor": "readability",
+      "reason": "Readability returns the H1 as the article title and leaves it out of the text it returns.",
+      "maxPages": 1
+    },
+    {
+      "template": "about",
+      "field": "h1",
+      "extractor": "readability",
+      "reason": "Readability returns the H1 as the article title and leaves it out of the text it returns.",
+      "maxPages": 1
+    },
+    {
+      "template": "terms",
+      "field": "h1",
+      "extractor": "readability",
+      "reason": "Readability returns the H1 as the article title and leaves it out of the text it returns.",
+      "maxPages": 1
+    },
+    {
+      "template": "agents",
+      "field": "h1",
+      "extractor": "readability",
+      "reason": "Readability returns the H1 as the article title and leaves it out of the text it returns.",
+      "maxPages": 1
+    },
+    {
+      "template": "gp",
+      "field": "h1",
+      "extractor": "readability",
+      "reason": "Readability returns the H1 as the article title and leaves it out of the text it returns.",
+      "maxPages": 1
+    },
+    {
+      "template": "guide",
+      "field": "h1",
+      "extractor": "readability",
+      "reason": "Readability returns the H1 as the article title and leaves it out of the text it returns.",
+      "maxPages": 5
+    },
+    {
+      "template": "health-service index",
+      "field": "h1",
+      "extractor": "readability",
+      "reason": "Readability returns the H1 as the article title and leaves it out of the text it returns.",
+      "maxPages": 1
+    },
+    {
+      "template": "specialty index",
+      "field": "h1",
+      "extractor": "readability",
+      "reason": "Readability returns the H1 as the article title and leaves it out of the text it returns.",
+      "maxPages": 1
+    },
+    {
+      "template": "surgery index",
+      "field": "h1",
+      "extractor": "readability",
+      "reason": "Readability returns the H1 as the article title and leaves it out of the text it returns.",
+      "maxPages": 1
+    },
+    {
+      "template": "health service",
+      "field": "release date",
+      "extractor": "trafilatura",
+      "fixtureOnly": true,
+      "reason": "trafilatura leaves out the sentence that carries the release date on one fixture page; the real build keeps it, so strict mode ignores this exception.",
+      "maxPages": 1
+    }
+  ]
+}

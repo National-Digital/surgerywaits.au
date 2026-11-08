@@ -51,6 +51,8 @@ npm run a11y -- site/dist-preview /dev/primitives/   # the same checks on the pr
 npm run html -- site/dist    # the W3C Nu Html Checker over the built pages, after npm run build; needs Java 21 (JAVA names the binary)
 npm run links -- site/dist   # internal links, assets and fragments on the built pages, after npm run build
 npm run weight -- site/dist  # page and script weight against scripts/page-weight-budget.json, after npm run build
+npm run extractability -- site/dist [--strict]  # Readability and trafilatura against the floors in scripts/extractability.json (up to 20 evenly spaced pages per template plus the first and last; --strict also fails a stale exception), after npm run build; needs uv and `uv sync` in pipeline/
+EXTRACT_TEST=1 npx vitest run scripts/extractability.test.ts  # proves the gate fails a page built to fail it
 HTML_TEST=1 npx vitest run scripts/html.test.ts   # proves the HTML gate fails a bad page; needs Java
 npm run worker:types:check   # fails when worker/worker-configuration.d.ts is stale
 npm run worker:dry-run -- /tmp/worker-out   # wrangler deploy --dry-run, no credentials
@@ -274,7 +276,7 @@ whose names are stable enough to require as status checks.
 
 - `Site checks` runs `npm ci`, then lint, format check, typecheck and knip. It builds the fixture dist
   with `uv`, sets `SURGERYWAITS_DIST` to it and runs vitest.
-- `Worker build` runs `npm ci`, `astro build`, the page and script weight check (`npm run weight`), the `wrangler types --check` freshness check and
+- `Worker build` runs `npm ci`, `astro build`, the page and script weight check (`npm run weight`), the extractability gate (`npm run extractability`), the `wrangler types --check` freshness check and
   `wrangler deploy --dry-run` into a temporary directory. It uses no Cloudflare credential or
   account identifier, and nothing is deployed. The script budget can never be set above 44,900
   bytes.
@@ -287,7 +289,7 @@ whose names are stable enough to require as status checks.
   the whole pytest suite with `SURGERYWAITS_REQUIRE_DATA=1`, which turns any skip whose reason
   does not start with `planned:` into a failure, so a missing pinned file cannot hide. Set the
   same variable locally after a pull to see the same result. It then builds the site from the real
-  dist, runs the HTML, link and weight gates, installs Chromium and prints the compare sheet on the
+  dist, runs the HTML, link, weight and extractability gates, installs Chromium and prints the compare sheet on the
   real figures, which must fit one page.
 - `Accessibility` installs Chromium with `npx playwright install --with-deps chromium`, then runs
   `npm run a11y` and the tests in `scripts/a11y.test.ts`. The first proves each accessibility

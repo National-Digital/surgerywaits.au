@@ -4,9 +4,9 @@ import { render, text, textsOf } from '../lib/test-render';
 import SafetyBlock from './SafetyBlock.astro';
 
 describe('SafetyBlock', () => {
-  it('is a labelled complementary landmark with the footer wording', async () => {
+  it('is a labelled region landmark with the footer wording', async () => {
     const html = await render(SafetyBlock, { id: 'safety-heading' });
-    expect(html).toContain('<aside class="c-safety" aria-labelledby="safety-heading"');
+    expect(html).toContain('<section class="c-safety" aria-labelledby="safety-heading"');
     expect(html).toContain('id="safety-heading"');
     const page = text(html);
     expect(page).toContain(label('footer_safety_heading'));

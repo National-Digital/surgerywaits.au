@@ -87,10 +87,15 @@ jobs:
       - run: npm run links -- site/dist --external
       # Every page, and the compare tool script, stays inside the budget in scripts/page-weight-budget.json.
       - run: npm run weight -- site/dist
+      # Mozilla Readability and trafilatura each recover the main text of a sample of every template, at the floors in scripts/extractability.json.
+      - run: npm run extractability -- site/dist
       # Proves each gate fails a page built to fail it.
       - run: npx vitest run scripts/html.test.ts scripts/links.test.ts
         env:
           HTML_TEST: '1'
+      - run: npx vitest run scripts/extractability.test.ts
+        env:
+          EXTRACT_TEST: '1'
       # Builds the site a second time and compares the checksum of every file.
       - run: npx vitest run site/src/contracts/determinism.test.ts
         env:
@@ -232,6 +237,9 @@ jobs:
         working-directory: .
       # The budget in scripts/page-weight-budget.json is set from this real build.
       - run: npm run weight -- site/dist
+        working-directory: .
+      # Strict also fails a stale exception and a template that has no pages.
+      - run: npm run extractability -- site/dist --strict
         working-directory: .
       # The Chromium build is fixed by the exact playwright version in package.json.
       - run: npx playwright install --with-deps chromium
