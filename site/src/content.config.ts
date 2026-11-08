@@ -4,6 +4,8 @@ import { z } from 'astro/zod';
 import {
   aboutSchema,
   agentsSchema,
+  correctionsSchema,
+  policySchema,
   areasSchema,
   compareTemplateSchema,
   healthServiceTemplateSchema,
@@ -94,6 +96,10 @@ export const collections = {
         'gp.yaml',
         'guides.yaml',
         'agents.yaml',
+        'privacy.yaml',
+        'terms.yaml',
+        'accessibility.yaml',
+        'corrections.yaml',
       ],
       base: './content/pages',
     }),
@@ -104,6 +110,8 @@ export const collections = {
       gpSchema,
       guidesIndexSchema,
       agentsSchema,
+      policySchema,
+      correctionsSchema,
     ]),
   }),
   guides: defineCollection({

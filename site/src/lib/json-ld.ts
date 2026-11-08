@@ -8,7 +8,7 @@ const CONTEXT = 'https://schema.org';
 interface Site {
   name: string;
   url: string;
-  operator: { name: string; url: string; contact_url: string };
+  operator: { name: string; legal_name: string; url: string; contact_url: string };
 }
 
 // A fragment on the page's own address, so a node's id never collides with another page's.
@@ -25,6 +25,7 @@ export function organization(site: Site): JsonLdNode {
     '@type': 'Organization',
     '@id': publisherId(site),
     name: site.operator.name,
+    legalName: site.operator.legal_name,
     url: site.operator.url,
     contactPoint: {
       '@type': 'ContactPoint',

@@ -128,6 +128,10 @@ browsers('The compare tool', () => {
     { timeout: T },
     async () => {
       const context = await up(browser).newContext();
+      // The page counter's script and report are answered here, and the checks below read what they were sent.
+      await context.route(/^https:\/\/(?:static\.)?cloudflareinsights\.com\//u, (route) =>
+        route.fulfill({ status: 204, body: '' }),
+      );
       const page = await context.newPage();
       const requests: string[] = [];
       const records: string[] = [];
@@ -177,8 +181,11 @@ browsers('The compare tool', () => {
         cookie: '',
       });
       expect(await context.cookies()).toEqual([]);
-      const other = requests.filter((url) => !url.startsWith(up(server).base));
-      expect(other).toEqual([]);
+      const counter = new Set(['https://static.cloudflareinsights.com']);
+      const other = requests.filter(
+        (url) => new URL(url).origin !== new URL(up(server).base).origin,
+      );
+      expect(other.filter((url) => !counter.has(new URL(url).origin))).toEqual([]);
       expect(jsonNow()).toEqual(['/tool/index.json', '/tool/figures.json', '/tool/places.json']);
       await Promise.all(pending);
       // No URL, header or body of any request holds what was chosen or typed.

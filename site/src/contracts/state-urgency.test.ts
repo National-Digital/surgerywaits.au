@@ -1,4 +1,12 @@
-import { ABOUT_PATH, DATA_PATH, METHODOLOGY_PATH } from '../lib/article-pages';
+import {
+  ABOUT_PATH,
+  ACCESSIBILITY_PATH,
+  CORRECTIONS_PATH,
+  DATA_PATH,
+  METHODOLOGY_PATH,
+  PRIVACY_PATH,
+  TERMS_PATH,
+} from '../lib/article-pages';
 import { GP_PATH, GUIDES_PATH } from '../lib/guides';
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -25,7 +33,7 @@ import {
   surgeryPath,
   statePath as surgeryStatePath,
 } from '../lib/surgery-page';
-import { elementsOf, render, text, textsOf, withoutJsonLd } from '../lib/test-render';
+import { elementsOf, render, text, textsOf, withoutSiteScripts } from '../lib/test-render';
 import {
   categories,
   categoryByNumber,
@@ -171,9 +179,9 @@ describe('Every page', () => {
     }
   });
 
-  it('ships no script and no event handler', () => {
+  it('ships no script of its own and no event handler', () => {
     for (const { path, html } of pages) {
-      expect([path, /<script|\son[a-z]+=|javascript:/i.test(withoutJsonLd(html))]).toEqual([
+      expect([path, /<script|\son[a-z]+=|javascript:/i.test(withoutSiteScripts(html))]).toEqual([
         path,
         false,
       ]);
@@ -209,9 +217,17 @@ describe('Every page', () => {
     built.add('/');
     built.add('/hospitals/');
     built.add('/surgery/');
-    [METHODOLOGY_PATH, DATA_PATH, ABOUT_PATH, GUIDES_PATH, GP_PATH].forEach((path) =>
-      built.add(path),
-    );
+    [
+      METHODOLOGY_PATH,
+      DATA_PATH,
+      ABOUT_PATH,
+      GUIDES_PATH,
+      GP_PATH,
+      PRIVACY_PATH,
+      TERMS_PATH,
+      ACCESSIBILITY_PATH,
+      CORRECTIONS_PATH,
+    ].forEach((path) => built.add(path));
     for (const kind of ['procedure', 'specialty'] as const) {
       for (const { props } of hubRoutes(kind)) {
         built.add(surgeryPath(refOf(kind, props.slug)));

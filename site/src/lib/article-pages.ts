@@ -1,8 +1,9 @@
-import { getSite, label } from './content';
-import type { ArticleSection } from './content-schema';
+import type { z } from 'astro/zod';
+import { getAbout, getSite, label } from './content';
+import type { ArticleSection, correctionsSchema } from './content-schema';
 import { readRules } from './dist';
 import type { Rules } from './dist';
-import { formatNotPublished } from './format';
+import { formatDate, formatNotPublished } from './format';
 import {
   BORDER_COUNT,
   BORDER_RADIUS_KM,
@@ -11,7 +12,7 @@ import {
   MIN_EXTREMES,
   MOVE_VOLUME_FLOOR,
 } from './longest-page';
-import { fillKnown } from './slots';
+import { fill, fillKnown } from './slots';
 import {
   MAX_OUTSIDE,
   MAX_SPREAD_KM,
@@ -25,6 +26,16 @@ import {
 export const METHODOLOGY_PATH = '/methodology/';
 export const DATA_PATH = '/data/';
 export const ABOUT_PATH = '/about/';
+export const PRIVACY_PATH = '/privacy/';
+export const TERMS_PATH = '/terms/';
+export const ACCESSIBILITY_PATH = '/accessibility/';
+export const CORRECTIONS_PATH = '/corrections/';
+
+type Corrections = z.output<typeof correctionsSchema>;
+interface CorrectionRow {
+  name: string;
+  cells: { text: string; withheld: boolean }[];
+}
 
 type Reason = Parameters<typeof formatNotPublished>[0];
 
@@ -111,6 +122,32 @@ export function methodologyFacts(
 }
 
 export const aboutFacts = (): Record<string, string> => ({ operator: getSite().operator.name });
+
+// The no-affiliation statement is the about page's own sentence, so the two pages cannot disagree.
+const independence = (): string => {
+  const sentence = getAbout().sections.find(({ id }) => id === 'independence')?.paragraphs[0];
+  if (sentence === undefined) {
+    throw new Error('the about page has no independence section');
+  }
+  return sentence;
+};
+
+export const policyFacts = (): Record<string, string> => ({
+  operator: getSite().operator.name,
+  legal_entity: getSite().operator.legal_entity,
+  independence: independence(),
+});
+
+// The line that tells a reader when a policy page last changed.
+export const updatedLine = (page: { updated: string; updated_line: string }): string =>
+  fill(page.updated_line, { date: formatDate(page.updated) });
+
+// The rows of the corrections table, in the order the file lists them.
+export const correctionRows = (log: Corrections['log']): CorrectionRow[] =>
+  log.entries.map((entry) => ({
+    name: formatDate(entry.date),
+    cells: [entry.pages, entry.wrong, entry.fix].map((text) => ({ text, withheld: false })),
+  }));
 
 export const dataFacts = (): Record<string, string> => ({
   passport_heading: label('passport_heading'),

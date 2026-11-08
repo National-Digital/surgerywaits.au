@@ -21,5 +21,5 @@
 - [ ] The change keeps to the rules in `docs/ARCHITECTURE.md`
 - [ ] A suppressed value shows "not published" with its reason, and no figure ships without its
       reference period and release date
-- [ ] The change keeps to `docs/ACCESSIBILITY.md`
+- [ ] The change keeps to `site/content/pages/accessibility.yaml`
 - [ ] The description names anything a maintainer must do beyond merging

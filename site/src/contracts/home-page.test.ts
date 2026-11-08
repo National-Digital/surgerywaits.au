@@ -2,7 +2,15 @@ import { parseFragment } from 'parse5';
 import type { DefaultTreeAdapterTypes } from 'parse5';
 import { describe, expect, it } from 'vitest';
 
-import { ABOUT_PATH, DATA_PATH, METHODOLOGY_PATH } from '../lib/article-pages';
+import {
+  ABOUT_PATH,
+  ACCESSIBILITY_PATH,
+  CORRECTIONS_PATH,
+  DATA_PATH,
+  METHODOLOGY_PATH,
+  PRIVACY_PATH,
+  TERMS_PATH,
+} from '../lib/article-pages';
 import { GP_PATH, GUIDES_PATH } from '../lib/guides';
 import HomePage from '../components/HomePage.astro';
 import { getHomeTemplate, getSite } from '../lib/content';
@@ -14,7 +22,7 @@ import { stateFiles, statePath, statesStamp } from '../lib/state-page';
 import { surgeryPath, surgeryRefs } from '../lib/surgery-page';
 import { categories, urgencyStamp } from '../lib/urgency-page';
 import { fill } from '../lib/slots';
-import { elementsOf, render, text, textsOf, withoutJsonLd } from '../lib/test-render';
+import { elementsOf, render, text, textsOf, withoutSiteScripts } from '../lib/test-render';
 
 const t = getHomeTemplate();
 const site = getSite();
@@ -78,6 +86,10 @@ describe('Home page', () => {
       ABOUT_PATH,
       GUIDES_PATH,
       GP_PATH,
+      PRIVACY_PATH,
+      TERMS_PATH,
+      ACCESSIBILITY_PATH,
+      CORRECTIONS_PATH,
     ]);
     for (const file of stateFiles()) {
       built.add(statePath(file.state));
@@ -233,7 +245,9 @@ describe('Home page', () => {
     expect(html.match(/id="[a-z]+-safety-heading"/g) ?? []).toHaveLength(1);
   });
 
-  it('ships no script and no event handler, and no search or compare control', () => {
-    expect(/<script|\son[a-z]+=|javascript:|<form|<input/i.test(withoutJsonLd(html))).toBe(false);
+  it('ships no script of its own and no event handler, and no search or compare control', () => {
+    expect(/<script|\son[a-z]+=|javascript:|<form|<input/i.test(withoutSiteScripts(html))).toBe(
+      false,
+    );
   });
 });

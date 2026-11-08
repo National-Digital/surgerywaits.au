@@ -29,7 +29,7 @@ import { hospitalPath } from '../lib/hospital-page';
 import type { HealthService } from '../lib/dist';
 import { fill } from '../lib/slots';
 import { getHospitalTemplate } from '../lib/content';
-import { render, text, textsOf, withoutJsonLd } from '../lib/test-render';
+import { render, text, textsOf, withoutSiteScripts } from '../lib/test-render';
 
 const t = getHealthServiceTemplate();
 const site = getSite();
@@ -76,9 +76,9 @@ describe('Every health service page', () => {
     }
   });
 
-  it('ships no script, carries one h1 and a canonical address', () => {
+  it('ships no script of its own, carries one h1 and a canonical address', () => {
     for (const { slug, html } of everyPage) {
-      expect([slug, /<script|\son[a-z]+=|javascript:/i.test(withoutJsonLd(html))]).toEqual([
+      expect([slug, /<script|\son[a-z]+=|javascript:/i.test(withoutSiteScripts(html))]).toEqual([
         slug,
         false,
       ]);
@@ -150,6 +150,10 @@ describe('Every health service page', () => {
       '/guides/',
       '/gp/',
       '/about/',
+      '/privacy/',
+      '/terms/',
+      '/accessibility/',
+      '/corrections/',
     ]);
     for (const slug of slugs) {
       built.add(healthServicePath(slug));

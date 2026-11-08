@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Credit } from './credits';
 import {
+  organization,
   breadcrumbList,
   financialYear,
   fileDataset,
@@ -16,6 +17,7 @@ const site = {
   url: 'https://example.test/',
   operator: {
     name: 'Test Operator',
+    legal_name: 'Test Operator Legal',
     url: 'https://operator.test/',
     contact_url: 'https://operator.test/contact/',
   },
@@ -46,6 +48,13 @@ describe('financialYear', () => {
 });
 
 describe('json-ld', () => {
+  it('names the publisher by its trading name and carries the registered name apart', () => {
+    expect(organization(site)).toMatchObject({
+      name: 'Test Operator',
+      legalName: 'Test Operator Legal',
+    });
+  });
+
   it('ends a breadcrumb trail on the page itself', () => {
     const list = breadcrumbList(site, '/a/b/', [{ label: 'Home', href: '/' }, { label: 'Here' }]);
     expect(list['itemListElement']).toEqual([

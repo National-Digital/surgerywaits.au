@@ -3,7 +3,8 @@ import { parse } from 'parse5';
 import type { DefaultTreeAdapterTypes } from 'parse5';
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { distSlug, readContent, replacedTerms } from '../lib/content-files';
+import { LEGAL_NAME, distSlug, readContent, replacedTerms } from '../lib/content-files';
+import { BEACON_SRC } from '../lib/privacy';
 import { termsSchema } from '../lib/content-schema';
 import { licenceUrl, readCredits } from '../lib/credits';
 import { readHospitalIndex } from '../lib/dist';
@@ -17,7 +18,7 @@ if (!existsSync(dist)) {
 // The schema.org types the site uses, with the properties each may carry.
 const COMMON = ['@type', '@id'];
 const VOCAB: Readonly<Record<string, readonly string[]>> = {
-  Organization: ['name', 'url', 'contactPoint'],
+  Organization: ['name', 'legalName', 'url', 'contactPoint'],
   ContactPoint: ['contactType', 'url'],
   WebSite: ['name', 'url', 'inLanguage', 'publisher'],
   WebPage: ['url', 'name', 'description', 'inLanguage', 'about', 'isPartOf', 'publisher'],
@@ -144,8 +145,8 @@ beforeAll(() => {
         const document = JSON.parse(body) as Json;
         found.contexts.push(document['@context']);
         nodes.push(...(document['@graph'] as Json[]));
-      } else if (!(type === 'module' && (src ?? '').startsWith('/_astro/'))) {
-        // The compare tool's module is the one script that runs.
+      } else if (src !== BEACON_SRC && !(type === 'module' && (src ?? '').startsWith('/_astro/'))) {
+        // Apart from the page counter, which has its own checks, the compare tool's module is the one script that runs.
         found.stray.push(script.attrs.map((a) => `${a.name}=${a.value}`).join(' '));
       }
     }
@@ -279,6 +280,8 @@ describe('JSON-LD on every page', () => {
     const website = ofType(first ?? ({ nodes: [] } as unknown as Page), 'WebSite')[0];
     expect(organization?.['@id']).toBe('https://nationaldigital.com.au/#organization');
     expect(organization?.['name']).toBe('National Digital');
+    expect(organization?.['legalName']).toBe(LEGAL_NAME);
+    expect(JSON.stringify(organization)).not.toMatch(/\b(?:ACN|ABN)\b|trading as/i);
     expect(website?.['@id']).toBe('https://surgerywaits.au/#website');
     for (const page of pages) {
       expect([page.path, ofType(page, 'Organization')]).toEqual([page.path, [organization]]);

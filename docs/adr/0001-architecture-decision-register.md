@@ -121,7 +121,7 @@ previews, no Cloudflare credential sits in the repository until the site is read
 
 The site counts page views with Cloudflare Web Analytics. The repository sets no cookie and the
 Worker drops any `Set-Cookie`. The count relies on Cloudflare Web Analytics, which Cloudflare
-[describes as using no cookies or other client-side state for analytics](https://blog.cloudflare.com/privacy-first-web-analytics/); the tests cannot observe the beacon, which Cloudflare adds at the edge.
+[describes as using no cookies or other client-side state for analytics](https://blog.cloudflare.com/privacy-first-web-analytics/); every page carries the beacon script, with the site's public token held in `site/content/site.yaml`, and the tests require exactly that script and no other from another host.
 Nothing a person types is sent anywhere, and the compare tool fetches only its own `/tool/` files.
 The beacon and report hosts are the only other hosts in the Content-Security-Policy, and the
 privacy check in CI allows exactly those.
@@ -275,17 +275,17 @@ Baseline compatibility.
 Why: a named methodology that a lint rule can check holds across contributors. Layers make the
 cascade order explicit, and a fixed naming scheme tells a reader what a class is for.
 
-### D19: Pages ship no client JavaScript by default
+### D19: Pages ship no client JavaScript of their own by default
 
 Every page is complete and usable with scripts off. The header shows the site navigation inline at every width, with no menu toggle. The compare tool is the only
-script: one vanilla TypeScript module loaded as `<script type="module">` from the site itself, with
-no framework and no islands runtime. Scripts find their elements through `js-` classes or `data-`
+script the site writes: one vanilla TypeScript module loaded as `<script type="module">` from the site itself, with
+no framework and no islands runtime. The one other script is the Cloudflare Web Analytics beacon, which every page loads from Cloudflare's host as the third-party script that [D8][d8] decides on. Scripts the site writes find their elements through `js-` classes or `data-`
 attributes and never through styling classes, so a CSS rename cannot break behaviour. The tool keeps
 no storage, URL state or history, fetches only from its own site and sends nothing a person types
 ([D8][d8]). A weight check holds the module to a set byte budget and fails when it grows past it.
 Browser support follows Baseline "widely available", and newer APIs sit behind a feature check.
 
-Why: this records how the site works, so that adding a framework or a second script needs a new
+Why: this records how the site works, so that adding a framework or another script, whether the site's own or a third party's, needs a new
 record. Pages that work without scripts are easier to make accessible and to read for tools that do
 not run scripts.
 
@@ -364,10 +364,9 @@ Why: tooling changes quickly, and a cited page lets a reviewer check the pattern
   A rule may name a pending test until the test lands.
 - The toolchain guide now lives in `CONTRIBUTING.md`, and `README.md` and `AGENTS.md` follow this
   split.
-- The corrections policy and its log, and the accessibility statement, are planned to move into the
-  site's own content. They are served at `/corrections/` and `/accessibility/` and each has a
-  Markdown twin. The data-problem issue template links the corrections page. Until the site has
-  pages, `docs/CORRECTIONS.md` and `docs/ACCESSIBILITY.md` stay in `docs/` and move then.
+- The corrections policy and its log, and the accessibility statement, are site content in
+  `site/content/pages/`. They are served at `/corrections/` and `/accessibility/`, and each will
+  have a Markdown twin. The data-problem issue template links the corrections page.
 
 Why: readers find governance files where GitHub shows them, and each policy is written once. A
 corrections log kept in the repository and again on the site would drift apart.

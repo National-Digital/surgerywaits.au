@@ -3,6 +3,8 @@ import { z } from 'astro/zod';
 import {
   aboutSchema,
   agentsSchema,
+  correctionsSchema,
+  policySchema,
   areasSchema,
   compareTemplateSchema,
   healthServiceTemplateSchema,
@@ -69,6 +71,15 @@ export const getGp = (): typeof gp => gp;
 export const getGuidesIndex = (): typeof guidesIndex => guidesIndex;
 export const getGuides = (): Map<string, z.output<typeof guideSchema>> => guides;
 
+const privacy = await single('articles', 'privacy', policySchema);
+const terms = await single('articles', 'terms', policySchema);
+const accessibility = await single('articles', 'accessibility', policySchema);
+const corrections = await single('articles', 'corrections', correctionsSchema);
+
+export const getPrivacy = (): typeof privacy => privacy;
+export const getTerms = (): typeof terms => terms;
+export const getAccessibility = (): typeof accessibility => accessibility;
+export const getCorrections = (): typeof corrections => corrections;
 export const getMethodology = (): typeof methodology => methodology;
 export const getDataPage = (): typeof dataPage => dataPage;
 export const getAbout = (): typeof about => about;

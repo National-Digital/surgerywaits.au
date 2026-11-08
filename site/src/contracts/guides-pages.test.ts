@@ -11,7 +11,7 @@ import { categories } from '../lib/urgency-page';
 import gpPage from '../pages/gp.astro';
 import guidePage from '../pages/guides/[slug].astro';
 import guidesIndexPage from '../pages/guides/index.astro';
-import { render, text, withoutJsonLd } from '../lib/test-render';
+import { render, text, withoutSiteScripts } from '../lib/test-render';
 
 const all = guides();
 const rendered = await Promise.all(
@@ -49,12 +49,12 @@ describe('Guides and the page for general practitioners', () => {
     expect(all).toHaveLength(getGuides().size);
   });
 
-  it('give each page one heading, a safety block, no script and no unfilled slot', () => {
+  it('give each page one heading, a safety block, no script of their own and no unfilled slot', () => {
     for (const { path, html } of pages) {
       expect(html.match(/<h1[ >]/g), path).toHaveLength(1);
       expect(html, path).toContain('c-safety');
       expect(html, path).toContain('In an emergency, call 000.');
-      expect(withoutJsonLd(html), path).not.toContain('<script');
+      expect(withoutSiteScripts(html), path).not.toContain('<script');
       expect(text(html), path).not.toMatch(/[{}]/);
     }
   });

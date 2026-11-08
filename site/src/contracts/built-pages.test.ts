@@ -7,6 +7,8 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import {
   distSlug,
   entityPattern,
+  BEACON_TOKEN,
+  LEGAL_ENTITY,
   pageStrings,
   readContent,
   replacedTerms,
@@ -48,9 +50,17 @@ import {
   nearPath,
   refOf,
 } from '../lib/surgery-page';
-import { fetchProblems, historyUses, pageProblems, sendingUses, storageUses } from '../lib/privacy';
+import {
+  BEACON_SRC,
+  beaconProblems,
+  fetchProblems,
+  historyUses,
+  pageProblems,
+  sendingUses,
+  storageUses,
+} from '../lib/privacy';
 import { fill } from '../lib/slots';
-import { elementsOf, plain, textsOf, withoutJsonLd } from '../lib/test-render';
+import { elementsOf, plain, textsOf, withoutSiteScripts } from '../lib/test-render';
 import type { Found } from '../lib/test-render';
 
 const dist = new URL('../../dist/', import.meta.url);
@@ -82,6 +92,7 @@ interface Basic {
 interface Page extends Basic {
   hospitalTable: boolean;
   entity: boolean;
+  legal: boolean;
   replaced: string[];
   passports: number;
   operator: boolean;
@@ -134,7 +145,10 @@ function analyse(path: string, html: string, bytes: number, skipped: boolean): P
           src?: string;
         },
     )
-    .filter((t) => !(t.type === 'application/ld+json' && t.src === undefined));
+    // The beacon is checked on every page by beaconProblems, so it is not one of a page's own scripts.
+    .filter(
+      (t) => !(t.type === 'application/ld+json' && t.src === undefined) && t.src !== BEACON_SRC,
+    );
   const count = (name: string): number => tags.filter((t) => t.tagName === name).length;
   const footer = tags.find((t) => t.tagName === 'footer');
   const main = tags.find((t) => t.tagName === 'main');
@@ -148,7 +162,8 @@ function analyse(path: string, html: string, bytes: number, skipped: boolean): P
     skipped,
     anyNoindex: html.includes('noindex'),
     hospitalTable: html.includes('id="hospitals-caption"'),
-    entity: pageStrings(root).some((t) => entityPattern.test(t)),
+    entity: pageStrings(root).some((t) => entityPattern.test(t.replace(LEGAL_ENTITY, ''))),
+    legal: pageStrings(root).some((t) => t.includes(LEGAL_ENTITY)),
     replaced: replacedTerms(distSlug(path), own, terms),
     passports: (html.match(/class="c-passport"/g) ?? []).length,
     operator: pageStrings(root).join('').includes(OPERATOR),
@@ -217,6 +232,14 @@ describe('Built pages', () => {
         .filter((p) => p.entity)
         .map((p) => p.path),
     ).toEqual([]);
+  });
+
+  it('print the registered name on the terms and privacy pages only', () => {
+    expect(
+      analysed()
+        .filter((p) => p.legal)
+        .map((p) => p.path),
+    ).toEqual(['privacy/index.html', 'terms/index.html']);
   });
 
   it('use no term the terms file replaces', () => {
@@ -304,7 +327,7 @@ describe('Built pages', () => {
     }
   });
 
-  it('ship zero JavaScript on every static page', () => {
+  it('ship no script of their own on every static page', () => {
     for (const p of analysed().filter(({ path }) => path !== TOOL_PAGE)) {
       expect([p.path, p.scripts, p.handlers, p.javascriptHref]).toEqual([p.path, 0, 0, false]);
     }
@@ -331,7 +354,10 @@ describe('Built pages and privacy', () => {
     expect(storageUses('x.localStorage.getItem("a")')).toEqual(['localstorage']);
   });
 
-  it('carry no beacon and no script from another host, and the tool script reaches no other host', () => {
+  it('carry the Web Analytics beacon once and no other script from another host, and the tool script reaches no other host', () => {
+    expect(
+      paths.flatMap((p) => beaconProblems(read(p), BEACON_TOKEN).map((x) => `${p}: ${x}`)),
+    ).toEqual([]);
     expect(paths.flatMap((p) => pageProblems(read(p)).map((x) => `${p}: ${x}`))).toEqual([]);
     for (const file of bundles()) {
       const text = read(`_astro/${file}`);
@@ -770,7 +796,7 @@ describe('Built longest-waits pages', () => {
         html.match(/<table[ >]/g)?.length ?? 0,
       );
       expect([path, html.includes('c-table__rank')]).toEqual([path, false]);
-      expect([path, /<script|\son[a-z]+=/i.test(withoutJsonLd(html))]).toEqual([path, false]);
+      expect([path, /<script|\son[a-z]+=/i.test(withoutSiteScripts(html))]).toEqual([path, false]);
     }
     // A page with no rows says so; the sample data has no cross-border pair.
     const nones = [
@@ -1090,12 +1116,12 @@ describe('Built health service pages', () => {
     }
   });
 
-  it('state a period and release for each table, rank nothing and ship no script', () => {
+  it('state a period and release for each table, rank nothing and ship no script of their own', () => {
     for (const { path, html } of mine()) {
       expect(textsOf(html, 'c-plain-table__stamp').length, path).toBe(
         html.match(/<table[ >]/g)?.length ?? 0,
       );
-      expect([path, /c-table__rank|<script|\son[a-z]+=/i.test(withoutJsonLd(html))]).toEqual([
+      expect([path, /c-table__rank|<script|\son[a-z]+=/i.test(withoutSiteScripts(html))]).toEqual([
         path,
         false,
       ]);
@@ -1138,8 +1164,16 @@ describe('Built health service pages', () => {
 });
 
 describe('Built content pages', () => {
-  it('hold the methodology, data and about pages at the earlier addresses', () => {
-    for (const path of ['methodology', 'data', 'about']) {
+  it('hold the content and policy pages at the earlier addresses', () => {
+    for (const path of [
+      'methodology',
+      'data',
+      'about',
+      'privacy',
+      'terms',
+      'accessibility',
+      'corrections',
+    ]) {
       expect(paths).toContain(`${path}/index.html`);
       expect(pageAt(`${path}/index.html`).h1).toBe(1);
     }

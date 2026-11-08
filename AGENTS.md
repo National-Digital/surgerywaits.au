@@ -2,17 +2,17 @@
 
 Read this file first. It points to where each rule lives and does not restate the architecture rules.
 
-| What must hold                                             | Where to look                                                                                                |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| The house rules for data, copy and markup                  | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#rules-that-decide-the-code), one test or planned test per rule |
-| Why a rule exists                                          | [`docs/adr/`](docs/adr/README.md)                                                                            |
-| Setting up, the checks to run, hooks, CI and pinned tools  | [`CONTRIBUTING.md`](CONTRIBUTING.md#setting-up)                                                              |
-| Commit and pull request form                               | [`CONTRIBUTING.md`](CONTRIBUTING.md#commits-and-pull-requests)                                               |
-| The library version and documentation page behind a change | The "Docs" line of the [pull request template](.github/PULL_REQUEST_TEMPLATE.md)                             |
-| Accessibility and corrections                              | [`docs/ACCESSIBILITY.md`](docs/ACCESSIBILITY.md), [`docs/CORRECTIONS.md`](docs/CORRECTIONS.md)               |
-| Security reports                                           | [`SECURITY.md`](SECURITY.md)                                                                                 |
-| Licences for code and data                                 | [`LICENSE`](LICENSE), [`LICENSE-DATA.md`](LICENSE-DATA.md)                                                   |
-| What a pipeline file or a dist file contains               | The JSON Schema in `contract/`, once it lands. Read the schema and never copy it into a document.            |
+| What must hold                                             | Where to look                                                                                                            |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| The house rules for data, copy and markup                  | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#rules-that-decide-the-code), one test or planned test per rule             |
+| Why a rule exists                                          | [`docs/adr/`](docs/adr/README.md)                                                                                        |
+| Setting up, the checks to run, hooks, CI and pinned tools  | [`CONTRIBUTING.md`](CONTRIBUTING.md#setting-up)                                                                          |
+| Commit and pull request form                               | [`CONTRIBUTING.md`](CONTRIBUTING.md#commits-and-pull-requests)                                                           |
+| The library version and documentation page behind a change | The "Docs" line of the [pull request template](.github/PULL_REQUEST_TEMPLATE.md)                                         |
+| Accessibility and corrections                              | [`accessibility.yaml`](site/content/pages/accessibility.yaml), [`corrections.yaml`](site/content/pages/corrections.yaml) |
+| Security reports                                           | [`SECURITY.md`](SECURITY.md)                                                                                             |
+| Licences for code and data                                 | [`LICENSE`](LICENSE), [`LICENSE-DATA.md`](LICENSE-DATA.md)                                                               |
+| What a pipeline file or a dist file contains               | The JSON Schema in `contract/`, once it lands. Read the schema and never copy it into a document.                        |
 
 ## What must hold in every change
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { render, text, textsOf, withoutJsonLd } from '../lib/test-render';
+import { render, text, textsOf, withoutSiteScripts } from '../lib/test-render';
 import primitives from './primitives.astro';
 
 describe('the primitives preview page', () => {
@@ -54,6 +54,6 @@ describe('the primitives preview page', () => {
     expect(html.match(/role="img"/g)).toHaveLength(2);
     expect(html).toContain('c-chart__gap');
     expect(textsOf(html, 'c-waits__stamp')).toHaveLength(1);
-    expect(withoutJsonLd(html)).not.toMatch(/<script/i);
+    expect(withoutSiteScripts(html)).not.toMatch(/<script/i);
   });
 });

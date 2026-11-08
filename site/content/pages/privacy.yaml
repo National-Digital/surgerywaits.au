@@ -1,0 +1,48 @@
+title: 'Privacy policy of {site}'
+description: What Surgery Waits collects from people who read it, and what its host processes to deliver the pages.
+crumb_home: Home
+crumb: Privacy
+heading: Privacy
+lede: '{legal_entity} operates Surgery Waits. The site has no accounts and no sign-up or contact form. This page states what the site does when your browser asks for a page.'
+updated: '2026-11-08'
+updated_line: 'Last updated {date}.'
+sections:
+  - id: collects
+    heading: What the site collects
+    paragraphs:
+      - The site asks you for no information. It has no accounts and no sign-up or contact form.
+      - The site sets no cookies. It writes nothing to local storage or session storage.
+      - The site loads no advertising or social media service. Apart from the page counter described below, every file the site loads comes from surgerywaits.au.
+      - The compare page has a search form that runs in your browser. What you type or choose stays on your device, and the page sends it nowhere.
+  - id: host
+    heading: What the host processes
+    paragraphs:
+      - Cloudflare delivers the site. When your browser requests a page, Cloudflare receives the request, which includes your IP address. The request also names the page and describes your browser. Cloudflare processes this to deliver the site and to protect it from abuse, under its own privacy policy.
+      - The code that runs in front of the pages sets response headers. It writes one usage line for each request to the MCP endpoint at /mcp. That line records which method or tool the request named and how the request ended. It holds no IP address and no content of the request.
+    links:
+      - label: Cloudflare privacy policy
+        href: https://www.cloudflare.com/privacypolicy/
+  - id: counting
+    heading: Page counting
+    paragraphs:
+      - Every page loads the Cloudflare Web Analytics script from static.cloudflareinsights.com. The script reports each page view to Cloudflare so that the site can see how many people read each page.
+      - Cloudflare Web Analytics records the address of the page without any query string, and the page that referred you if your browser says so. It also records your country and the type of browser and device you use. It measures how long the page took to load. It sets no cookie and writes nothing to local storage. Cloudflare states that it does not track individual people across the websites of its customers.
+      - Cloudflare keeps the unsampled data for 7 days. It then aggregates the data to about a tenth of its original volume.
+      - The compare tool does not send what you type or choose to Cloudflare or to anyone else.
+    links:
+      - label: Cloudflare Web Analytics privacy statement
+        href: https://blog.cloudflare.com/privacy-first-web-analytics/
+  - id: browser
+    heading: Headers the site sends
+    paragraphs:
+      - The site sends the header Referrer-Policy with the value no-referrer. A website you reach through a link on this site receives no information about the page you came from.
+      - The site sends a Permissions-Policy header that turns off access to device features, such as the camera and the microphone, for its pages.
+  - id: other
+    heading: Other websites
+    paragraphs:
+      - Some pages link to other websites, such as GitHub and publicdata.au. Each of those websites handles information under its own policy.
+      - A GitHub issue is public. A person who reports a problem there should leave out personal information.
+  - id: contact
+    heading: Questions
+    paragraphs:
+      - To ask a question about this page, use the contact link in the footer of every page.
