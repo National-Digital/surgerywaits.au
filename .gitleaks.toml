@@ -4,8 +4,8 @@ title = "surgerywaits.au gitleaks config"
 [extend]
 useDefault = true
 
-# The Web Analytics site token is public: every page carries it in its HTML.
+# The Web Analytics site token and the IndexNow key are public: the site serves both.
 [allowlist]
-description = "Cloudflare Web Analytics site token"
+description = "Cloudflare Web Analytics site token and IndexNow key"
 regexTarget = "match"
-regexes = ['''cc733e51363949e9a697365b40ada13b''']
+regexes = ['''cc733e51363949e9a697365b40ada13b''', '''59ce5198fa6fd5f9269af30836915344''']

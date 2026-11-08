@@ -154,6 +154,9 @@ const catalogProblem = (body: string): string | undefined => {
   return undefined;
 };
 
+// The IndexNow key is public: search engines fetch it to confirm who submits the site's addresses.
+const INDEXNOW_KEY = '59ce5198fa6fd5f9269af30836915344';
+
 // Every machine-readable file the site serves.
 // A new surface is added here with its own entry.
 export const SURFACES: readonly Surface[] = [
@@ -263,6 +266,14 @@ export const SURFACES: readonly Surface[] = [
     purpose:
       'A Markdown version of each page, written from the page and returned by the Worker to a client that asks for text/markdown.',
     check: twinProblem,
+  },
+  {
+    id: 'indexnow-key',
+    pattern: /^\/[0-9a-f]{32}\.txt$/u,
+    mediaType: 'text/plain',
+    purpose: 'The key that lets IndexNow confirm that this site submits its own addresses.',
+    expected: () => [`/${INDEXNOW_KEY}.txt`],
+    check: (body) => (body === INDEXNOW_KEY ? undefined : 'not the IndexNow key'),
   },
   {
     id: 'security',
