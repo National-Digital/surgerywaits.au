@@ -1,0 +1,150 @@
+name: Preview deploy
+
+# Publishes the site that Preview build made for a pull request to Cloudflare Pages, on the branch
+# pr-<number> of the project. It never checks out or runs code from the pull request: it takes the
+# built files from the artifact and treats them as data. The Cloudflare secrets sit in the preview
+# environment and reach one step. A preview serves the static site only, and carries noindex.
+on: # zizmor: ignore[dangerous-triggers] runs from the default branch, takes only the built files of the pull request, and never checks out or runs its code
+  workflow_run:
+    workflows: [Preview build]
+    types: [completed]
+
+permissions: {}
+
+# A run in progress is never cancelled part way, and a newer run for the same branch waits for it.
+concurrency:
+  group: preview-deploy-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy the preview
+    if: ${{ github.repository == 'National-Digital/surgerywaits.au' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: preview
+      url: ${{ steps.url.outputs.url }}
+    permissions:
+      actions: read # downloads the artifact of the build run
+      pull-requests: read # finds the pull request of a commit from a fork
+      statuses: write # reports the preview address on the commit
+    env:
+      PROJECT: surgerywaits-au
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - name: Find the pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          LISTED: ${{ github.event.workflow_run.pull_requests[0].number }}
+        run: |
+          set -eu
+          case "$HEAD_SHA" in *[!0-9a-f]*|'') echo "::error::The commit is not a hash"; exit 1 ;; esac
+          number="$LISTED"
+          [ -n "$number" ] || number=$(gh api "repos/$GITHUB_REPOSITORY/commits/$HEAD_SHA/pulls" --jq '[.[] | select(.state == "open")][0].number // empty')
+          case "$number" in ''|*[!0-9]*) echo "::notice::No open pull request has this commit, so nothing is deployed"; exit 0 ;; esac
+          # A build of an older commit, or of a pull request that has closed, deploys nothing.
+          info=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$number" --jq '[.state, .head.sha] | join(" ")')
+          state=${info%% *}
+          head=${info##* }
+          if [ "$state" = open ] && [ "$head" = "$HEAD_SHA" ]; then
+            echo "number=$number" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::The pull request is closed or has a newer commit, so nothing is deployed"
+          fi
+      - if: ${{ steps.pr.outputs.number != '' }}
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: preview-dist
+          path: ${{ runner.temp }}/preview
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      # Pages would run a worker or a function from the files, apply a routes file and follow a redirects file.
+      # The Markdown versions are served only by the Worker, and leaving them out keeps the count under the Pages limit.
+      - name: Make the files static and mark them noindex
+        if: ${{ steps.pr.outputs.number != '' }}
+        env:
+          DIR: ${{ runner.temp }}/preview
+        run: |
+          set -eu
+          rm -rf -- "$DIR/_worker.js" "$DIR/_routes.json" "$DIR/_redirects" "$DIR/functions" "$DIR/_headers"
+          find "$DIR" -type l -delete
+          find "$DIR" -name '*.md' -type f -delete
+          printf '/*\n  X-Robots-Tag: noindex\n' > "$DIR/_headers"
+          count=$(find "$DIR" -type f | wc -l)
+          echo "The preview holds $count files" >> "$GITHUB_STEP_SUMMARY"
+          [ "$count" -le 20000 ] || { echo "::error::The preview holds $count files, and Cloudflare Pages accepts 20000"; exit 1; }
+      # The major version is the one in .node-version, which this workflow does not check out.
+      - if: ${{ steps.pr.outputs.number != '' }}
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26'
+      # Wrangler is installed here, with no credentials in reach, so the step that holds them runs only the installed copy.
+      - name: Install wrangler
+        if: ${{ steps.pr.outputs.number != '' }}
+        run: npm install --ignore-scripts --no-audit --no-fund --prefix "$RUNNER_TEMP/wrangler" wrangler@4.158.0 # zizmor: ignore[adhoc-packages] the step has no checkout, so no lockfile, and it pins the exact version in the lockfile of the repository
+      # Only this step and the next one that deletes a preview see the Cloudflare credentials. They run from a folder with no wrangler config.
+      - name: wrangler pages deploy
+        if: ${{ steps.pr.outputs.number != '' }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          DIR: ${{ runner.temp }}/preview
+          NUMBER: ${{ steps.pr.outputs.number }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -eu
+          "$RUNNER_TEMP/wrangler/node_modules/.bin/wrangler" pages deploy "$DIR" --project-name "$PROJECT" --branch "pr-$NUMBER" --commit-hash "$HEAD_SHA" --commit-message "Preview of pull request $NUMBER"
+      # A pull request that closed while the deploy ran has already had its cleanup, so its new preview is deleted here.
+      - name: Check the pull request is still open
+        id: open
+        if: ${{ steps.pr.outputs.number != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          set -eu
+          state=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$NUMBER" --jq .state)
+          echo "state=$state" >> "$GITHUB_OUTPUT"
+      - name: Delete the preview of a closed pull request
+        if: ${{ steps.pr.outputs.number != '' && steps.open.outputs.state != 'open' }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          set -eu
+          case "$NUMBER" in ''|*[!0-9]*) echo "::error::The pull request number is not a number"; exit 1 ;; esac
+          case "$CLOUDFLARE_ACCOUNT_ID" in ''|*[!0-9a-f]*) echo "::error::The account identifier is missing"; exit 1 ;; esac
+          base="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$PROJECT/deployments"
+          call() {
+            printf 'header = "Authorization: Bearer %s"\n' "$CLOUDFLARE_API_TOKEN" | curl --fail-with-body --silent --show-error --config - "$@"
+          }
+          page=1
+          ids=
+          while :; do
+            listing=$(call "$base?env=preview&per_page=25&page=$page")
+            ids="$ids $(printf '%s' "$listing" | jq -r --arg branch "pr-$NUMBER" '.result[] | select(.deployment_trigger.metadata.branch == $branch) | .id')"
+            [ "$(printf '%s' "$listing" | jq '.result | length')" -ge 25 ] || break
+            page=$((page + 1))
+          done
+          for id in $ids; do
+            case "$id" in *[!0-9a-f-]*) echo "::error::Unexpected deployment identifier"; exit 1 ;; esac
+            call --request DELETE "$base/$id?force=true" > /dev/null
+          done
+          echo "::notice::The pull request closed during the deploy, so its preview was deleted"
+      - name: Report the address
+        id: url
+        if: ${{ steps.pr.outputs.number != '' && steps.open.outputs.state == 'open' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ steps.pr.outputs.number }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -eu
+          url="https://pr-$NUMBER.$PROJECT.pages.dev"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          printf '### Preview\n\n%s\n' "$url" >> "$GITHUB_STEP_SUMMARY"
+          gh api "repos/$GITHUB_REPOSITORY/statuses/$HEAD_SHA" -f state=success -f context=Preview -f description="The preview is published" -f target_url="$url" > /dev/null

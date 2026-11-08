@@ -1,0 +1,55 @@
+name: Preview cleanup
+
+# Deletes the previews of a pull request from Cloudflare Pages when the pull request closes. It
+# checks out nothing and runs no code from the repository or the pull request, so it can use the
+# preview environment's secrets for pull requests from forks too.
+on: # zizmor: ignore[dangerous-triggers] checks out nothing, runs no repository code, and reads only the pull request number, which it checks is digits
+  pull_request_target:
+    types: [closed]
+
+permissions: {}
+
+concurrency:
+  group: preview-cleanup-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    name: Delete the previews
+    if: ${{ github.repository == 'National-Digital/surgerywaits.au' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: preview
+    permissions: {}
+    env:
+      PROJECT: surgerywaits-au
+    steps:
+      - name: Delete every deployment on the pull request's branch
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -eu
+          case "$NUMBER" in ''|*[!0-9]*) echo "::error::The pull request number is not a number"; exit 1 ;; esac
+          case "$CLOUDFLARE_ACCOUNT_ID" in ''|*[!0-9a-f]*) echo "::error::The account identifier is missing"; exit 1 ;; esac
+          base="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$PROJECT/deployments"
+          call() {
+            printf 'header = "Authorization: Bearer %s"\n' "$CLOUDFLARE_API_TOKEN" | curl --fail-with-body --silent --show-error --config - "$@"
+          }
+          # List every page first, since a deletion would shift the pages that follow.
+          page=1
+          ids=
+          while :; do
+            listing=$(call "$base?env=preview&per_page=25&page=$page")
+            ids="$ids $(printf '%s' "$listing" | jq -r --arg branch "pr-$NUMBER" '.result[] | select(.deployment_trigger.metadata.branch == $branch) | .id')"
+            [ "$(printf '%s' "$listing" | jq '.result | length')" -ge 25 ] || break
+            page=$((page + 1))
+          done
+          deleted=0
+          for id in $ids; do
+            case "$id" in *[!0-9a-f-]*) echo "::error::Unexpected deployment identifier"; exit 1 ;; esac
+            call --request DELETE "$base/$id?force=true" > /dev/null
+            deleted=$((deleted + 1))
+          done
+          echo "Deleted $deleted deployments of the branch pr-$NUMBER" >> "$GITHUB_STEP_SUMMARY"

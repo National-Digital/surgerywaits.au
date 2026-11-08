@@ -105,17 +105,14 @@ single dependency-free module keeps the one interactive part small enough to aud
 One Cloudflare Worker serves the built site as static assets. It also holds the response headers,
 redirects, content negotiation and the MCP route ([D9][d9]).
 
-There are no per-pull-request preview deployments. Checks run in CI. Production deploys only from
-`main`, through a protected environment. The deploy workflow, the environment's token and the
-account identifier are added when the site is ready to ship, and are planned. Until then CI builds
-the Worker and runs `wrangler deploy --dry-run`, which needs no Cloudflare credentials. If previews
-are wanted after that, they use a hostname on the site's own domain with `noindex`, and never a
-`workers.dev` hostname. The Worker's configuration turns `workers_dev` and `preview_urls` off, and a
-repository test fails when either is missing or on.
+Each pull request gets a preview on Cloudflare Pages, described in [D21][d21]. A preview serves the
+static site only, so it has no Worker. Production deploys only from `main`, through the protected
+`production` environment, and the deploy workflow checks that the commit passed CI. The Worker's
+configuration turns `workers_dev` and `preview_urls` off for production and for the staging Worker,
+and a repository test fails when either is missing or on.
 
 Why: a Worker serves static assets and runs code in one deployment. Headers, redirects, content
-negotiation and the MCP route then live in one deployment as code that tests can run. Without
-previews, no Cloudflare credential sits in the repository until the site is ready to ship.
+negotiation and the MCP route then live in one deployment as code that tests can run.
 
 ### D8: Analytics count page views and nothing else
 
@@ -309,14 +306,34 @@ Why: strict flags left to each author vary from file to file. A fixed list makes
 same for every contributor and catches a missing array element or an unchecked optional before it
 reaches a page.
 
-### D21: Previews and deploys wait until the site is ready to ship
+### D21: Pull request previews are static builds on Cloudflare Pages
 
-No preview and no deploy workflow exists before go-live. CI builds the Worker and checks it with
-`wrangler deploy --dry-run`. The deploy workflow, the production environment's token and the
-account identifier are added when the site is ready to ship. Details are in [D7][d7].
+Three workflows make the previews.
 
-Why: keeping every Cloudflare credential out of the repository until it is needed removes a source
-of leaks. A dry run checks the Worker's configuration and size without one.
+- `preview-build.yml` runs on every pull request, forks included. It has no secrets and no
+  environment. It builds the site from the pinned data, runs the built-page checks and uploads the
+  files as an artifact.
+- `preview-deploy.yml` runs when a build finishes successfully. It runs from the default branch, and
+  it never checks out or runs code from the pull request. It downloads the artifact, deletes
+  `_worker.js`, `_routes.json`, `_redirects`, `functions`, `_headers` and every Markdown version of a page, writes a `_headers` file that sets
+  `X-Robots-Tag: noindex` on every path, and runs `wrangler pages deploy` for the branch
+  `pr-<number>` of the `surgerywaits-au` project. It reports the address
+  `https://pr-<number>.surgerywaits-au.pages.dev` as a commit status named Preview and in the job
+  summary. It posts no comment. Only that step and the step that deletes the preview of a closed pull request see the Cloudflare credentials, which sit in the
+  `preview` environment.
+- `preview-cleanup.yml` runs when a pull request closes. It checks out nothing, and it deletes every
+  Pages deployment on the branch `pr-<number>` through the Cloudflare API.
+
+A preview serves the static site only. It has no Worker, so it has none of the Worker's headers,
+Markdown negotiation, MCP route or redirects, and it leaves out the Markdown versions of the pages. Anyone's pull request, from a fork too, gets a
+public preview with `noindex` until the pull request closes. The `surgerywaits-au` Pages project
+keeps its production deployment as a rollback. Repository tests pin which steps hold the secrets
+and that the two workflows with secrets run no repository code.
+
+Why: a reviewer can open the built pages for a pull request before it merges. The build runs the
+pull request's code with no credentials, and the workflows that hold the credentials treat the
+built files as data. Cloudflare Pages gives each branch its own address, so a Worker is not needed
+for a preview.
 
 ### D22: The repository follows Astro's project layout
 
@@ -439,9 +456,9 @@ number.
 - **A fallback source for the data ([D2][d2]).** A fallback needs its own parsing and licence check,
   and a quiet switch to it would put figures from two origins on one page. The build fails instead,
   and the failure is the signal to fix the source.
-- **Cloudflare Pages with per-pull-request previews ([D7][d7]).** Pages keeps headers and redirects
-  in separate files and runs code in a separate functions layer. Previews need Cloudflare
-  credentials in the repository before the site is ready.
+- **Cloudflare Pages for production ([D7][d7]).** Pages keeps headers and redirects in separate
+  files and runs code in a separate functions layer. Production stays on the Worker, and Pages
+  hosts only the pull request previews ([D21][d21]).
 - **A single aggregate required check ([D14][d14]).** It reports one result and hides which part
   failed.
 - **Lighthouse as a required check ([D16][d16]).** Runner variance makes the result unrepeatable.
@@ -470,5 +487,6 @@ See `docs/ARCHITECTURE.md` ("The shape", "Rules that decide the code"), `CONTRIB
 [d17]: #d17-the-whole-build-is-checked-by-the-w3c-nu-html-checker
 [d18]: #d18-css-follows-itcss-layers-and-bem-names
 [d20]: #d20-types-are-strict-everywhere
+[d21]: #d21-pull-request-previews-are-static-builds-on-cloudflare-pages
 [d24]: #d24-documentation-has-one-place-for-each-audience
 [d28]: #d28-three-test-runners-each-have-one-job
