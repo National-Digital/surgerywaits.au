@@ -76,6 +76,20 @@ describe('formatCount and formatSurgeries', () => {
   });
 });
 
+describe('formatDayParts', () => {
+  it('splits the number from the unit and takes the unit from the last number', () => {
+    expect(format.formatDayParts(543)).toEqual({ amount: '543', unit: 'days' });
+    expect(format.formatDayParts(1)).toEqual({ amount: '1', unit: 'day' });
+    expect(format.formatDayParts(1234)).toEqual({ amount: '1,234', unit: 'days' });
+    expect(format.formatDayParts(356, 189)).toEqual({ amount: '356 to 189', unit: 'days' });
+    expect(format.formatDayParts(12, 1)).toEqual({ amount: '12 to 1', unit: 'day' });
+  });
+
+  it('refuses an empty list', () => {
+    expect(() => format.formatDayParts()).toThrow(RangeError);
+  });
+});
+
 describe('formatKilometres', () => {
   it('uses the singular for one kilometre and groups thousands', () => {
     expect(format.formatKilometres(1)).toBe('1 kilometre');
@@ -409,6 +423,7 @@ describe('every export', () => {
     formatSurgeries: () => format.formatSurgeries(0),
     formatHospitals: () => format.formatHospitals(0),
     formatKilometres: () => format.formatKilometres(0),
+    formatDayParts: () => format.formatDayParts(0).amount,
     formatPercent: () => format.formatPercent('on_time', 0),
     formatQueenslandFigure: () => format.formatQueenslandFigure('treated', qldPublished),
     formatPercentPoints: () => format.formatPercentPoints(0),

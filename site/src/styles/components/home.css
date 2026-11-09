@@ -1,0 +1,136 @@
+@layer components {
+  .c-home-screen p + p {
+    margin-block-start: var(--space-3);
+  }
+
+  .c-proof {
+    position: relative;
+    z-index: 1;
+    margin-block: calc(var(--space-7) * -0.75) var(--space-5);
+  }
+
+  /* Results sit between the band and the strip, so the strip stops overlapping the band. */
+  .c-results-mount:not([hidden]) ~ .c-proof {
+    margin-block-start: var(--space-5);
+  }
+
+  .c-proof__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+    background: var(--card);
+    box-shadow: var(--lift);
+    list-style: none;
+  }
+
+  .c-proof__tile {
+    max-width: none;
+    padding: var(--space-4) var(--space-5) var(--space-2);
+    /* A line above and to the left of each tile divides the tiles; the list clips the outer edges. */
+    box-shadow: -1px -1px 0 0 var(--hairline);
+  }
+
+  .c-proof__tile p {
+    margin-block-end: var(--space-2);
+  }
+
+  .c-proof__figure {
+    display: block;
+    margin-block-end: var(--space-2);
+    font: var(--fs-figure) / 1 var(--serif);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .c-proof__unit {
+    font-size: 0.5em;
+  }
+
+  .c-proof__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--target);
+  }
+
+  .c-starts {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+    gap: var(--space-3);
+    margin: var(--space-4) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .c-starts__item {
+    position: relative;
+    max-width: none;
+    min-height: var(--target);
+    padding: var(--space-3) var(--space-3) var(--space-4);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+    background: var(--card);
+  }
+
+  .c-starts__link {
+    display: flex;
+    align-items: center;
+    min-height: var(--target);
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+
+  /* The link covers its card, and the ring sits on the card so the whole card shows focus. */
+  .c-starts__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-md);
+  }
+
+  /* The ring shows on the card; the link's own outline stays transparent so forced colours still draw it. */
+  .c-starts__link:focus-visible {
+    outline-color: transparent;
+  }
+
+  .c-starts__item:has(.c-starts__link:focus-visible) {
+    outline: var(--focus-width) solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .c-starts__note {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: var(--fs-small);
+  }
+
+  /* A card with no count keeps the count's row, so every sentence starts at the same height. */
+  .c-starts__item:not(:has(.c-starts__count)) .c-starts__note {
+    padding-block-start: calc(var(--fs-figure) * 1.1);
+  }
+
+  .c-starts__count {
+    display: block;
+    font: var(--fs-figure) / 1.1 var(--serif);
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .c-starts__item {
+      transition: border-color var(--duration-fast);
+    }
+
+    .c-starts__item:hover {
+      border-color: var(--accent);
+    }
+  }
+
+  @media (forced-colors: active) {
+    .c-proof__list,
+    .c-starts__item {
+      border-color: CanvasText;
+    }
+  }
+}

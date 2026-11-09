@@ -1,7 +1,23 @@
 title: 'Planned surgery waiting times at public hospitals in Australia: {site}'
 description: 'This site shows how long patients waited for planned surgery at public hospitals in Australia. Find a surgery, a hospital, a state or territory or an urgency category. The latest figures cover {period}.'
 heading: How long will I wait for planned surgery?
-lede: 'This site shows how long patients waited for planned surgery at public hospitals in Australia. The latest figures cover {period}. Each figure comes from published government data, and each figure shows the period it covers.'
+lede: This site shows what public hospitals near you published, including across state borders.
+band_privacy: What you type stays in your browser, and this page does not store it.
+band_details: How that works
+band_compare_link: Open the search on its own page
+band_fallback_label: Pages that hold the same figures
+band_fallback: The pages below hold the same figures as the search.
+proof_heading_three: Three published figures
+proof_heading_two: Two published figures
+proof_heading_one: One published figure
+proof_longest: '{surgery} at {hospital} had the longest published median wait in {period}.'
+proof_longest_link: See the {count} longest waits
+proof_border: 'In {period}, the published median wait for {surgery} at {to_hospital} in {to_state} was {days} shorter than at {from_hospital} in {from_state}. The two hospitals are {distance} apart.'
+proof_border_link: See the border comparisons
+proof_move_up: '{surgery} in {state} had the biggest state-level move from {previous} to {period}, and the median wait rose.'
+proof_move_down: '{surgery} in {state} had the biggest state-level move from {previous} to {period}, and the median wait fell.'
+proof_move_link: See where waits rose and fell
+about_lede: 'This site shows how long patients waited for planned surgery at public hospitals in Australia. The latest figures cover {period}. Each figure comes from published government data, and each figure shows the period it covers.'
 stamp_shared: 'The surgery, state, urgency and hospital counts on this page are for {period}. The data was released on {release}.'
 stamp: 'The surgery, state and urgency counts on this page are for {period} and were released on {release}.'
 hospitals_stamp: 'The hospital count is for {period} and was released on {release}.'
@@ -29,7 +45,7 @@ common_median: National median wait
 common_surgeries: Surgeries, Australia
 common_hospitals: Hospitals reporting
 states_heading: Waiting times by state and territory
-states_intro: Each state and territory page shows its waiting times beside the national figures and ranks its public hospitals by median wait. The table gives the number of public hospitals with a current figure in each state or territory, the number of surgery types with a published median wait, and the shortest and longest state median wait.
+states_intro: Each state and territory page shows its waiting times beside the national figures and ranks its public hospitals by median wait. For each state or territory, the table counts the public hospitals that report and the surgery types with a published median wait, and it gives the shortest and longest state median wait.
 states_caption: Hospitals reporting, surgery types and state median waits by state and territory
 states_row_heading: State or territory
 states_hospitals: Hospitals reporting

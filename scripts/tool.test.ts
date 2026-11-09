@@ -14,6 +14,8 @@ const browsers = describe.skipIf(skip);
 const INPUT = '.js-combo-input';
 const OPTION = '[role="option"]';
 const RESULTS = '.js-tool-results';
+// The search sits on the compare page and on the home page, and both run the same cases.
+const PATHS = ['/compare/', '/'];
 
 let browser: Browser | undefined;
 let server: Served | undefined;
@@ -44,13 +46,18 @@ async function choose(page: Page, field: number, text: string): Promise<void> {
   await input.press('Enter');
 }
 
-async function open(page: Page): Promise<void> {
-  await page.goto(`${up(server).base}/compare/`);
+async function open(page: Page, path = '/compare/'): Promise<void> {
+  await page.goto(`${up(server).base}${path}`);
   await page.locator('.js-tool-form').waitFor();
 }
 
-async function compare(page: Page, surgery: string, place: string): Promise<void> {
-  await open(page);
+async function compare(
+  page: Page,
+  surgery: string,
+  place: string,
+  path = '/compare/',
+): Promise<void> {
+  await open(page, path);
   await choose(page, 0, surgery);
   await choose(page, 1, place);
   await page.locator('button[type="submit"]').click();
@@ -62,18 +69,20 @@ browsers('The compare tool', () => {
     'finds a surgery by an everyday word and lists the nearest hospitals first',
     { timeout: T },
     async () => {
-      const page = await up(browser).newPage();
-      await compare(page, 'cataracts', 'Armidale');
-      const heading = await page.locator(`${RESULTS} h2`).innerText();
-      expect(heading).toBe('Cataract surgery near Armidale');
-      const names = await page.locator(`${RESULTS} h3`).allInnerTexts();
-      expect(names[0]).toContain('Armidale Hospital');
-      expect(names.length).toBeLessThanOrEqual(8);
-      const text = await page.locator(RESULTS).innerText();
-      expect(text).toMatch(/\d+ days?/);
-      expect(text).toMatch(/released \d{1,2} \w+ \d{4}/);
-      expect(await page.locator('.js-tool-message').innerText()).toContain('are listed below');
-      await page.close();
+      for (const path of PATHS) {
+        const page = await up(browser).newPage();
+        await compare(page, 'cataracts', 'Armidale', path);
+        const heading = await page.locator(`${RESULTS} h2`).innerText();
+        expect(heading).toBe('Cataract surgery near Armidale');
+        const names = await page.locator(`${RESULTS} h3`).allInnerTexts();
+        expect(names[0]).toContain('Armidale Hospital');
+        expect(names.length).toBeLessThanOrEqual(8);
+        const text = await page.locator(RESULTS).innerText();
+        expect(text).toMatch(/\d+ days?/);
+        expect(text).toMatch(/released \d{1,2} \w+ \d{4}/);
+        expect(await page.locator('.js-tool-message').innerText()).toContain('are listed below');
+        await page.close();
+      }
     },
   );
 
@@ -127,129 +136,137 @@ browsers('The compare tool', () => {
     'keeps nothing, loads each file on first use and sends no request that carries a choice',
     { timeout: T },
     async () => {
-      const context = await up(browser).newContext();
-      // The page counter's script and report are answered here, and the checks below read what they were sent.
-      await context.route(/^https:\/\/(?:static\.)?cloudflareinsights\.com\//u, (route) =>
-        route.fulfill({ status: 204, body: '' }),
-      );
-      const page = await context.newPage();
-      const requests: string[] = [];
-      const records: string[] = [];
-      const pending: Promise<void>[] = [];
-      page.on('request', (request) => {
-        requests.push(request.url());
-        pending.push(
-          request.allHeaders().then((headers) => {
-            records.push(
-              [
-                request.method(),
-                request.url(),
-                JSON.stringify(headers),
-                request.postData() ?? '',
-              ].join(' '),
-            );
-          }),
+      for (const path of PATHS) {
+        const context = await up(browser).newContext();
+        // The page counter's script and report are answered here, and the checks below read what they were sent.
+        await context.route(/^https:\/\/(?:static\.)?cloudflareinsights\.com\//u, (route) =>
+          route.fulfill({ status: 204, body: '' }),
         );
-      });
-      await open(page);
-      const before = await page.evaluate(() => history.length);
-      const jsonNow = (): string[] =>
-        requests
-          .filter((url) => url.endsWith('.json'))
-          .map((url) => url.slice(up(server).base.length));
-      expect(jsonNow()).toEqual(['/tool/index.json']);
-      await choose(page, 0, 'knee');
-      expect(jsonNow()).toEqual(['/tool/index.json', '/tool/figures.json']);
-      await choose(page, 1, 'Armidale');
-      await page.locator('button[type="submit"]').click();
-      await page.locator(`${RESULTS} li`).first().waitFor();
-      const kept = await page.evaluate(
-        (length) => ({
-          url: location.href,
-          history: history.length - length,
-          local: localStorage.length,
-          session: sessionStorage.length,
-          cookie: document.cookie,
-        }),
-        before,
-      );
-      expect(kept).toEqual({
-        url: `${up(server).base}/compare/`,
-        history: 0,
-        local: 0,
-        session: 0,
-        cookie: '',
-      });
-      expect(await context.cookies()).toEqual([]);
-      const counter = new Set(['https://static.cloudflareinsights.com']);
-      const other = requests.filter(
-        (url) => new URL(url).origin !== new URL(up(server).base).origin,
-      );
-      expect(other.filter((url) => !counter.has(new URL(url).origin))).toEqual([]);
-      expect(jsonNow()).toEqual(['/tool/index.json', '/tool/figures.json', '/tool/places.json']);
-      await Promise.all(pending);
-      // No URL, header or body of any request holds what was chosen or typed.
-      expect(records.length).toBeGreaterThan(3);
-      expect(records.filter((r) => /knee|armidale|total-knee-replacement/i.test(r))).toEqual([]);
-      await context.close();
+        const page = await context.newPage();
+        const requests: string[] = [];
+        const records: string[] = [];
+        const pending: Promise<void>[] = [];
+        page.on('request', (request) => {
+          requests.push(request.url());
+          pending.push(
+            request.allHeaders().then((headers) => {
+              records.push(
+                [
+                  request.method(),
+                  request.url(),
+                  JSON.stringify(headers),
+                  request.postData() ?? '',
+                ].join(' '),
+              );
+            }),
+          );
+        });
+        await open(page, path);
+        const before = await page.evaluate(() => history.length);
+        const jsonNow = (): string[] =>
+          requests
+            .filter((url) => url.endsWith('.json'))
+            .map((url) => url.slice(up(server).base.length));
+        expect(jsonNow()).toEqual(['/tool/index.json']);
+        await choose(page, 0, 'knee');
+        expect(jsonNow()).toEqual(['/tool/index.json', '/tool/figures.json']);
+        await choose(page, 1, 'Armidale');
+        await page.locator('button[type="submit"]').click();
+        await page.locator(`${RESULTS} li`).first().waitFor();
+        const kept = await page.evaluate(
+          (length) => ({
+            url: location.href,
+            history: history.length - length,
+            local: localStorage.length,
+            session: sessionStorage.length,
+            cookie: document.cookie,
+          }),
+          before,
+        );
+        expect(kept).toEqual({
+          url: `${up(server).base}${path}`,
+          history: 0,
+          local: 0,
+          session: 0,
+          cookie: '',
+        });
+        expect(await context.cookies()).toEqual([]);
+        const counter = new Set(['https://static.cloudflareinsights.com']);
+        const other = requests.filter(
+          (url) => new URL(url).origin !== new URL(up(server).base).origin,
+        );
+        expect(other.filter((url) => !counter.has(new URL(url).origin))).toEqual([]);
+        expect(jsonNow()).toEqual(['/tool/index.json', '/tool/figures.json', '/tool/places.json']);
+        await Promise.all(pending);
+        // No URL, header or body of any request holds what was chosen or typed.
+        expect(records.length).toBeGreaterThan(3);
+        expect(records.filter((r) => /knee|armidale|total-knee-replacement/i.test(r))).toEqual([]);
+        await context.close();
+      }
     },
   );
 
   it('shows the static pages and no form with scripts off', { timeout: T }, async () => {
-    const context = await up(browser).newContext({ javaScriptEnabled: false });
-    const page = await context.newPage();
-    await page.goto(`${up(server).base}/compare/`);
-    expect(await page.locator('.js-tool-form').isVisible()).toBe(false);
-    const links = await page
-      .locator('.js-tool-fallback a')
-      .evaluateAll((nodes) => nodes.map((node) => node.getAttribute('href')));
-    expect(links).toEqual(['/surgery/', '/hospitals/', '/state/']);
-    await context.close();
+    for (const path of PATHS) {
+      const context = await up(browser).newContext({ javaScriptEnabled: false });
+      const page = await context.newPage();
+      await page.goto(`${up(server).base}${path}`);
+      expect(await page.locator('.js-tool-form').isVisible()).toBe(false);
+      const links = await page
+        .locator('.js-tool-fallback a')
+        .evaluateAll((nodes) => nodes.map((node) => node.getAttribute('href')));
+      expect(links).toEqual(['/surgery/', '/hospitals/', '/state/']);
+      await context.close();
+    }
   });
 
   it('prints one sheet with the tool hidden', { timeout: T }, async () => {
-    // The second case needs a place that only the real dist holds.
-    const cases = [
-      { surgery: 'cataract', place: 'Armidale' },
-      { surgery: 'keyhole belly', place: 'Benayeo' },
-    ];
-    let ran = 0;
-    for (const { surgery, place } of cases) {
-      const page = await up(browser).newPage();
-      await open(page);
-      const known = await page.evaluate(async (name) => {
-        const file = (await (await fetch('/tool/places.json')).json()) as { places: string[][] };
-        return file.places.some((row) => row[0] === name);
-      }, place);
-      if (known) {
-        ran += 1;
-        await compare(page, surgery, place);
-        await page.emulateMedia({ media: 'print' });
-        expect(await page.locator('.js-tool-form').isVisible()).toBe(false);
-        expect(await page.locator('.js-tool-print').isVisible()).toBe(false);
-        expect(await page.locator('.c-masthead').isVisible()).toBe(false);
-        expect(await page.locator(`${RESULTS} li`).first().isVisible()).toBe(true);
-        expect(await page.locator('.c-spark').first().isVisible()).toBe(false);
-        const safety = page.locator('.c-tool__safety');
-        expect(await safety.getByRole('heading').innerText()).toBe('Before you use these figures');
-        expect(await safety.isVisible()).toBe(true);
-        const sizes = await page.evaluate(() =>
-          [...document.querySelectorAll('.c-results-mount *, .c-tool__safety *')]
-            .filter((node) => node.childNodes.length > 0 && node.textContent.trim() !== '')
-            .map((node) => parseFloat(getComputedStyle(node).fontSize)),
-        );
-        // 10pt is 13.33px.
-        expect(Math.min(...sizes)).toBeGreaterThanOrEqual(13.3);
-        const pdf = await page.pdf({
-          format: 'A4',
-          margin: { top: '1.5cm', bottom: '1.5cm', left: '1cm', right: '1cm' },
-        });
-        const sheets = pdf.toString('latin1').match(/\/Type\s*\/Page(?![s\w])/g) ?? [];
-        expect(sheets, `${surgery} near ${place}`).toHaveLength(1);
+    for (const path of PATHS) {
+      // The second case needs a place that only the real dist holds.
+      const cases = [
+        { surgery: 'cataract', place: 'Armidale' },
+        { surgery: 'keyhole belly', place: 'Benayeo' },
+      ];
+      let ran = 0;
+      for (const { surgery, place } of cases) {
+        const page = await up(browser).newPage();
+        await open(page, path);
+        const known = await page.evaluate(async (name) => {
+          const file = (await (await fetch('/tool/places.json')).json()) as { places: string[][] };
+          return file.places.some((row) => row[0] === name);
+        }, place);
+        if (known) {
+          ran += 1;
+          await compare(page, surgery, place, path);
+          await page.emulateMedia({ media: 'print' });
+          expect(await page.locator('.js-tool-form').isVisible()).toBe(false);
+          expect(await page.locator('.js-tool-print').isVisible()).toBe(false);
+          expect(await page.locator('.c-masthead').isVisible()).toBe(false);
+          expect(await page.locator(`${RESULTS} li`).first().isVisible()).toBe(true);
+          expect(await page.locator('.c-spark').first().isVisible()).toBe(false);
+          const safety = page.locator('.c-tool__safety');
+          expect(await safety.getByRole('heading').innerText()).toBe(
+            'Before you use these figures',
+          );
+          expect(await safety.isVisible()).toBe(true);
+          const sizes = await page.evaluate(() =>
+            [...document.querySelectorAll('.c-results-mount *, .c-tool__safety *')]
+              .filter((node) => node.childNodes.length > 0 && node.textContent.trim() !== '')
+              .map((node) => parseFloat(getComputedStyle(node).fontSize)),
+          );
+          // 10pt is 13.33px.
+          expect(Math.min(...sizes)).toBeGreaterThanOrEqual(13.3);
+          const pdf = await page.pdf({
+            format: 'A4',
+            margin: { top: '1.5cm', bottom: '1.5cm', left: '1cm', right: '1cm' },
+          });
+          const sheets = pdf.toString('latin1').match(/\/Type\s*\/Page(?![s\w])/g) ?? [];
+          expect(sheets, `${surgery} near ${place}`).toHaveLength(1);
+        }
+        await page.close();
       }
-      await page.close();
+      expect(ran, 'a print case ran').toBeGreaterThan(0);
     }
-    expect(ran, 'a print case ran').toBeGreaterThan(0);
   });
 
   it(
@@ -422,4 +439,112 @@ browsers('The compare tool', () => {
       await page.close();
     },
   );
+
+  it(
+    'prints the whole home page before a result, with the band black on white',
+    { timeout: T },
+    async () => {
+      const page = await up(browser).newPage();
+      await open(page, '/');
+      await page.emulateMedia({ media: 'print' });
+      const band = page.locator('.c-band');
+      expect(await band.isVisible()).toBe(true);
+      expect(await band.evaluate((node) => getComputedStyle(node).backgroundColor)).toBe(
+        'rgba(0, 0, 0, 0)',
+      );
+      expect(await page.locator('.c-band h1').evaluate((n) => getComputedStyle(n).color)).toBe(
+        'rgb(0, 0, 0)',
+      );
+      expect(await band.evaluate((n) => getComputedStyle(n).backgroundImage)).toBe('none');
+      expect(
+        await page.locator('.c-proof__list').evaluate((n) => getComputedStyle(n).boxShadow),
+      ).toBe('none');
+      expect(await page.locator('.c-masthead').isVisible()).toBe(false);
+      expect(await page.locator('.c-footer').isVisible()).toBe(false);
+      expect(await page.locator('.c-tool__safety').isVisible()).toBe(true);
+      expect(await page.locator('#common-heading').isVisible()).toBe(true);
+      await page.close();
+    },
+  );
+
+  it('prints black ink on the home page in both dark theme paths', { timeout: T }, async () => {
+    for (const path of ['attribute', 'media']) {
+      const page = await up(browser).newPage();
+      if (path === 'media') {
+        await page.emulateMedia({ colorScheme: 'dark' });
+      }
+      await open(page, '/');
+      if (path === 'attribute') {
+        await page.evaluate(() => {
+          document.documentElement.dataset['theme'] = 'dark';
+        });
+      }
+      await page.emulateMedia({ media: 'print', colorScheme: 'dark' });
+      const colour = (selector: string): Promise<string> =>
+        page
+          .locator(selector)
+          .first()
+          .evaluate((n) => getComputedStyle(n).color);
+      for (const selector of [
+        '.c-band__search h2',
+        '.c-band__search .c-field__label',
+        '.c-band__search button',
+        '.c-proof__figure',
+        '.c-proof__text',
+        '.c-starts__note',
+      ]) {
+        expect(await colour(selector), `${path} ${selector}`).toBe('rgb(0, 0, 0)');
+      }
+      expect(
+        await page
+          .locator('.c-proof__figure')
+          .first()
+          .evaluate((n) => {
+            const { backgroundColor } = getComputedStyle(n.closest('.c-proof__list') ?? n);
+            return backgroundColor;
+          }),
+      ).toBe('rgba(0, 0, 0, 0)');
+      await page.close();
+    }
+  });
+
+  it('prints only the sheet on the home page once a result shows', { timeout: T }, async () => {
+    const page = await up(browser).newPage();
+    await compare(page, 'cataract', 'Armidale', '/');
+    await page.emulateMedia({ media: 'print' });
+    for (const hidden of ['.c-band', '.c-proof', '#common-heading', '.c-passport']) {
+      expect(await page.locator(hidden).first().isVisible(), hidden).toBe(false);
+    }
+    expect(await page.locator(`${RESULTS} li`).first().isVisible()).toBe(true);
+    expect(await page.locator('.c-tool__safety').isVisible()).toBe(true);
+    const pdf = await page.pdf({
+      format: 'A4',
+      margin: { top: '1.5cm', bottom: '1.5cm', left: '1cm', right: '1cm' },
+    });
+    const sheets = pdf.toString('latin1').match(/\/Type\s*\/Page(?![s\w])/g) ?? [];
+    expect(sheets).toHaveLength(1);
+    await page.close();
+  });
+
+  it('keeps the place list whole on the home band at 390px', { timeout: T }, async () => {
+    const page = await up(browser).newPage();
+    await page.setViewportSize({ width: 390, height: 844 });
+    const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map((x) => [
+      `Bay ${x}`,
+      'QLD',
+      -16.9,
+      145.8,
+    ]);
+    await page.route('**/tool/places.json', (route) => route.fulfill({ json: { places: rows } }));
+    await open(page, '/');
+    await page.locator(INPUT).nth(1).fill('Bay');
+    const field = page.locator('.js-tool-field').nth(1);
+    await field.locator(OPTION).first().waitFor();
+    expect(await field.locator(OPTION).count()).toBe(8);
+    const last = await field.locator(OPTION).last().boundingBox();
+    const band = await page.locator('.c-band').boundingBox();
+    expect(last && band && last.y + last.height <= band.y + band.height).toBe(true);
+    expect(await field.locator(OPTION).last().isVisible()).toBe(true);
+    await page.close();
+  });
 });

@@ -10,5 +10,7 @@
 @import url('./objects/columns.css');
 @import url('./objects/table-scroll.css');
 @import url('./components/tool.css');
+@import url('./components/band.css');
+@import url('./components/home.css');
 @import url('./utilities/visually-hidden.css');
 @import url('./print/print.css');

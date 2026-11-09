@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   CEILING_BYTES,
+  homeScriptProblems,
   measurePages,
   overBudget,
   overScript,
@@ -64,6 +65,35 @@ describe('the page-weight gate', () => {
     const r = command(resolve(fixtures, 'heavy-script'), '--budget', file);
     expect(r.status).toBe(1);
     expect(r.stdout).toMatch(/FAIL the tool script is \d+ B, budget 1000 B/);
+  });
+
+  it('requires the home page to load the same script file as the compare page', async () => {
+    expect(await homeScriptProblems(resolve(fixtures, 'light'))).toEqual([]);
+    expect(await homeScriptProblems(resolve(fixtures, 'other-home'))).toEqual([
+      'the home page loads other.js and the compare page loads tool.js',
+    ]);
+    const r = command(
+      resolve(fixtures, 'other-home'),
+      '--budget',
+      resolve(fixtures, 'budget.json'),
+    );
+    expect(r.status).toBe(1);
+    expect(r.stdout).toContain('FAIL the home page loads');
+  });
+
+  it('fails when neither page loads a script, and when only one does', async () => {
+    expect(await homeScriptProblems(resolve(fixtures, 'no-script'))).toEqual([
+      'the home page loads no script and the compare page loads no script',
+    ]);
+    expect(await homeScriptProblems(resolve(fixtures, 'one-script'))).toEqual([
+      'the home page loads tool.js and the compare page loads no script',
+    ]);
+  });
+
+  it('fails when the build has no home page at its root', async () => {
+    expect(await homeScriptProblems(resolve(fixtures, 'split-script'))).toEqual([
+      'the build has no home page at its root',
+    ]);
   });
 
   it('refuses a script budget above the earlier tool weight', () => {

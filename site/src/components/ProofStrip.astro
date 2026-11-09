@@ -1,0 +1,32 @@
+---
+import type { ProofTile } from '../lib/home-proof';
+
+interface Props {
+  heading: string;
+  tiles: ProofTile[];
+}
+
+const { heading, tiles } = Astro.props;
+---
+
+{tiles.length > 0 && (
+  <section class="c-proof c-home-screen" aria-labelledby="proof-heading">
+    <h2 class="u-visually-hidden" id="proof-heading">
+      {heading}
+    </h2>
+    <ul class="c-proof__list">
+      {tiles.map((tile) => (
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+        <li class="c-proof__tile">
+          <span class="c-proof__figure">
+            {tile.amount} <span class="c-proof__unit">{tile.unit}</span>
+          </span>
+          <p class="c-proof__text">{tile.sentence}</p>
+          <a class="c-proof__link" href={tile.href}>
+            {tile.link}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}

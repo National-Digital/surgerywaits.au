@@ -1,0 +1,128 @@
+---
+import IndexList from './IndexList.astro';
+import { BAND_SEARCH, FORM_HEADING, HOME_HEADING, PAGE_HEADING } from '../lib/compare-form';
+import { getCompareTemplate, getHomeTemplate, getNavigation } from '../lib/content';
+import { HOSPITALS_PATH } from '../lib/hospital-page';
+import { STATES_PATH } from '../lib/state-page';
+import { SURGERY_PATH } from '../lib/surgery-page';
+
+interface Props {
+  // The band sits on the home page; otherwise the form sits in the compare page's column.
+  band?: boolean;
+}
+
+const { band = false } = Astro.props;
+// Each page's h1 names its section, so the form's own heading is the only name the form has.
+const labelledby = band ? HOME_HEADING : PAGE_HEADING;
+const t = getCompareTemplate();
+const home = getHomeTemplate();
+const fallback = [
+  { name: t.fallback_surgery_name, href: SURGERY_PATH, notes: [t.fallback_surgery_note] },
+  { name: t.fallback_hospitals_name, href: HOSPITALS_PATH, notes: [t.fallback_hospitals_note] },
+  { name: t.fallback_states_name, href: STATES_PATH, notes: [t.fallback_states_note] },
+];
+const links = [
+  { name: t.fallback_surgery_name, href: SURGERY_PATH },
+  { name: t.fallback_hospitals_name, href: HOSPITALS_PATH },
+  { name: t.fallback_states_name, href: STATES_PATH },
+];
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- the Astro parser types Fragment as error
+const Card = band ? BAND_SEARCH.tag : Fragment;
+const cardProps = band ? BAND_SEARCH.props : {};
+---
+
+<section
+  class={band ? 'c-band c-home-screen' : 'c-tool'}
+  aria-labelledby={labelledby}
+  data-tool
+  data-failed={t.load_failed}
+>
+  <div class={band ? 'c-band__inner' : 'o-columns u-no-print'}>
+    <slot />
+
+    {band ? (
+      <nav
+        class="c-band__fallback js-tool-fallback"
+        aria-label={home.band_fallback_label}
+        data-twin-skip
+      >
+        <p>{home.band_fallback}</p>
+        <ul class="c-band__links">
+          {links.map((link) => (
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+            <li>
+              <a href={link.href}>{link.name}</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    ) : (
+      <div class="js-tool-fallback">
+        <h2>{t.fallback_heading}</h2>
+        <p>{t.fallback_intro}</p>
+        <IndexList items={fallback} />
+      </div>
+    )}
+
+    <Card {...cardProps}>
+      <form class="c-tool__form js-tool-form" aria-labelledby={FORM_HEADING} hidden>
+        <h2 id={FORM_HEADING}>{t.form_heading}</h2>
+        <div class="c-field js-tool-field">
+          <label class="c-field__label" id="surgery-label" for="surgery">
+            {t.tool.surgery_label}
+          </label>
+          <p class="c-field__hint" id="surgery-hint">
+            {t.tool.surgery_hint}
+          </p>
+          <input
+            class="c-field__input js-combo-input"
+            id="surgery"
+            type="text"
+            autocomplete="off"
+            spellcheck={false}
+            aria-describedby="surgery-hint"
+          />
+          <ul class="c-combo js-combo-list" id="surgery-list" hidden></ul>
+        </div>
+        <div class="c-field js-tool-field">
+          <label class="c-field__label" id="place-label" for="place">
+            {t.tool.place_label}
+          </label>
+          <p class="c-field__hint" id="place-hint">
+            {t.tool.place_hint}
+          </p>
+          <input
+            class="c-field__input js-combo-input"
+            id="place"
+            type="text"
+            autocomplete="off"
+            spellcheck={false}
+            aria-describedby="place-hint"
+          />
+          <ul class="c-combo js-combo-list" id="place-list" hidden></ul>
+        </div>
+        <button class="c-button" type="submit">
+          {t.tool.submit}
+        </button>
+      </form>
+      <p class="c-tool__message js-tool-message" role="status"></p>
+    </Card>
+
+    {band && (
+      <>
+        <p class="c-band__privacy">{home.band_privacy}</p>
+        <details class="c-band__details">
+          <summary>{home.band_details}</summary>
+          <p>
+            {t.privacy} <a href={getNavigation().compare.href}>{home.band_compare_link}</a>
+          </p>
+        </details>
+      </>
+    )}
+  </div>
+</section>
+{/* The rest of the page goes here so the script stays last in the body. */}
+<slot name="after" />
+<script>
+  import '../tool/tool';
+</script>

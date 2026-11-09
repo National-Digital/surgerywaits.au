@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { handle } from '../../../worker/index';
 import { twinPathOf } from '../../../worker/twins';
+import { getHomeTemplate } from '../lib/content';
 import { addressOf, pageFiles } from '../lib/twins';
 
 type Node = DefaultTreeAdapterTypes.Node;
@@ -47,7 +48,10 @@ function seen(node: Node, into: Seen, base: string): Seen {
     into.text += ` ${node.value}`;
   }
   if (isElement(node)) {
-    if (NOT_READ.has(node.tagName) || node.attrs.some((a) => a.name === 'hidden')) {
+    if (
+      NOT_READ.has(node.tagName) ||
+      node.attrs.some((a) => a.name === 'hidden' || a.name === 'data-twin-skip')
+    ) {
       return into;
     }
     if (/^h[1-6]$/u.test(node.tagName)) {
@@ -79,6 +83,18 @@ describe('the Markdown twins', () => {
       .sort();
     expect(files.length).toBeGreaterThan(100);
     expect(built).toEqual(files.map(twinOf).sort());
+  });
+
+  it('carry the home page parts every reader sees and leave out only the scripts-off fallback', () => {
+    const t = getHomeTemplate();
+    const twin = read('/index.md');
+    for (const text of [t.heading, t.lede, t.band_privacy, t.band_details, t.about_heading]) {
+      expect(twin, text).toContain(text);
+    }
+    expect(twin).toContain('](https://surgerywaits.au/compare/)');
+    for (const text of [t.band_fallback, t.band_fallback_label]) {
+      expect(twin, text).not.toContain(text);
+    }
   });
 
   it('give the page address first and the same words as main, in the same order', () => {

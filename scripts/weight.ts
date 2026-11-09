@@ -4,7 +4,13 @@
 // module script is also held to its own budget in bytes as built.
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { measurePages, overBudget, overScript, scriptWeight } from './page-weight.ts';
+import {
+  homeScriptProblems,
+  measurePages,
+  overBudget,
+  overScript,
+  scriptWeight,
+} from './page-weight.ts';
 import type { Budget } from './page-weight.ts';
 
 const out = (s: string): void => {
@@ -34,7 +40,7 @@ let script = 'no script';
 try {
   const { file, bytes } = await scriptWeight(resolve(dist));
   script = `${file} ${String(bytes)} B of ${String(budget.scriptBytes)} B`;
-  problems.push(...overScript(bytes, budget));
+  problems.push(...overScript(bytes, budget), ...(await homeScriptProblems(resolve(dist))));
 } catch (error) {
   problems.push(error instanceof Error ? error.message : String(error));
 }

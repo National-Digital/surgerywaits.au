@@ -123,15 +123,37 @@ export function overBudget(weights: PageWeight[], budget: Budget): string[] {
 // A module's static imports and re-exports, never a dynamic import.
 const STATIC_IMPORT = /\b(?:import|export)\s*(?:[^'"();]*?\bfrom\s*)?(["'])([^"']+)\1/g;
 
-// The compare page's module script and the local chunks it imports, as they sit in the dist, with
-// the JSON it fetches later left out.
-export async function scriptWeight(dist: string): Promise<{ file: string; bytes: number }> {
-  const html = await readFile(join(dist, 'compare', 'index.html'), 'utf8');
+// The local file a built page loads as its first script with a source, or null when it loads none.
+async function scriptOf(dist: string, page: string): Promise<string | null> {
+  const html = await readFile(join(dist, page, 'index.html'), 'utf8');
   let src: string | undefined;
   walk(parse(html, { scriptingEnabled: false }), (el) => {
     src ??= el.tagName === 'script' ? el.attrs.find((a) => a.name === 'src')?.value : undefined;
   });
-  const file = src === undefined ? null : local(src, '/compare/index.html');
+  return src === undefined ? null : local(src, `/${page}/index.html`);
+}
+
+// The home page runs the same search, so it must load the very file the compare page does.
+export async function homeScriptProblems(dist: string): Promise<string[]> {
+  const home = await scriptOf(dist, '').catch(() => undefined);
+  if (home === undefined) {
+    return ['the build has no home page at its root'];
+  }
+  const compare = await scriptOf(dist, 'compare');
+  if (home === null || compare === null) {
+    return [
+      `the home page loads ${home ?? 'no script'} and the compare page loads ${compare ?? 'no script'}`,
+    ];
+  }
+  return home === compare
+    ? []
+    : [`the home page loads ${home} and the compare page loads ${compare}`];
+}
+
+// The compare page's module script and the local chunks it imports, as they sit in the dist, with
+// the JSON it fetches later left out. The home page loads the same file, which homeScriptProblems checks.
+export async function scriptWeight(dist: string): Promise<{ file: string; bytes: number }> {
+  const file = await scriptOf(dist, 'compare');
   if (file === null) {
     throw new Error('the compare page loads no local script');
   }

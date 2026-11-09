@@ -1,15 +1,19 @@
 ---
 // Base comes first so its global sheet, and with it the layer order, precedes every component sheet.
 import Base from '../layouts/Base.astro';
+import CompareForm from './CompareForm.astro';
 import DataPassport from './DataPassport.astro';
-import IndexList from './IndexList.astro';
 import LinkList from './LinkList.astro';
 import PlainTable from './PlainTable.astro';
+import ProofStrip from './ProofStrip.astro';
 import SafetyBlock from './SafetyBlock.astro';
+import StartCards from './StartCards.astro';
 import { getHomeTemplate, getSite } from '../lib/content';
+import { HOME_HEADING } from '../lib/compare-form';
 import { readHospitalSources, readSurgeryIndexSources } from '../lib/dist';
 import { formatCount } from '../lib/format';
 import { commonProcedures, homeCounts, homeStamps, stateSummary } from '../lib/home-page';
+import { proofHeading, proofTiles } from '../lib/home-proof';
 import { HOSPITALS_PATH } from '../lib/hospital-page';
 import { surgeryStamp } from '../lib/index-pages';
 import { fill } from '../lib/slots';
@@ -24,29 +28,34 @@ const common = commonProcedures();
 const stateTable = stateSummary(t.state_extreme);
 const count = (n: number, one: string, many: string): string =>
   n === 1 ? one : fill(many, { count: formatCount(n) });
-const start = [
+const startCards = [
   {
     name: t.surgery_link,
     href: SURGERY_PATH,
-    notes: [count(counts.surgeries, t.surgery_note_one, t.surgery_note_many)],
+    note: count(counts.surgeries, t.surgery_note_one, t.surgery_note_many),
+    count: formatCount(counts.surgeries),
   },
-  { name: t.specialty_link, href: SPECIALTY_PATH, notes: [t.specialty_note] },
+  { name: t.specialty_link, href: SPECIALTY_PATH, note: t.specialty_note },
   {
     name: t.hospitals_link,
     href: HOSPITALS_PATH,
-    notes: [count(counts.hospitals, t.hospitals_note_one, t.hospitals_note_many)],
+    note: count(counts.hospitals, t.hospitals_note_one, t.hospitals_note_many),
+    count: formatCount(counts.hospitals),
   },
   {
     name: t.states_link,
     href: STATES_PATH,
-    notes: [count(counts.states, t.states_note_one, t.states_note_many)],
+    note: count(counts.states, t.states_note_one, t.states_note_many),
+    count: formatCount(counts.states),
   },
   {
     name: t.urgency_link,
     href: URGENCY_PATH,
-    notes: [count(counts.categories, t.urgency_note_one, t.urgency_note_many)],
+    note: count(counts.categories, t.urgency_note_one, t.urgency_note_many),
+    count: formatCount(counts.categories),
   },
 ];
+const tiles = proofTiles(t);
 const urgency = categories().map((category) => ({ label: category.label, href: category.path }));
 const sources = [
   ...new Set([...readSurgeryIndexSources(), ...readHospitalSources(), ...common.sources]),
@@ -57,70 +66,87 @@ const sources = [
   title={fill(t.title, { site: getSite().name })}
   description={fill(t.description, { period: stamp.period })}
   canonicalPath="/"
+  bleed
+  compareBar={false}
+  printFooter={false}
 >
-  <div class="o-columns">
-    <h1>{t.heading}</h1>
-    <p>{fill(t.lede, { period: stamp.period })}</p>
-    <p>{homeStamps(t)}</p>
+  <CompareForm band>
+    <h1 id={HOME_HEADING}>{t.heading}</h1>
+    <p class="c-band__lede">{t.lede}</p>
 
-    <section aria-labelledby="start-heading">
-      <h2 id="start-heading">{t.start_heading}</h2>
-      <p>{t.start_intro}</p>
-      <IndexList items={start} />
-    </section>
-  </div>
+    <Fragment slot="after">
+      <div class="c-results-mount js-tool-results" id="results" tabindex="-1" hidden></div>
 
-  <section aria-labelledby="common-heading">
-    <div class="o-columns">
-      <h2 id="common-heading">{t.common_heading}</h2>
-      <p>{fill(t.common_intro, { count: formatCount(common.rows.length) })}</p>
-    </div>
-    <PlainTable
-      id="common"
-      caption={fill(t.common_caption, { count: formatCount(common.rows.length) })}
-      stamp={common.stamp}
-      rowHeading={t.common_row_heading}
-      headings={[t.common_median, t.common_surgeries, t.common_hospitals]}
-      rows={common.rows}
-    />
-  </section>
+      <ProofStrip heading={tiles.length > 0 ? proofHeading(t, tiles.length) : ''} {tiles} />
 
-  <section aria-labelledby="states-heading">
-    <div class="o-columns">
-      <h2 id="states-heading">{t.states_heading}</h2>
-      <p>{t.states_intro}</p>
-    </div>
-    <PlainTable
-      id="states"
-      caption={t.states_caption}
-      stamp={stateTable.stamp}
-      rowHeading={t.states_row_heading}
-      headings={[t.states_hospitals, t.states_types, t.states_shortest, t.states_longest]}
-      rows={stateTable.rows}
-    />
-  </section>
+      <div class="o-columns c-home-screen">
+        <p>{homeStamps(t)}</p>
 
-  <div class="o-columns">
-    <section aria-labelledby="urgency-heading">
-      <h2 id="urgency-heading">{t.urgency_heading}</h2>
-      <p>{t.urgency_intro}</p>
-      <LinkList links={urgency} />
-    </section>
+        <section aria-labelledby="about-heading">
+          <h2 id="about-heading">{t.about_heading}</h2>
+          <p>{fill(t.about_lede, { period: stamp.period })}</p>
+          {t.about.map((paragraph) => (
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+            <p>{paragraph}</p>
+          ))}
+        </section>
 
-    <section aria-labelledby="about-heading">
-      <h2 id="about-heading">{t.about_heading}</h2>
-      {t.about.map((paragraph) => (
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
-        <p>{paragraph}</p>
-      ))}
-    </section>
+        <section aria-labelledby="start-heading">
+          <h2 id="start-heading">{t.start_heading}</h2>
+          <p>{t.start_intro}</p>
+          <StartCards cards={startCards} />
+        </section>
+      </div>
 
-    <section aria-labelledby="exclusion-heading">
-      <h2 id="exclusion-heading">{t.exclusion_heading}</h2>
-      <p>{t.exclusion}</p>
-    </section>
+      <section class="c-home-screen" aria-labelledby="common-heading">
+        <div class="o-columns">
+          <h2 id="common-heading">{t.common_heading}</h2>
+          <p>{fill(t.common_intro, { count: formatCount(common.rows.length) })}</p>
+        </div>
+        <PlainTable
+          id="common"
+          caption={fill(t.common_caption, { count: formatCount(common.rows.length) })}
+          stamp={common.stamp}
+          rowHeading={t.common_row_heading}
+          headings={[t.common_median, t.common_surgeries, t.common_hospitals]}
+          rows={common.rows}
+        />
+      </section>
 
-    <SafetyBlock id="home-safety-heading" />
-    <DataPassport {sources} />
-  </div>
+      <section class="c-home-screen" aria-labelledby="states-heading">
+        <div class="o-columns">
+          <h2 id="states-heading">{t.states_heading}</h2>
+          <p>{t.states_intro}</p>
+        </div>
+        <PlainTable
+          id="states"
+          caption={t.states_caption}
+          stamp={stateTable.stamp}
+          rowHeading={t.states_row_heading}
+          headings={[t.states_hospitals, t.states_types, t.states_shortest, t.states_longest]}
+          rows={stateTable.rows}
+        />
+      </section>
+
+      <div class="o-columns c-home-screen">
+        <section aria-labelledby="urgency-heading">
+          <h2 id="urgency-heading">{t.urgency_heading}</h2>
+          <p>{t.urgency_intro}</p>
+          <LinkList links={urgency} />
+        </section>
+
+        <section aria-labelledby="exclusion-heading">
+          <h2 id="exclusion-heading">{t.exclusion_heading}</h2>
+          <p>{t.exclusion}</p>
+        </section>
+      </div>
+
+      <div class="o-columns c-tool__safety">
+        <SafetyBlock id="home-safety-heading" />
+      </div>
+      <div class="o-columns c-home-screen">
+        <DataPassport {sources} />
+      </div>
+    </Fragment>
+  </CompareForm>
 </Base>

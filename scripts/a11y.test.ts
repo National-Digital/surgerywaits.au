@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -452,7 +452,15 @@ browsers('the runner', () => {
     () => {
       const dir = mkdtempSync(resolve(tmpdir(), 'a11y-dist-'));
       try {
-        copyFileSync(resolve(root, CLEAN_FIXTURE), resolve(dir, 'index.html'));
+        // The home page must hold the tool form, so the fixture carries a stand-in for it.
+        const clean = readFileSync(resolve(root, CLEAN_FIXTURE), 'utf8');
+        writeFileSync(
+          resolve(dir, 'index.html'),
+          clean.replace(
+            '</main>',
+            '<div data-tool><p class="js-tool-form">Search</p></div></main>',
+          ),
+        );
         const file = resolve(dir, 'exceptions.json');
         const run = (entries: unknown[]): ReturnType<typeof spawnSync> => {
           writeFileSync(file, JSON.stringify(entries));

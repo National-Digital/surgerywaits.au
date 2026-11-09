@@ -9,4 +9,15 @@
   .o-wrap--flush {
     padding-block-end: 0;
   }
+
+  /* A page with a full-width band drops the column; each section after the band restores the same content width. */
+  .o-wrap--bleed {
+    max-width: none;
+    padding-inline: 0;
+  }
+
+  .o-wrap--bleed > :where(:not(.c-band)) {
+    width: min(100% - 2 * var(--space-5), var(--column) - 2 * var(--space-5));
+    margin-inline: auto;
+  }
 }

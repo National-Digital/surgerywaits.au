@@ -4,6 +4,12 @@
     padding: 0 var(--space-5) var(--space-8) max(var(--space-5), (100% - var(--measure)) / 2);
   }
 
+  /* A bleed page sizes each section to the content width itself, so a column inside one adds no padding. */
+  .o-wrap--bleed .o-columns {
+    padding-inline: 0;
+    padding-block-end: var(--space-4);
+  }
+
   .o-columns > * {
     max-width: var(--measure);
   }

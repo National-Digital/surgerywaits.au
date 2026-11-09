@@ -13,8 +13,11 @@ const elementsIn = (node: Node, ...tags: string[]): Element[] =>
 
 // Charts are drawn in SVG and their figures sit in the table beside them; scripts and hidden parts need a browser.
 const SKIPPED = new Set(['script', 'style', 'svg', 'template', 'noscript']);
+// A part marked data-twin-skip is a scripts-off fallback that repeats links the page already carries.
 const skipped = (el: Element): boolean =>
-  SKIPPED.has(el.tagName) || attr(el, 'hidden') !== undefined;
+  SKIPPED.has(el.tagName) ||
+  attr(el, 'hidden') !== undefined ||
+  attr(el, 'data-twin-skip') !== undefined;
 
 const BLOCKS = new Set([
   'address',

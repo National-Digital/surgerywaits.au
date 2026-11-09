@@ -19,6 +19,8 @@ interface Props {
   noindex?: boolean;
   compactFooter?: boolean;
   compareBar?: boolean;
+  // A page with a full-width band drops the column, and each section after the band restores the content width.
+  bleed?: boolean;
   // A page that prints as one sheet leaves the footer off it.
   printFooter?: boolean;
   medical?: boolean | undefined;
@@ -36,6 +38,7 @@ const {
   noindex = false,
   compactFooter = false,
   compareBar = true,
+  bleed = false,
   printFooter = true,
   medical,
   about,
@@ -72,7 +75,7 @@ const graph = [
   <body>
     <SkipLink />
     <Masthead />
-    <main id="main" class="o-wrap">
+    <main id="main" class:list={['o-wrap', { 'o-wrap--bleed': bleed }]}>
       <slot />
     </main>
     {compareBar && <CompareBar />}
