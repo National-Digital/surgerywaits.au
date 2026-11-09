@@ -147,6 +147,18 @@ export function formatDays(n: number): string {
   return withUnit(n, 'day', 'days');
 }
 
+// A day count without its unit, so a page can set the unit smaller; the unit follows the last number.
+export function formatDayParts(...values: number[]): { amount: string; unit: string } {
+  const last = values.at(-1);
+  if (last === undefined) {
+    throw new RangeError('a day count needs a number');
+  }
+  return {
+    amount: values.map(formatCount).join(' to '),
+    unit: cardinal.select(last) === 'one' ? 'day' : 'days',
+  };
+}
+
 export function formatKilometres(n: number): string {
   if (finite(n) < 1) {
     return 'less than 1 kilometre';

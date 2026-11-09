@@ -31,6 +31,12 @@ describe('the Markdown of a paragraph', () => {
       md('<p>shown<span hidden>secret</span></p><svg><text>chart</text></svg><p>end</p>'),
     ).toBe('shown\n\nend\n');
   });
+
+  it('skips a part marked as shown only when scripts are off', () => {
+    expect(md('<p>shown</p><nav data-twin-skip><p>links</p></nav><p>end</p>')).toBe(
+      'shown\n\nend\n',
+    );
+  });
 });
 
 describe('the Markdown of text that would read as syntax', () => {

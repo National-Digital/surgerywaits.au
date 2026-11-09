@@ -107,6 +107,43 @@
       display: none !important;
     }
 
+    /* With a result showing, the page prints the sheet and the safety block only. */
+    main:has(.c-results-mount:not([hidden])) .c-home-screen {
+      display: none !important;
+    }
+
+    .c-band {
+      padding: 0 !important;
+      background: none !important;
+    }
+
+    /* Dark tokens never reach paper: every home section prints black on white in either theme. */
+    .c-home-screen,
+    .c-home-screen * {
+      background: none !important;
+      color: var(--print-ink) !important;
+    }
+
+    .c-band__search {
+      border-color: var(--print-ink) !important;
+      background: none !important;
+      box-shadow: none !important;
+    }
+
+    .c-proof {
+      margin-block-start: 0 !important;
+    }
+
+    .c-proof__list,
+    .c-starts__item {
+      border: 1px solid var(--print-ink) !important;
+      box-shadow: none !important;
+    }
+
+    .c-proof__tile {
+      box-shadow: none !important;
+    }
+
     .c-tool__safety {
       padding: 0 !important;
     }

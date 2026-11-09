@@ -21,6 +21,11 @@ const shown = isBuilt(compare.href);
     }
 
     @media (width <= 640px) {
+      /* The bar stays clear of a focused control (WCAG 2.4.11). */
+      :global(html:has(.c-compare-bar)) {
+        scroll-padding-bottom: var(--space-8);
+      }
+
       .c-compare-bar {
         position: sticky;
         inset-block-end: 0;

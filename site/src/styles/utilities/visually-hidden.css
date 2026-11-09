@@ -1,10 +1,11 @@
 @layer utilities {
+  /* Paint containment clips the text to its 1px box, and the box is not a scroll container. */
   .u-visually-hidden {
     position: absolute;
     width: 1px;
     height: 1px;
     padding: 0;
-    overflow: hidden;
+    contain: paint;
     clip-path: inset(50%);
     white-space: nowrap;
     border: 0;

@@ -1,0 +1,35 @@
+---
+interface Card {
+  name: string;
+  href: string;
+  // The whole sentence, and the count that opens it when the card shows one.
+  note: string;
+  count?: string | undefined;
+}
+
+interface Props {
+  cards: Card[];
+}
+
+const { cards } = Astro.props;
+// The count is set larger inside its sentence, so the sentence still reads whole.
+const parts = (card: Card): { lead: string; rest: string } =>
+  card.count !== undefined && card.note.startsWith(card.count)
+    ? { lead: card.count, rest: card.note.slice(card.count.length) }
+    : { lead: '', rest: card.note };
+---
+
+<ul class="c-starts">
+  {cards.map((card) => (
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- the Astro parser types JSX as error
+    <li class="c-starts__item">
+      <a class="c-starts__link" href={card.href}>
+        {card.name}
+      </a>
+      <p class="c-starts__note">
+        {parts(card).lead !== '' && <span class="c-starts__count">{parts(card).lead}</span>}
+        {parts(card).rest}
+      </p>
+    </li>
+  ))}
+</ul>

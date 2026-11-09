@@ -13,7 +13,7 @@ sections:
       - The site asks you for no information. It has no accounts and no sign-up or contact form.
       - The site sets no cookies. It writes nothing to local storage or session storage.
       - The site loads no advertising or social media service. Apart from the page counter described below, every file the site loads comes from surgerywaits.au.
-      - The compare page has a search form that runs in your browser. What you type or choose stays on your device, and the page sends it nowhere.
+      - The home page and the compare page each have a search form that runs in your browser. What you type or choose stays on your device, and the page sends it nowhere.
   - id: host
     heading: What the host processes
     paragraphs:

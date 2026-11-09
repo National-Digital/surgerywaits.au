@@ -222,6 +222,8 @@ beforeAll(() => {
 }, 900_000);
 
 const TOOL_PAGE = 'compare/index.html';
+// The home page runs the same search, so it loads the same script.
+const TOOL_PAGES = [TOOL_PAGE, 'index.html'];
 
 // Needs `npm run build` first, so only the build job runs it, with BUILT_PAGES=1.
 describe('Built pages', () => {
@@ -320,26 +322,31 @@ describe('Built pages', () => {
     }
   });
 
-  it('show the compare bar only when its page is built, and never on that page', () => {
+  it('show the compare bar only when its page is built, and never on a page that carries the search', () => {
     const target = paths.includes('compare/index.html');
     for (const p of analysed()) {
-      expect([p.path, p.compareBar]).toEqual([p.path, target && p.path !== TOOL_PAGE]);
+      expect([p.path, p.compareBar]).toEqual([p.path, target && !TOOL_PAGES.includes(p.path)]);
     }
   });
 
   it('ship no script of their own on every static page', () => {
-    for (const p of analysed().filter(({ path }) => path !== TOOL_PAGE)) {
+    for (const p of analysed().filter(({ path }) => !TOOL_PAGES.includes(path))) {
       expect([p.path, p.scripts, p.handlers, p.javascriptHref]).toEqual([p.path, 0, 0, false]);
     }
   });
 
   it('load the compare tool as one module script from the site, with no inline script or handler', () => {
-    const page = analysed().find(({ path }) => path === TOOL_PAGE);
-    expect(page, 'the compare page is built').toBeDefined();
-    expect(page?.scriptTags).toHaveLength(1);
-    expect(page?.scriptTags[0]?.type).toBe('module');
-    expect(page?.scriptTags[0]?.src).toMatch(/^\/_astro\/[\w.-]+\.js$/);
-    expect([page?.handlers, page?.javascriptHref]).toEqual([0, false]);
+    const sources: (string | undefined)[] = [];
+    for (const file of TOOL_PAGES) {
+      const page = analysed().find(({ path }) => path === file);
+      expect(page, `${file} is built`).toBeDefined();
+      expect(page?.scriptTags, file).toHaveLength(1);
+      expect(page?.scriptTags[0]?.type).toBe('module');
+      expect(page?.scriptTags[0]?.src).toMatch(/^\/_astro\/[\w.-]+\.js$/);
+      expect([page?.handlers, page?.javascriptHref]).toEqual([0, false]);
+      sources.push(page?.scriptTags[0]?.src);
+    }
+    expect(new Set(sources).size).toBe(1);
   });
 });
 

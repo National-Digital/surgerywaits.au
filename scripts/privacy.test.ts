@@ -178,6 +178,7 @@ browsers('Privacy in the browser', () => {
         expect(await run(address), path).toEqual(clean);
       }
       expect(await run(`${up(site).base}/compare/`, fullFlow)).toEqual(clean);
+      expect(await run(`${up(site).base}/`, fullFlow)).toEqual(clean);
     },
   );
 
@@ -185,9 +186,11 @@ browsers('Privacy in the browser', () => {
     'leaves the address and history alone and calls no history method through a full compare flow',
     { timeout: T },
     async () => {
-      const address = `${up(site).base}/compare/`;
-      const seen = await run(address, fullFlow);
-      expect([seen.moved, seen.historyGrew, seen.calls]).toEqual([[], 0, []]);
+      for (const path of ['/compare/', '/']) {
+        const address = `${up(site).base}${path}`;
+        const seen = await run(address, fullFlow);
+        expect([path, seen.moved, seen.historyGrew, seen.calls]).toEqual([path, [], 0, []]);
+      }
     },
   );
 

@@ -15,15 +15,18 @@ async function pick(page: Page, field: number, text: string): Promise<void> {
   await input.press('Enter');
 }
 
-export const TOOL_STATES: Record<string, (page: Page) => Promise<void>> = {
-  '/compare/': async (page) => {
-    await page.locator('.js-tool-form').waitFor();
+type State = (page: Page) => Promise<void>;
+
+const states = (path: string): Record<string, State> => ({
+  [path]: async (page): Promise<void> => {
+    // A page with no tool root has no form, so the wait times out and the audit fails.
+    await page.locator('[data-tool] .js-tool-form').waitFor();
   },
-  '/compare/?state=options': async (page) => {
+  [`${path}?state=options`]: async (page): Promise<void> => {
     await page.locator(INPUT).first().fill(SURGERY);
     await page.locator(OPTION).first().waitFor();
   },
-  '/compare/?state=results': async (page) => {
+  [`${path}?state=results`]: async (page): Promise<void> => {
     await pick(page, 0, SURGERY);
     await pick(page, 1, PLACE);
     // The keyboard keeps focus-visible on, as it would be for a person who used the keyboard.
@@ -31,4 +34,7 @@ export const TOOL_STATES: Record<string, (page: Page) => Promise<void>> = {
     await page.keyboard.press('Enter');
     await page.locator('.js-tool-results li').first().waitFor();
   },
-};
+});
+
+// The search sits on the compare page and on the home page, so both are audited in each state.
+export const TOOL_STATES: Record<string, State> = { ...states('/compare/'), ...states('/') };

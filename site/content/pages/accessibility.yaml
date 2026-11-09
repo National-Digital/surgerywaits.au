@@ -10,7 +10,7 @@ sections:
   - id: built
     heading: How the site is built
     paragraphs:
-      - The pages are HTML. Every page runs the page counter that the privacy page describes. The compare page also runs a search script and gives the same figures without it. Every link in the site navigation shows without script.
+      - The pages are HTML. Every page runs the page counter that the privacy page describes. The home page and the compare page also run a search script, and each gives the same figures without it. Every link in the site navigation shows without script.
     items:
       - A figure that a publisher withheld is written in words on the page, so colour carries no meaning on its own.
       - The text size is relative, so the text size set in your browser applies.
